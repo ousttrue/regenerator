@@ -14,3 +14,10 @@ FILE(GLOB SRC
     ) 
 
 ADD_EXECUTABLE(${PROJECT_NAME} ${SRC})
+
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PRIVATE
+    "C:/Program Files/LLVM/include"
+    )
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} PRIVATE
+    "C:/Program Files/LLVM/lib/libclang.lib"
+    )
