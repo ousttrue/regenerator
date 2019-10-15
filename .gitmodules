@@ -1,0 +1,3 @@
+[submodule "submodules/cpptypeinfo"]
+	path = submodules/cpptypeinfo
+	url = https://github.com/ousttrue/cpptypeinfo.git
