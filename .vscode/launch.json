@@ -28,8 +28,8 @@
             "request": "launch",
             "program": "${workspaceFolder}/dclangen.exe",
             "args": [
-                "${workspaceFolder}/sample.h",
-                // "C:/Program Files/LLVM/include/clang-c/Index.h",
+                // "${workspaceFolder}/sample.h",
+                "C:/Program Files/LLVM/include/clang-c/Index.h",
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

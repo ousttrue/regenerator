@@ -11,9 +11,12 @@ int main(string[] args)
 
 	auto index = clang_createIndex(0, 1);
 
-	auto params = [cast(byte*) "-x".ptr, cast(byte*) "c++".ptr];
+	auto params = [
+		cast(byte*) "-x".ptr, cast(byte*) "c++".ptr,
+		cast(byte*) "-IC:/Program Files/LLVM/include".ptr
+	];
 	auto tu = clang_createTranslationUnitFromSourceFile(index,
-			cast(byte*) args[1].ptr, cast(int) params.length, params.ptr, 0, null);
+			cast(byte*) "C:/Program Files/LLVM/include/clang-c/Index.h".ptr, cast(int) params.length, params.ptr, 0, null);
 
 	if (!tu)
 	{
@@ -41,13 +44,13 @@ string getCursorKindName(CXCursorKind cursorKind)
 	return to!string(cast(immutable char*) result);
 }
 
-byte* getCursorSpelling(CXCursor cursor)
+string getCursorSpelling(CXCursor cursor)
 {
 	CXString cursorSpelling = clang_getCursorSpelling(cursor);
 	auto result = clang_getCString(cursorSpelling);
 
 	clang_disposeString(cursorSpelling);
-	return result;
+	return to!string(cast(immutable char*) result);
 }
 
 extern (C) CXChildVisitResult visitor(CXCursor cursor, CXCursor /* parent */ , void* clientData)
@@ -61,8 +64,12 @@ extern (C) CXChildVisitResult visitor(CXCursor cursor, CXCursor /* parent */ , v
 	uint curLevel = *(cast(uint*) clientData);
 	uint nextLevel = curLevel + 1;
 
-	writeln(getCursorKindName(cursorKind));
-	// std::cout << std::string(curLevel, '-') << " " <<  << " (" << getCursorSpelling(cursor) << ")\n";
+	// indent
+	for (int i = 0; i < curLevel; ++i)
+	{
+		write("  ");
+	}
+	writefln("%s (%s)", getCursorKindName(cursorKind), getCursorSpelling(cursor));
 
 	clang_visitChildren(cursor, &visitor, &nextLevel);
 
