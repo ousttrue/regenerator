@@ -9,7 +9,13 @@
             "args": [
                 "gen",
                 "dlang",
-                "source/libclang"
+                "source/libclang",
+                "-I",
+                "C:/Program Files/LLVM/include",
+                "--header",
+                "C:/Program Files/LLVM/include/clang-c/Index.h",
+                "--header",
+                "C:/Program Files/LLVM/include/clang-c/CXString.h",
             ],
             "console": "integratedTerminal",
             "env": {
@@ -22,8 +28,8 @@
             "request": "launch",
             "program": "${workspaceFolder}/dclangen.exe",
             "args": [
-                // "${workspaceFolder}/main.cpp",
-                "C:/Program Files/LLVM/include/clang-c/Index.h",
+                "${workspaceFolder}/sample.h",
+                // "C:/Program Files/LLVM/include/clang-c/Index.h",
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

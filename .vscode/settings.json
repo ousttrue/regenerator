@@ -1,2 +1,11 @@
 {
+    "cSpell.words": [
+        "cpptypeinfo",
+        "dlang",
+        "nargs"
+    ],
+    "dscanner.ignoredKeys": [
+        "dscanner.style.undocumented_declaration",
+        "dscanner.suspicious.unmodified"
+    ]
 }

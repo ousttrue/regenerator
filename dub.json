@@ -5,5 +5,8 @@
 	"copyright": "Copyright © 2019, ousttrue",
 	"description": "A minimal D application.",
 	"license": "proprietary",
-	"name": "dclangen"
+	"name": "dclangen",
+	"libs": [
+		"C:/Program Files/LLVM/lib/libclang"
+	],
 }
