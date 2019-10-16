@@ -15,6 +15,6 @@ struct CXStringSet{
     uint Count;
 }
 
-extern(C) byte* clang_getCString(CXString string) nothrow;
-extern(C) void clang_disposeString(CXString string) nothrow;
-extern(C) void clang_disposeStringSet(CXStringSet* set) nothrow;
+extern(C) byte* clang_getCString(CXString string);
+extern(C) void clang_disposeString(CXString string);
+extern(C) void clang_disposeStringSet(CXStringSet* set);

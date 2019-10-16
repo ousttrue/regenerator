@@ -1,19 +1,24 @@
 import std.stdio;
+import std.conv;
 import libclang;
 
-void main(string[] args)
+int main(string[] args)
 {
 	if (args.length < 2)
-		return;
+	{
+		return 1;
+	}
 
 	auto index = clang_createIndex(0, 1);
-	// string[] params = ["-x", "c++",];
-	// auto cparams = [params[0].ptr, params[1].ptr];
+
+	auto params = [cast(byte*) "-x".ptr, cast(byte*) "c++".ptr];
 	auto tu = clang_createTranslationUnitFromSourceFile(index,
-			cast(byte*) args[1].ptr, 0, null, 0, null);
+			cast(byte*) args[1].ptr, cast(int) params.length, params.ptr, 0, null);
 
 	if (!tu)
-		return;
+	{
+		return 2;
+	}
 
 	auto rootCursor = clang_getTranslationUnitCursor(tu);
 
@@ -24,16 +29,16 @@ void main(string[] args)
 	clang_disposeTranslationUnit(tu);
 	clang_disposeIndex(index);
 
-	return;
+	return 0;
 }
 
-byte* getCursorKindName(CXCursorKind cursorKind)
+string getCursorKindName(CXCursorKind cursorKind)
 {
 	auto kindName = clang_getCursorKindSpelling(cursorKind);
 	auto result = clang_getCString(kindName);
 
 	clang_disposeString(kindName);
-	return result;
+	return to!string(cast(immutable char*) result);
 }
 
 byte* getCursorSpelling(CXCursor cursor)
@@ -45,7 +50,7 @@ byte* getCursorSpelling(CXCursor cursor)
 	return result;
 }
 
-extern (C) CXChildVisitResult visitor(CXCursor cursor, CXCursor /* parent */ , void* clientData) nothrow
+extern (C) CXChildVisitResult visitor(CXCursor cursor, CXCursor /* parent */ , void* clientData)
 {
 	auto location = clang_getCursorLocation(cursor);
 	if (clang_Location_isFromMainFile(location) == 0)
@@ -56,7 +61,8 @@ extern (C) CXChildVisitResult visitor(CXCursor cursor, CXCursor /* parent */ , v
 	uint curLevel = *(cast(uint*) clientData);
 	uint nextLevel = curLevel + 1;
 
-	// std::cout << std::string(curLevel, '-') << " " << getCursorKindName(cursorKind) << " (" << getCursorSpelling(cursor) << ")\n";
+	writeln(getCursorKindName(cursorKind));
+	// std::cout << std::string(curLevel, '-') << " " <<  << " (" << getCursorSpelling(cursor) << ")\n";
 
 	clang_visitChildren(cursor, &visitor, &nextLevel);
 
