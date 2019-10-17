@@ -1,5 +1,6 @@
 import std.stdio;
 import std.conv;
+import std.outbuffer;
 import libclang;
 
 string getCursorKindName(CXCursorKind cursorKind)
@@ -20,19 +21,42 @@ string getCursorSpelling(CXCursor cursor)
 	return to!string(cast(immutable char*) clang_getCString(cursorSpelling));
 }
 
-extern (C) CXChildVisitResult visitor(CXCursor cursor, CXCursor /* parent */ ,
-		immutable char* indent)
+extern (C) CXChildVisitResult visitor(CXCursor cursor, CXCursor /* parent */ , Context* context)
 {
+	auto cursorKind = clang_getCursorKind(cursor);
+
 	if (clang_Location_isFromMainFile(clang_getCursorLocation(cursor)))
 	{
-		auto cursorKind = clang_getCursorKind(cursor);
-
-		writefln("%s%s (%s)", to!string(indent),
+		writefln("%s%s (%s)", context.getIndent(),
 				getCursorKindName(cursorKind), getCursorSpelling(cursor));
-
-		clang_visitChildren(cursor, &visitor, cast(void*)(to!string(indent) ~ "  ").ptr);
 	}
+
+	// nest
+	auto childContext = context.getChild();
+	clang_visitChildren(cursor, &visitor, &childContext);
+
+	// continue
 	return CXChildVisitResult.CXChildVisit_Continue;
+}
+
+struct Context
+{
+	int level;
+
+	string getIndent()
+	{
+		auto buf = new OutBuffer();
+		for (int i = 0; i < level; ++i)
+		{
+			buf.write("  ");
+		}
+		return buf.toString();
+	}
+
+	Context getChild()
+	{
+		return Context(level + 1);
+	}
 }
 
 int main(string[] args)
@@ -60,8 +84,9 @@ int main(string[] args)
 	scope (exit)
 		clang_disposeTranslationUnit(tu);
 
+	Context context;
 	auto rootCursor = clang_getTranslationUnitCursor(tu);
-	clang_visitChildren(rootCursor, &visitor, cast(void*) "".ptr);
+	clang_visitChildren(rootCursor, &visitor, &context);
 
 	return 0;
 }
