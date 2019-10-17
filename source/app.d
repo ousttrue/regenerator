@@ -23,17 +23,32 @@ string getCursorSpelling(CXCursor cursor)
 
 extern (C) CXChildVisitResult visitor(CXCursor cursor, CXCursor /* parent */ , Context* context)
 {
-	auto cursorKind = clang_getCursorKind(cursor);
+	auto childContext = context.getChild();
 
-	if (clang_Location_isFromMainFile(clang_getCursorLocation(cursor)))
+	auto cursorKind = cast(CXCursorKind) clang_getCursorKind(cursor);
+	auto kind = getCursorKindName(cursorKind);
+	switch (cursorKind)
 	{
-		writefln("%s%s (%s)", context.getIndent(),
-				getCursorKindName(cursorKind), getCursorSpelling(cursor));
+	case CXCursorKind.CXCursor_InclusionDirective:
+	case CXCursorKind.CXCursor_MacroDefinition:
+	case CXCursorKind.CXCursor_MacroExpansion:
+		// skip
+		break;
+
+	case CXCursorKind.CXCursor_UnexposedDecl:
+		// extern C
+		clang_visitChildren(cursor, &visitor, &childContext);
+		break;
+
+	default:
+		return CXChildVisitResult.CXChildVisit_Break;
 	}
 
-	// nest
-	auto childContext = context.getChild();
-	clang_visitChildren(cursor, &visitor, &childContext);
+	// if (clang_Location_isFromMainFile(clang_getCursorLocation(cursor)))
+	// {
+	// 	writefln("%s%s (%s)", context.getIndent(),
+	// 			, getCursorSpelling(cursor));
+	// }
 
 	// continue
 	return CXChildVisitResult.CXChildVisit_Continue;

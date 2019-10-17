@@ -8,7 +8,7 @@ import libclang.CXErrorCode;
 
 
 enum CXAvailabilityKind {
-    CXAvailability_Available = 0x00000000,
+CXAvailability_Available = 0x00000000,
     CXAvailability_Deprecated = 0x00000001,
     CXAvailability_NotAvailable = 0x00000002,
     CXAvailability_NotAccessible = 0x00000003,
