@@ -5,7 +5,8 @@ import libclang;
 
 string toString(CXString cxs)
 {
-	return to!string(cast(immutable char*) clang_getCString(cxs));
+	auto p = clang_getCString(cxs);
+	return to!string(cast(immutable char*) p);
 }
 
 string getCursorKindName(CXCursorKind cursorKind)
@@ -26,6 +27,42 @@ string getCursorSpelling(CXCursor cursor)
 	return toString(cursorSpelling);
 }
 
+string getCursorTypeKindName(CXTypeKind typeKind)
+{
+	auto kindName = clang_getTypeKindSpelling(typeKind);
+	scope (exit)
+		clang_disposeString(kindName);
+
+	return toString(kindName);
+}
+
+class Type
+{
+
+}
+
+class Primitive : Type
+{
+	CXTypeKind m_kind;
+
+	this(CXTypeKind kind)
+	{
+		m_kind = kind;
+	}
+}
+
+class Typedef : Type
+{
+	string m_name;
+	Type m_type;
+
+	this(string name, Type type)
+	{
+		m_name = name;
+		m_type = type;
+	}
+}
+
 struct Context
 {
 	int level;
@@ -43,7 +80,7 @@ struct Context
 
 	Context getChild()
 	{
-		return Context(level + 1,);
+		return Context(level + 1, isExternC);
 	}
 
 	CXToken[] getTokens(CXCursor cursor)
@@ -60,6 +97,46 @@ struct Context
 
 		return tokens[0 .. num];
 	}
+
+	Type[] stack;
+	Type[uint] typeMap;
+
+	CXCursor getRootCanonical(CXCursor cursor)
+	{
+		auto current = cursor;
+		while (true)
+		{
+			auto canonical = clang_getCanonicalCursor(current);
+			if (canonical == current)
+			{
+				return current;
+			}
+			current = canonical;
+		}
+	}
+
+	void pushTypedef(CXCursor cursor)
+	{
+		auto hash = clang_hashCursor(cursor);
+		auto type = clang_getTypedefDeclUnderlyingType(cursor);
+		auto kind = getCursorTypeKindName(type.kind);
+		switch (type.kind)
+		{
+		case CXTypeKind.CXType_ULongLong:
+			{
+				auto name = getCursorSpelling(cursor);
+				auto decl = new Typedef(name, new Primitive(type.kind));
+				typeMap[hash] = decl;
+				stack ~= decl;
+			}
+			break;
+
+		default:
+			throw new Exception("not implemented");
+		}
+		// scope (exit)
+		// 	clang_disposeString(type);
+	}
 }
 
 extern (C) CXChildVisitResult visitor(CXCursor cursor, CXCursor /* parent */ ,
@@ -68,7 +145,7 @@ extern (C) CXChildVisitResult visitor(CXCursor cursor, CXCursor /* parent */ ,
 	auto context = parentContext.getChild();
 	auto tu = clang_Cursor_getTranslationUnit(cursor);
 	auto cursorKind = cast(CXCursorKind) clang_getCursorKind(cursor);
-	// auto kind = getCursorKindName(cursorKind);
+	auto kind = getCursorKindName(cursorKind);
 	switch (cursorKind)
 	{
 	case CXCursorKind.CXCursor_InclusionDirective:
@@ -97,17 +174,15 @@ extern (C) CXChildVisitResult visitor(CXCursor cursor, CXCursor /* parent */ ,
 		clang_visitChildren(cursor, &visitor, &context);
 		break;
 
+	case CXCursorKind.CXCursor_TypedefDecl:
+		context.pushTypedef(cursor);
+		clang_visitChildren(cursor, &visitor, &context);
+		break;
+
 	default:
 		return CXChildVisitResult.CXChildVisit_Break;
 	}
 
-	// if (clang_Location_isFromMainFile(clang_getCursorLocation(cursor)))
-	// {
-	// 	writefln("%s%s (%s)", context.getIndent(),
-	// 			, getCursorSpelling(cursor));
-	// }
-
-	// continue
 	return CXChildVisitResult.CXChildVisit_Continue;
 }
 
