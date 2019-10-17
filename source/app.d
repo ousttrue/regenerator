@@ -3,13 +3,18 @@ import std.conv;
 import std.outbuffer;
 import libclang;
 
+string toString(CXString cxs)
+{
+	return to!string(cast(immutable char*) clang_getCString(cxs));
+}
+
 string getCursorKindName(CXCursorKind cursorKind)
 {
 	auto kindName = clang_getCursorKindSpelling(cursorKind);
 	scope (exit)
 		clang_disposeString(kindName);
 
-	return to!string(cast(immutable char*) clang_getCString(kindName));
+	return toString(kindName);
 }
 
 string getCursorSpelling(CXCursor cursor)
@@ -18,15 +23,52 @@ string getCursorSpelling(CXCursor cursor)
 	scope (exit)
 		clang_disposeString(cursorSpelling);
 
-	return to!string(cast(immutable char*) clang_getCString(cursorSpelling));
+	return toString(cursorSpelling);
 }
 
-extern (C) CXChildVisitResult visitor(CXCursor cursor, CXCursor /* parent */ , Context* context)
+struct Context
 {
-	auto childContext = context.getChild();
+	int level;
+	bool isExternC;
 
+	string getIndent()
+	{
+		auto buf = new OutBuffer();
+		for (int i = 0; i < level; ++i)
+		{
+			buf.write("  ");
+		}
+		return buf.toString();
+	}
+
+	Context getChild()
+	{
+		return Context(level + 1,);
+	}
+
+	CXToken[] getTokens(CXCursor cursor)
+	{
+		auto extent = clang_getCursorExtent(cursor);
+		auto begin = clang_getRangeStart(extent);
+		auto end = clang_getRangeEnd(extent);
+		auto range = clang_getRange(begin, end);
+
+		CXToken* tokens;
+		uint num;
+		auto tu = clang_Cursor_getTranslationUnit(cursor);
+		clang_tokenize(tu, range, &tokens, &num);
+
+		return tokens[0 .. num];
+	}
+}
+
+extern (C) CXChildVisitResult visitor(CXCursor cursor, CXCursor /* parent */ ,
+		Context* parentContext)
+{
+	auto context = parentContext.getChild();
+	auto tu = clang_Cursor_getTranslationUnit(cursor);
 	auto cursorKind = cast(CXCursorKind) clang_getCursorKind(cursor);
-	auto kind = getCursorKindName(cursorKind);
+	// auto kind = getCursorKindName(cursorKind);
 	switch (cursorKind)
 	{
 	case CXCursorKind.CXCursor_InclusionDirective:
@@ -36,8 +78,23 @@ extern (C) CXChildVisitResult visitor(CXCursor cursor, CXCursor /* parent */ , C
 		break;
 
 	case CXCursorKind.CXCursor_UnexposedDecl:
-		// extern C
-		clang_visitChildren(cursor, &visitor, &childContext);
+		{
+			auto tokens = context.getTokens(cursor);
+			scope (exit)
+				clang_disposeTokens(tu, tokens.ptr, cast(uint) tokens.length);
+
+			if (tokens.length >= 2)
+			{
+				// extern C
+				auto token0 = toString(clang_getTokenSpelling(tu, tokens[0]));
+				auto token1 = toString(clang_getTokenSpelling(tu, tokens[1]));
+				if (token0 == "extern" && token1 == "\"C\"")
+				{
+					context.isExternC = true;
+				}
+			}
+		}
+		clang_visitChildren(cursor, &visitor, &context);
 		break;
 
 	default:
@@ -52,26 +109,6 @@ extern (C) CXChildVisitResult visitor(CXCursor cursor, CXCursor /* parent */ , C
 
 	// continue
 	return CXChildVisitResult.CXChildVisit_Continue;
-}
-
-struct Context
-{
-	int level;
-
-	string getIndent()
-	{
-		auto buf = new OutBuffer();
-		for (int i = 0; i < level; ++i)
-		{
-			buf.write("  ");
-		}
-		return buf.toString();
-	}
-
-	Context getChild()
-	{
-		return Context(level + 1);
-	}
 }
 
 int main(string[] args)
