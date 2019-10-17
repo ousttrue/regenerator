@@ -9,6 +9,17 @@ string toString(CXString cxs)
 	return to!string(cast(immutable char*) p);
 }
 
+string function(T) cxToString(T)(CXString function(T) func)
+{
+	return (T t) => {
+		auto name = func(T);
+		scope (exit)
+			clang_disposeString(kindName);
+
+		return toString(kindName);
+	};
+}
+
 string getCursorKindName(CXCursorKind cursorKind)
 {
 	auto kindName = clang_getCursorKindSpelling(cursorKind);
@@ -41,6 +52,26 @@ class Type
 
 }
 
+struct TypeRef
+{
+	Type type;
+	bool isConst;
+}
+
+class Pointer : Type
+{
+	TypeRef m_typeref;
+
+	this()
+	{
+	}
+
+	this(Type type, bool isConst = false)
+	{
+		m_typeref = TypeRef(type, isConst);
+	}
+}
+
 class Primitive : Type
 {
 	CXTypeKind m_kind;
@@ -54,12 +85,12 @@ class Primitive : Type
 class Typedef : Type
 {
 	string m_name;
-	Type m_type;
+	TypeRef m_typeref;
 
-	this(string name, Type type)
+	this(string name, Type type, bool isConst = false)
 	{
 		m_name = name;
-		m_type = type;
+		m_typeref = TypeRef(type, isConst);
 	}
 }
 
@@ -115,27 +146,31 @@ struct Context
 		}
 	}
 
-	void pushTypedef(CXCursor cursor)
+	Type getUnderlyingType(CXCursor cursor)
 	{
-		auto hash = clang_hashCursor(cursor);
 		auto type = clang_getTypedefDeclUnderlyingType(cursor);
 		auto kind = getCursorTypeKindName(type.kind);
 		switch (type.kind)
 		{
 		case CXTypeKind.CXType_ULongLong:
-			{
-				auto name = getCursorSpelling(cursor);
-				auto decl = new Typedef(name, new Primitive(type.kind));
-				typeMap[hash] = decl;
-				stack ~= decl;
-			}
-			break;
+			return new Primitive(type.kind);
+
+		case CXTypeKind.CXType_Pointer:
+			return new Pointer();
 
 		default:
 			throw new Exception("not implemented");
 		}
-		// scope (exit)
-		// 	clang_disposeString(type);
+	}
+
+	void pushTypedef(CXCursor cursor)
+	{
+		auto type = getUnderlyingType(cursor);
+		auto name = getCursorSpelling(cursor);
+		auto decl = new Typedef(name, type);
+		auto hash = clang_hashCursor(cursor);
+		typeMap[hash] = decl;
+		stack ~= decl;
 	}
 }
 
