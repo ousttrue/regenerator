@@ -160,7 +160,8 @@ class Parser
 		// auto context = parentContext.getChild();
 		auto tu = clang_Cursor_getTranslationUnit(cursor);
 		auto cursorKind = cast(CXCursorKind) clang_getCursorKind(cursor);
-		// auto kind = getCursorKindName(cursorKind);
+		auto kind = getCursorKindName(cursorKind);
+		writefln("%s%s", context.getIndent(), kind);
 		switch (cursorKind)
 		{
 		case CXCursorKind.CXCursor_InclusionDirective:
@@ -248,12 +249,16 @@ class Parser
 		case CXTypeKind.CXType_ULongLong:
 			return new Primitive(type.kind);
 
-		case CXTypeKind.CXType_Elaborated:
-			// struct typedef decl
-			throw new Exception("not implemented");
-
 		case CXTypeKind.CXType_Pointer:
 			return new Pointer();
+
+		case CXTypeKind.CXType_Typedef:
+			return null;
+
+		case CXTypeKind.CXType_Elaborated:
+			// struct typedef decl
+			// throw new Exception("not implemented");
+			return null;
 
 		default:
 			throw new Exception("not implemented");
@@ -263,6 +268,10 @@ class Parser
 	void pushTypedef(CXCursor cursor)
 	{
 		auto type = getUnderlyingType(cursor);
+		if (!type)
+		{
+			return;
+		}
 		auto name = getCursorSpelling(cursor);
 		auto decl = new Typedef(name, type);
 		auto hash = clang_hashCursor(cursor);
