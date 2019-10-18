@@ -3,7 +3,7 @@ import std.conv;
 import std.outbuffer;
 import libclang;
 
-string toString(CXString cxs)
+string CXStringToString(CXString cxs)
 {
 	auto p = clang_getCString(cxs);
 	return to!string(cast(immutable char*) p);
@@ -16,7 +16,7 @@ string function(T) cxToString(T)(CXString function(T) func)
 		scope (exit)
 			clang_disposeString(kindName);
 
-		return toString(kindName);
+		return CXStringToString(kindName);
 	};
 }
 
@@ -26,7 +26,7 @@ string getCursorKindName(CXCursorKind cursorKind)
 	scope (exit)
 		clang_disposeString(kindName);
 
-	return toString(kindName);
+	return CXStringToString(kindName);
 }
 
 string getCursorSpelling(CXCursor cursor)
@@ -35,7 +35,7 @@ string getCursorSpelling(CXCursor cursor)
 	scope (exit)
 		clang_disposeString(cursorSpelling);
 
-	return toString(cursorSpelling);
+	return CXStringToString(cursorSpelling);
 }
 
 string getCursorTypeKindName(CXTypeKind typeKind)
@@ -44,7 +44,7 @@ string getCursorTypeKindName(CXTypeKind typeKind)
 	scope (exit)
 		clang_disposeString(kindName);
 
-	return toString(kindName);
+	return CXStringToString(kindName);
 }
 
 class Type
@@ -114,6 +114,94 @@ struct Context
 		return Context(level + 1, isExternC);
 	}
 
+}
+
+alias applyCallback = int delegate(CXCursor);
+
+extern (C) CXChildVisitResult visitor(CXCursor cursor, CXCursor /* parent */ , CXCursorIterator* it)
+{
+	return it.call(cursor);
+}
+
+struct CXCursorIterator
+{
+	CXCursor cursor;
+	applyCallback callback;
+	int end;
+
+	this(CXCursor cursor)
+	{
+		this.cursor = cursor;
+	}
+
+	int opApply(applyCallback dg)
+	{
+		callback = dg;
+		clang_visitChildren(cursor, &visitor, &this);
+		return end;
+	}
+
+	CXChildVisitResult call(CXCursor cursor)
+	{
+		if (callback(cursor))
+		{
+			end = 1;
+			return CXChildVisitResult.CXChildVisit_Break;
+		}
+
+		return CXChildVisitResult.CXChildVisit_Continue;
+	}
+}
+
+class Parser
+{
+	void traverse(CXCursor cursor, Context context = Context())
+	{
+		// auto context = parentContext.getChild();
+		auto tu = clang_Cursor_getTranslationUnit(cursor);
+		auto cursorKind = cast(CXCursorKind) clang_getCursorKind(cursor);
+		// auto kind = getCursorKindName(cursorKind);
+		switch (cursorKind)
+		{
+		case CXCursorKind.CXCursor_InclusionDirective:
+		case CXCursorKind.CXCursor_MacroDefinition:
+		case CXCursorKind.CXCursor_MacroExpansion:
+			// skip
+			break;
+
+		case CXCursorKind.CXCursor_UnexposedDecl:
+			{
+				auto tokens = getTokens(cursor);
+				scope (exit)
+					clang_disposeTokens(tu, tokens.ptr, cast(uint) tokens.length);
+
+				if (tokens.length >= 2)
+				{
+					// extern C
+					auto token0 = CXStringToString(clang_getTokenSpelling(tu, tokens[0]));
+					auto token1 = CXStringToString(clang_getTokenSpelling(tu, tokens[1]));
+					if (token0 == "extern" && token1 == "\"C\"")
+					{
+						context.isExternC = true;
+					}
+				}
+				foreach (child; CXCursorIterator(cursor))
+				{
+					traverse(child, context.getChild());
+				}
+			}
+			break;
+
+		case CXCursorKind.CXCursor_TypedefDecl:
+			// parseTypedef(cursor);
+			pushTypedef(cursor);
+			break;
+
+		default:
+			return;
+		}
+	}
+
 	CXToken[] getTokens(CXCursor cursor)
 	{
 		auto extent = clang_getCursorExtent(cursor);
@@ -152,8 +240,17 @@ struct Context
 		auto kind = getCursorTypeKindName(type.kind);
 		switch (type.kind)
 		{
+		case CXTypeKind.CXType_Bool:
+		case CXTypeKind.CXType_Int:
+		case CXTypeKind.CXType_Long:
+		case CXTypeKind.CXType_LongLong:
+		case CXTypeKind.CXType_UShort:
 		case CXTypeKind.CXType_ULongLong:
 			return new Primitive(type.kind);
+
+		case CXTypeKind.CXType_Elaborated:
+			// struct typedef decl
+			throw new Exception("not implemented");
 
 		case CXTypeKind.CXType_Pointer:
 			return new Pointer();
@@ -172,53 +269,6 @@ struct Context
 		typeMap[hash] = decl;
 		stack ~= decl;
 	}
-}
-
-extern (C) CXChildVisitResult visitor(CXCursor cursor, CXCursor /* parent */ ,
-		Context* parentContext)
-{
-	auto context = parentContext.getChild();
-	auto tu = clang_Cursor_getTranslationUnit(cursor);
-	auto cursorKind = cast(CXCursorKind) clang_getCursorKind(cursor);
-	auto kind = getCursorKindName(cursorKind);
-	switch (cursorKind)
-	{
-	case CXCursorKind.CXCursor_InclusionDirective:
-	case CXCursorKind.CXCursor_MacroDefinition:
-	case CXCursorKind.CXCursor_MacroExpansion:
-		// skip
-		break;
-
-	case CXCursorKind.CXCursor_UnexposedDecl:
-		{
-			auto tokens = context.getTokens(cursor);
-			scope (exit)
-				clang_disposeTokens(tu, tokens.ptr, cast(uint) tokens.length);
-
-			if (tokens.length >= 2)
-			{
-				// extern C
-				auto token0 = toString(clang_getTokenSpelling(tu, tokens[0]));
-				auto token1 = toString(clang_getTokenSpelling(tu, tokens[1]));
-				if (token0 == "extern" && token1 == "\"C\"")
-				{
-					context.isExternC = true;
-				}
-			}
-		}
-		clang_visitChildren(cursor, &visitor, &context);
-		break;
-
-	case CXCursorKind.CXCursor_TypedefDecl:
-		context.pushTypedef(cursor);
-		clang_visitChildren(cursor, &visitor, &context);
-		break;
-
-	default:
-		return CXChildVisitResult.CXChildVisit_Break;
-	}
-
-	return CXChildVisitResult.CXChildVisit_Continue;
 }
 
 int main(string[] args)
@@ -246,9 +296,13 @@ int main(string[] args)
 	scope (exit)
 		clang_disposeTranslationUnit(tu);
 
-	Context context;
 	auto rootCursor = clang_getTranslationUnitCursor(tu);
-	clang_visitChildren(rootCursor, &visitor, &context);
+
+	auto parser = new Parser();
+	foreach (cursor; CXCursorIterator(rootCursor))
+	{
+		parser.traverse(cursor);
+	}
 
 	return 0;
 }
