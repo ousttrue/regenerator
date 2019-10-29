@@ -208,6 +208,34 @@ class Struct : Type
 	{
 		m_name = name;
 	}
+
+	override string toString() const
+	{
+		return format("struct %s", m_name);
+	}
+}
+
+class Enum : Type
+{
+	string m_name;
+
+	this(string name)
+	{
+		m_name = name;
+	}
+
+	override string toString() const
+	{
+		return format("enum %s", m_name);
+	}
+}
+
+class Function : Type
+{
+	override string toString() const
+	{
+		return format("function");
+	}
 }
 
 class Typedef : Type
@@ -246,7 +274,6 @@ struct Context
 	{
 		return Context(level + 1, isExternC);
 	}
-
 }
 
 alias applyCallback = int delegate(CXCursor);
@@ -341,6 +368,7 @@ class Parser
 			break;
 
 		case CXCursorKind.CXCursor_EnumDecl:
+			parseEnum(cursor);
 			break;
 
 		case CXCursorKind.CXCursor_VarDecl:
@@ -446,6 +474,11 @@ class Parser
 			}
 		}
 
+		if (type.kind == CXTypeKind.CXType_FunctionProto)
+		{
+			return new Function();
+		}
+
 		int a = 0;
 		throw new Exception("not implemented");
 	}
@@ -469,6 +502,14 @@ class Parser
 	{
 		auto name = getCursorSpelling(cursor);
 		auto decl = new Struct(name);
+		auto hash = clang_hashCursor(cursor);
+		typeMap[hash] = decl;
+	}
+
+	void parseEnum(CXCursor cursor)
+	{
+		auto name = getCursorSpelling(cursor);
+		auto decl = new Enum(name);
 		auto hash = clang_hashCursor(cursor);
 		typeMap[hash] = decl;
 	}
