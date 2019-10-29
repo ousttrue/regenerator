@@ -1,6 +1,7 @@
 import std.stdio;
 import std.conv;
 import std.outbuffer;
+import std.string;
 import libclang;
 
 string CXStringToString(CXString cxs)
@@ -49,13 +50,27 @@ string getCursorTypeKindName(CXTypeKind typeKind)
 
 class Type
 {
-
+	override string toString() const
+	{
+		throw new Exception("type");
+	}
 }
 
 struct TypeRef
 {
 	Type type;
 	bool isConst;
+	string toString() const
+	{
+		if (isConst)
+		{
+			return format("const %s", type);
+		}
+		else
+		{
+			return format("%s", type);
+		}
+	}
 }
 
 class Pointer : Type
@@ -70,15 +85,86 @@ class Pointer : Type
 	{
 		m_typeref = TypeRef(type, isConst);
 	}
+
+	override string toString() const
+	{
+		return format("%s*", m_typeref.type);
+	}
 }
 
 class Primitive : Type
 {
-	CXTypeKind m_kind;
+}
 
-	this(CXTypeKind kind)
+class Bool : Primitive
+{
+	override string toString() const
 	{
-		m_kind = kind;
+		return "bool";
+	}
+}
+
+class Int8 : Primitive
+{
+	override string toString() const
+	{
+		return "int8";
+	}
+}
+
+class Int16 : Primitive
+{
+	override string toString() const
+	{
+		return "int16";
+	}
+}
+
+class Int32 : Primitive
+{
+	override string toString() const
+	{
+		return "int32";
+	}
+}
+
+class Int64 : Primitive
+{
+	override string toString() const
+	{
+		return "int64";
+	}
+}
+
+class UInt8 : Primitive
+{
+	override string toString() const
+	{
+		return "uint8";
+	}
+}
+
+class UInt16 : Primitive
+{
+	override string toString() const
+	{
+		return "uint16";
+	}
+}
+
+class UInt32 : Primitive
+{
+	override string toString() const
+	{
+		return "uint32";
+	}
+}
+
+class UInt64 : Primitive
+{
+	override string toString() const
+	{
+		return "uint64";
 	}
 }
 
@@ -91,6 +177,11 @@ class Typedef : Type
 	{
 		m_name = name;
 		m_typeref = TypeRef(type, isConst);
+	}
+
+	override string toString() const
+	{
+		return format("typedef %s =  %s", m_name, m_typeref);
 	}
 }
 
@@ -161,7 +252,7 @@ class Parser
 		auto tu = clang_Cursor_getTranslationUnit(cursor);
 		auto cursorKind = cast(CXCursorKind) clang_getCursorKind(cursor);
 		auto kind = getCursorKindName(cursorKind);
-		writefln("%s%s", context.getIndent(), kind);
+		// writefln("%s%s", context.getIndent(), kind);
 		switch (cursorKind)
 		{
 		case CXCursorKind.CXCursor_InclusionDirective:
@@ -242,15 +333,20 @@ class Parser
 		switch (type.kind)
 		{
 		case CXTypeKind.CXType_Bool:
+			return new Bool();
 		case CXTypeKind.CXType_Int:
 		case CXTypeKind.CXType_Long:
+			return new Int32();
 		case CXTypeKind.CXType_LongLong:
+			return new Int64();
 		case CXTypeKind.CXType_UShort:
+			return new UInt16();
 		case CXTypeKind.CXType_ULongLong:
-			return new Primitive(type.kind);
+			return new UInt64();
 
 		case CXTypeKind.CXType_Pointer:
-			return new Pointer();
+			// return new Pointer();
+			return null;
 
 		case CXTypeKind.CXType_Typedef:
 			return null;
@@ -311,6 +407,11 @@ int main(string[] args)
 	foreach (cursor; CXCursorIterator(rootCursor))
 	{
 		parser.traverse(cursor);
+	}
+
+	foreach (key, value; parser.typeMap)
+	{
+		writefln("%s", value);
 	}
 
 	return 0;
