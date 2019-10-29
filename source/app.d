@@ -2,7 +2,33 @@ import std.stdio;
 import std.conv;
 import std.outbuffer;
 import std.string;
+import std.array;
 import libclang;
+
+Primitive KindToPrimitive(CXTypeKind kind)
+{
+	switch (kind)
+	{
+	case CXTypeKind.CXType_Bool:
+		return new Bool();
+	case CXTypeKind.CXType_Char_S:
+		return new Int8();
+	case CXTypeKind.CXType_Int:
+	case CXTypeKind.CXType_Long:
+		return new Int32();
+	case CXTypeKind.CXType_LongLong:
+		return new Int64();
+	case CXTypeKind.CXType_Char_U:
+		return new UInt8();
+	case CXTypeKind.CXType_UShort:
+		return new UInt16();
+	case CXTypeKind.CXType_ULongLong:
+		return new UInt64();
+
+	default:
+		return null;
+	}
+}
 
 string CXStringToString(CXString cxs)
 {
@@ -76,10 +102,6 @@ struct TypeRef
 class Pointer : Type
 {
 	TypeRef m_typeref;
-
-	this()
-	{
-	}
 
 	this(Type type, bool isConst = false)
 	{
@@ -181,7 +203,7 @@ class Typedef : Type
 
 	override string toString() const
 	{
-		return format("typedef %s =  %s", m_name, m_typeref);
+		return format("typedef %s = %s", m_name, m_typeref);
 	}
 }
 
@@ -258,6 +280,9 @@ class Parser
 		case CXCursorKind.CXCursor_InclusionDirective:
 		case CXCursorKind.CXCursor_MacroDefinition:
 		case CXCursorKind.CXCursor_MacroExpansion:
+		case CXCursorKind.CXCursor_ClassTemplate:
+		case CXCursorKind.CXCursor_ClassTemplatePartialSpecialization:
+		case CXCursorKind.CXCursor_FunctionTemplate:
 			// skip
 			break;
 
@@ -285,12 +310,20 @@ class Parser
 			break;
 
 		case CXCursorKind.CXCursor_TypedefDecl:
-			// parseTypedef(cursor);
-			pushTypedef(cursor);
+			parseTypedef(cursor);
+			break;
+
+		case CXCursorKind.CXCursor_FunctionDecl:
+			break;
+
+		case CXCursorKind.CXCursor_StructDecl:
+			break;
+
+		case CXCursorKind.CXCursor_VarDecl:
 			break;
 
 		default:
-			return;
+			throw new Exception("");
 		}
 	}
 
@@ -326,53 +359,70 @@ class Parser
 		}
 	}
 
-	Type getUnderlyingType(CXCursor cursor)
+	Type kindToType(CXCursor cursor, CXType type)
 	{
-		auto type = clang_getTypedefDeclUnderlyingType(cursor);
-		auto kind = getCursorTypeKindName(type.kind);
-		switch (type.kind)
+		auto primitive = KindToPrimitive(type.kind);
+		if (primitive)
 		{
-		case CXTypeKind.CXType_Bool:
-			return new Bool();
-		case CXTypeKind.CXType_Int:
-		case CXTypeKind.CXType_Long:
-			return new Int32();
-		case CXTypeKind.CXType_LongLong:
-			return new Int64();
-		case CXTypeKind.CXType_UShort:
-			return new UInt16();
-		case CXTypeKind.CXType_ULongLong:
-			return new UInt64();
-
-		case CXTypeKind.CXType_Pointer:
-			// return new Pointer();
-			return null;
-
-		case CXTypeKind.CXType_Typedef:
-			return null;
-
-		case CXTypeKind.CXType_Elaborated:
-			// struct typedef decl
-			// throw new Exception("not implemented");
-			return null;
-
-		default:
-			throw new Exception("not implemented");
+			return primitive;
 		}
+
+		if (type.kind == CXTypeKind.CXType_Pointer)
+		{
+			// pointer
+			auto isConst = clang_isConstQualifiedType(type);
+			auto pointee = kindToType(cursor, clang_getPointeeType(type));
+			return new Pointer(pointee, isConst != 0);
+		}
+
+		if (type.kind == CXTypeKind.CXType_Elaborated)
+		{
+			// struct
+			auto children = CXCursorIterator(cursor).array();
+			auto child = children[0];
+			auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
+			if (childKind == CXCursorKind.CXCursor_StructDecl)
+			{
+				auto kind = getCursorKindName(childKind);
+				writeln(kind);
+				throw new Exception("not implemented");
+			}
+			else
+			{
+				throw new Exception("not implemented");
+			}
+		}
+
+		int a = 0;
+		throw new Exception("not implemented");
 	}
 
-	void pushTypedef(CXCursor cursor)
+	void pushTypedef(CXCursor cursor, Type type)
 	{
-		auto type = getUnderlyingType(cursor);
-		if (!type)
-		{
-			return;
-		}
 		auto name = getCursorSpelling(cursor);
 		auto decl = new Typedef(name, type);
 		auto hash = clang_hashCursor(cursor);
 		typeMap[hash] = decl;
 		stack ~= decl;
+	}
+
+	void parseTypedef(CXCursor cursor)
+	{
+		auto underlying = clang_getTypedefDeclUnderlyingType(cursor);
+		auto type = kindToType(cursor, underlying);
+		pushTypedef(cursor, type);
+
+		// // typedef
+		// if (underlying.kind == CXTypeKind.CXType_Typedef)
+		// {
+		// 	throw new Exception("unknown type");
+		// }
+
+		// // elaborate
+		// if (underlying.kind == CXTypeKind.CXType_Elaborated)
+		// {
+		// 	throw new Exception("unknown type");
+		// }
 	}
 }
 

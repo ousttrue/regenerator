@@ -6,6 +6,7 @@
     ],
     "dscanner.ignoredKeys": [
         "dscanner.style.undocumented_declaration",
-        "dscanner.suspicious.unmodified"
+        "dscanner.suspicious.unmodified",
+        "dscanner.style.phobos_naming_convention"
     ]
 }
