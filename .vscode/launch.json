@@ -29,6 +29,9 @@
             "program": "${workspaceFolder}/dclangen.exe",
             "args": [
                 // "${workspaceFolder}/sample.h",
+                "-I",
+                "C:/Program Files/LLVM/include",
+                "-H",
                 "C:/Program Files/LLVM/include/clang-c/Index.h",
             ],
             "stopAtEntry": false,

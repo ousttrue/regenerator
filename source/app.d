@@ -4,6 +4,7 @@ import std.outbuffer;
 import std.string;
 import std.array;
 import std.path;
+import std.getopt;
 import libclang;
 
 CXTranslationUnitImpl* getTU(void* index, string header, string[] params)
@@ -581,20 +582,21 @@ class Parser
 
 int main(string[] args)
 {
-	if (args.length < 2)
-	{
-		return 1;
-	}
+	string header;
+	string[] includes;
+	getopt(args, "include|I", &includes, std.getopt.config.required, "header|H", &header);
 
 	auto index = clang_createIndex(0, 1);
 	scope (exit)
 		clang_disposeIndex(index);
 
 	string[] params = ["-x", "c++"];
+	foreach (include; includes)
+	{
+		params ~= format("-I%s", include);
+	}
 
-	params ~= "-IC:/Program Files/LLVM/include";
-
-	auto tu = getTU(index, args[1], params);
+	auto tu = getTU(index, header, params);
 	if (!tu)
 	{
 		return 2;
