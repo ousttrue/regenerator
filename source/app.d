@@ -313,6 +313,11 @@ struct CXCursorIterator
 	}
 }
 
+class Header
+{
+	Type[] types;
+}
+
 class Parser
 {
 	void traverse(CXCursor cursor, Context context = Context())
@@ -395,7 +400,6 @@ class Parser
 	}
 
 	Type[uint] typeMap;
-
 	CXCursor getRootCanonical(CXCursor cursor)
 	{
 		auto current = cursor;
@@ -483,12 +487,36 @@ class Parser
 		throw new Exception("not implemented");
 	}
 
+	Header[string] headers;
+
+	Header getOrCreateHeader(CXCursor cursor)
+	{
+		auto location = clang_getCursorLocation(cursor);
+		void* file;
+		uint line;
+		uint column;
+		uint offset;
+		clang_getInstantiationLocation(location, &file, &line, &column, &offset);
+		auto path = CXStringToString(clang_getFileName(file));
+		auto found = headers.get(path, null);
+		if (found)
+		{
+			return found;
+		}
+
+		found = new Header();
+		headers[path] = found;
+		return found;
+	}
+
 	void pushTypedef(CXCursor cursor, Type type)
 	{
 		auto name = getCursorSpelling(cursor);
 		auto decl = new Typedef(name, type);
 		auto hash = clang_hashCursor(cursor);
 		typeMap[hash] = decl;
+		auto header = getOrCreateHeader(cursor);
+		header.types ~= decl;
 	}
 
 	void parseTypedef(CXCursor cursor)
@@ -548,9 +576,13 @@ int main(string[] args)
 		parser.traverse(cursor);
 	}
 
-	foreach (key, value; parser.typeMap)
+	// foreach (key, value; parser.typeMap)
+	// {
+	// 	writefln("%s", value);
+	// }
+	foreach (path, header; parser.headers)
 	{
-		writefln("%s", value);
+		writefln("[%s]", path);
 	}
 
 	return 0;
