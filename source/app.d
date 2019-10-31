@@ -76,6 +76,24 @@ string getCursorTypeKindName(CXTypeKind typeKind)
 	return CXStringToString(kindName);
 }
 
+struct Location
+{
+	string path;
+	int line;
+}
+
+Location getCursorLocation(CXCursor cursor)
+{
+	auto location = clang_getCursorLocation(cursor);
+	void* file;
+	uint line;
+	uint column;
+	uint offset;
+	clang_getInstantiationLocation(location, &file, &line, &column, &offset);
+	auto path = CXStringToString(clang_getFileName(file));
+	return Location(path, line);
+}
+
 class Type
 {
 	override string toString() const
@@ -200,13 +218,25 @@ class UInt64 : Primitive
 	}
 }
 
-class Struct : Type
+class UserType : Type
 {
+	string m_path;
+	int m_line;
 	string m_name;
 
-	this(string name)
+	protected this(string path, int line, string name)
 	{
+		m_path = path;
+		m_line = line;
 		m_name = name;
+	}
+}
+
+class Struct : UserType
+{
+	this(string path, int line, string name)
+	{
+		super(path, line, name);
 	}
 
 	override string toString() const
@@ -215,13 +245,11 @@ class Struct : Type
 	}
 }
 
-class Enum : Type
+class Enum : UserType
 {
-	string m_name;
-
-	this(string name)
+	this(string path, int line, string name)
 	{
-		m_name = name;
+		super(path, line, name);
 	}
 
 	override string toString() const
@@ -230,28 +258,27 @@ class Enum : Type
 	}
 }
 
-class Function : Type
+class Typedef : UserType
 {
-	override string toString() const
-	{
-		return format("function");
-	}
-}
-
-class Typedef : Type
-{
-	string m_name;
 	TypeRef m_typeref;
 
-	this(string name, Type type, bool isConst = false)
+	this(string path, int line, string name, Type type, bool isConst = false)
 	{
-		m_name = name;
+		super(path, line, name);
 		m_typeref = TypeRef(type, isConst);
 	}
 
 	override string toString() const
 	{
 		return format("typedef %s = %s", m_name, m_typeref);
+	}
+}
+
+class Function : Type
+{
+	override string toString() const
+	{
+		return format("function");
 	}
 }
 
@@ -491,28 +518,23 @@ class Parser
 
 	Header getOrCreateHeader(CXCursor cursor)
 	{
-		auto location = clang_getCursorLocation(cursor);
-		void* file;
-		uint line;
-		uint column;
-		uint offset;
-		clang_getInstantiationLocation(location, &file, &line, &column, &offset);
-		auto path = CXStringToString(clang_getFileName(file));
-		auto found = headers.get(path, null);
+		auto location = getCursorLocation(cursor);
+		auto found = headers.get(location.path, null);
 		if (found)
 		{
 			return found;
 		}
 
 		found = new Header();
-		headers[path] = found;
+		headers[location.path] = found;
 		return found;
 	}
 
 	void pushTypedef(CXCursor cursor, Type type)
 	{
+		auto location = getCursorLocation(cursor);
 		auto name = getCursorSpelling(cursor);
-		auto decl = new Typedef(name, type);
+		auto decl = new Typedef(location.path, location.line, name, type);
 		auto hash = clang_hashCursor(cursor);
 		typeMap[hash] = decl;
 		auto header = getOrCreateHeader(cursor);
@@ -528,16 +550,18 @@ class Parser
 
 	void parseStruct(CXCursor cursor)
 	{
+		auto location = getCursorLocation(cursor);
 		auto name = getCursorSpelling(cursor);
-		auto decl = new Struct(name);
+		auto decl = new Struct(location.path, location.line, name);
 		auto hash = clang_hashCursor(cursor);
 		typeMap[hash] = decl;
 	}
 
 	void parseEnum(CXCursor cursor)
 	{
+		auto location = getCursorLocation(cursor);
 		auto name = getCursorSpelling(cursor);
-		auto decl = new Enum(name);
+		auto decl = new Enum(location.path, location.line, name);
 		auto hash = clang_hashCursor(cursor);
 		typeMap[hash] = decl;
 	}
@@ -576,13 +600,13 @@ int main(string[] args)
 		parser.traverse(cursor);
 	}
 
-	// foreach (key, value; parser.typeMap)
-	// {
-	// 	writefln("%s", value);
-	// }
 	foreach (path, header; parser.headers)
 	{
 		writefln("[%s]", path);
+		foreach (decl; header.types)
+		{
+			writefln("%s", decl);
+		}
 	}
 
 	return 0;
