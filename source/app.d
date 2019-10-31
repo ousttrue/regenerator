@@ -3,7 +3,19 @@ import std.conv;
 import std.outbuffer;
 import std.string;
 import std.array;
+import std.path;
 import libclang;
+
+CXTranslationUnitImpl* getTU(void* index, string header, string[] params)
+{
+	byte*[] c_params;
+	foreach (param; params)
+	{
+		c_params ~= cast(byte*) param.toStringz();
+	}
+	return clang_createTranslationUnitFromSourceFile(index,
+			cast(byte*) header.toStringz(), cast(int) params.length, c_params.ptr, 0, null);
+}
 
 Primitive KindToPrimitive(CXTypeKind kind)
 {
@@ -578,13 +590,11 @@ int main(string[] args)
 	scope (exit)
 		clang_disposeIndex(index);
 
-	auto params = [
-		cast(byte*) "-x".ptr, cast(byte*) "c++".ptr,
-		cast(byte*) "-IC:/Program Files/LLVM/include".ptr
-	];
-	auto tu = clang_createTranslationUnitFromSourceFile(index,
-			cast(byte*) "C:/Program Files/LLVM/include/clang-c/Index.h".ptr,
-			cast(int) params.length, params.ptr, 0, null);
+	string[] params = ["-x", "c++"];
+
+	params ~= "-IC:/Program Files/LLVM/include";
+
+	auto tu = getTU(index, args[1], params);
 	if (!tu)
 	{
 		return 2;
@@ -600,14 +610,14 @@ int main(string[] args)
 		parser.traverse(cursor);
 	}
 
-	foreach (path, header; parser.headers)
-	{
-		writefln("[%s]", path);
-		foreach (decl; header.types)
-		{
-			writefln("%s", decl);
-		}
-	}
+	// foreach (path, header; parser.headers)
+	// {
+	// 	writefln("[%s]", path);
+	// 	foreach (decl; header.types)
+	// 	{
+	// 		writefln("%s", decl);
+	// 	}
+	// }
 
 	return 0;
 }
