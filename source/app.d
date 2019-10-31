@@ -4,14 +4,54 @@ import std.array;
 import std.path;
 import std.file;
 import std.getopt;
+import std.conv;
+import std.algorithm;
 import libclang;
 import clanghelper;
 import parser;
 import cursoriterator;
 
+class DSource
+{
+	string m_path;
+	UserType[] m_types;
+
+	this(string path)
+	{
+		m_path = path;
+	}
+
+	void addDecl(UserType type)
+	{
+		m_types ~= type;
+	}
+
+	void writeTo(string dir)
+	{
+		writeln(dir);
+		writeln(m_path);
+
+		mkdirRecurse(dir);
+
+		// open
+		auto name = m_path.baseName().stripExtension();
+		auto stem = format("%s/%s.d", dir, name);
+		// writeln(stem);
+
+		auto f = File(stem, "w");
+		foreach (decl; m_types)
+		{
+			castSwitch!((Typedef decl) => f.writefln("// typedef %s",
+					decl.m_name), (Enum decl) => f.writefln("// enum %s", decl.m_name),
+					(Struct decl) => f.writefln("// struct %s", decl.m_name),
+					() => f.writefln("// %s", decl))(decl);
+		}
+	}
+}
+
 class Header
 {
-	Type[] types;
+	UserType[] types;
 }
 
 class Parser
@@ -21,7 +61,7 @@ class Parser
 		// auto context = parentContext.getChild();
 		auto tu = clang_Cursor_getTranslationUnit(cursor);
 		auto cursorKind = cast(CXCursorKind) clang_getCursorKind(cursor);
-		auto kind = getCursorKindName(cursorKind);
+		auto _ = getCursorKindName(cursorKind);
 		// writefln("%s%s", context.getIndent(), kind);
 		switch (cursorKind)
 		{
@@ -209,6 +249,8 @@ class Parser
 		auto decl = new Struct(location.path, location.line, name);
 		auto hash = clang_hashCursor(cursor);
 		typeMap[hash] = decl;
+		auto header = getOrCreateHeader(cursor);
+		header.types ~= decl;
 	}
 
 	void parseEnum(CXCursor cursor)
@@ -218,6 +260,8 @@ class Parser
 		auto decl = new Enum(location.path, location.line, name);
 		auto hash = clang_hashCursor(cursor);
 		typeMap[hash] = decl;
+		auto header = getOrCreateHeader(cursor);
+		header.types ~= decl;
 	}
 
 	void exportD(string header, string dir)
@@ -235,16 +279,12 @@ class Parser
 			rmdirRecurse(dir);
 		}
 
-		// mkdir
-		writefln("mkdir %s ...", dir);
-		mkdirRecurse(dir);
-
-		// gather items
-		writefln("[%s]", header);
+		auto dsource = new DSource(header);
 		foreach (decl; parsed_header.types)
 		{
-			writefln("%s", decl);
+			dsource.addDecl(decl);
 		}
+		dsource.writeTo(dir);
 	}
 }
 
@@ -286,7 +326,7 @@ int main(string[] args)
 	{
 		auto x = toStringz(dir);
 		auto y = x[0 .. dir.length + 1];
-		parser.exportD(header, y);
+		parser.exportD(header, to!string(y.ptr));
 	}
 
 	return 0;
