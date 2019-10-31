@@ -4,6 +4,7 @@ import std.outbuffer;
 import std.string;
 import std.array;
 import std.path;
+import std.file;
 import std.getopt;
 import libclang;
 
@@ -477,7 +478,7 @@ class Parser
 			auto child = children[0];
 			auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
 			auto kind = getCursorKindName(childKind);
-			writeln(kind);
+			// writeln(kind);
 			if (childKind == CXCursorKind.CXCursor_StructDecl
 					|| childKind == CXCursorKind.CXCursor_UnionDecl
 					|| childKind == CXCursorKind.CXCursor_EnumDecl)
@@ -578,13 +579,42 @@ class Parser
 		auto hash = clang_hashCursor(cursor);
 		typeMap[hash] = decl;
 	}
+
+	void exportD(string header, string dir)
+	{
+		auto parsed_header = headers[header];
+		if (!parsed_header)
+		{
+			return;
+		}
+
+		if (exists(dir))
+		{
+			// clear dir
+			writefln("rmdir %s ...", dir);
+			rmdirRecurse(dir);
+		}
+
+		// mkdir
+		writefln("mkdir %s ...", dir);
+		mkdirRecurse(dir);
+
+		// gather items
+		writefln("[%s]", header);
+		foreach (decl; parsed_header.types)
+		{
+			writefln("%s", decl);
+		}
+	}
 }
 
 int main(string[] args)
 {
 	string header;
+	string dir;
 	string[] includes;
-	getopt(args, "include|I", &includes, std.getopt.config.required, "header|H", &header);
+	getopt(args, "include|I", &includes, "outdir", &dir,
+			std.getopt.config.required, "header|H", &header);
 
 	auto index = clang_createIndex(0, 1);
 	scope (exit)
@@ -612,14 +642,12 @@ int main(string[] args)
 		parser.traverse(cursor);
 	}
 
-	// foreach (path, header; parser.headers)
-	// {
-	// 	writefln("[%s]", path);
-	// 	foreach (decl; header.types)
-	// 	{
-	// 		writefln("%s", decl);
-	// 	}
-	// }
+	if (dir)
+	{
+		auto x = toStringz(dir);
+		auto y = x[0 .. dir.length + 1];
+		parser.exportD(header, y);
+	}
 
 	return 0;
 }
