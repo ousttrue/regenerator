@@ -60,18 +60,33 @@ string getCursorTypeKindName(CXTypeKind typeKind)
 
 struct Location
 {
-	string path;
-	int line;
+    string path;
+    int line;
 }
 
 Location getCursorLocation(CXCursor cursor)
 {
-	auto location = clang_getCursorLocation(cursor);
-	void* file;
-	uint line;
-	uint column;
-	uint offset;
-	clang_getInstantiationLocation(location, &file, &line, &column, &offset);
-	auto path = CXStringToString(clang_getFileName(file));
-	return Location(path, line);
+    auto location = clang_getCursorLocation(cursor);
+    void* file;
+    uint line;
+    uint column;
+    uint offset;
+    clang_getInstantiationLocation(location, &file, &line, &column, &offset);
+    auto path = CXStringToString(clang_getFileName(file));
+    return Location(path, line);
+}
+
+CXToken[] getTokens(CXCursor cursor)
+{
+    auto extent = clang_getCursorExtent(cursor);
+    auto begin = clang_getRangeStart(extent);
+    auto end = clang_getRangeEnd(extent);
+    auto range = clang_getRange(begin, end);
+
+    CXToken* tokens;
+    uint num;
+    auto tu = clang_Cursor_getTranslationUnit(cursor);
+    clang_tokenize(tu, range, &tokens, &num);
+
+    return tokens[0 .. num];
 }

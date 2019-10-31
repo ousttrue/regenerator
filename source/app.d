@@ -1,6 +1,4 @@
 import std.stdio;
-import std.conv;
-import std.outbuffer;
 import std.string;
 import std.array;
 import std.path;
@@ -9,64 +7,7 @@ import std.getopt;
 import libclang;
 import clanghelper;
 import parser;
-
-struct Context
-{
-	int level;
-	bool isExternC;
-
-	string getIndent()
-	{
-		auto buf = new OutBuffer();
-		for (int i = 0; i < level; ++i)
-		{
-			buf.write("  ");
-		}
-		return buf.toString();
-	}
-
-	Context getChild()
-	{
-		return Context(level + 1, isExternC);
-	}
-}
-
-alias applyCallback = int delegate(CXCursor);
-
-extern (C) CXChildVisitResult visitor(CXCursor cursor, CXCursor /* parent */ , CXCursorIterator* it)
-{
-	return it.call(cursor);
-}
-
-struct CXCursorIterator
-{
-	CXCursor cursor;
-	applyCallback callback;
-	int end;
-
-	this(CXCursor cursor)
-	{
-		this.cursor = cursor;
-	}
-
-	int opApply(applyCallback dg)
-	{
-		callback = dg;
-		clang_visitChildren(cursor, &visitor, &this);
-		return end;
-	}
-
-	CXChildVisitResult call(CXCursor cursor)
-	{
-		if (callback(cursor))
-		{
-			end = 1;
-			return CXChildVisitResult.CXChildVisit_Break;
-		}
-
-		return CXChildVisitResult.CXChildVisit_Continue;
-	}
-}
+import cursoriterator;
 
 class Header
 {
@@ -137,21 +78,6 @@ class Parser
 		default:
 			throw new Exception("");
 		}
-	}
-
-	CXToken[] getTokens(CXCursor cursor)
-	{
-		auto extent = clang_getCursorExtent(cursor);
-		auto begin = clang_getRangeStart(extent);
-		auto end = clang_getRangeEnd(extent);
-		auto range = clang_getRange(begin, end);
-
-		CXToken* tokens;
-		uint num;
-		auto tu = clang_Cursor_getTranslationUnit(cursor);
-		clang_tokenize(tu, range, &tokens, &num);
-
-		return tokens[0 .. num];
 	}
 
 	Type[uint] typeMap;
