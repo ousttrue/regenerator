@@ -1,7 +1,7 @@
 import std.getopt;
 import std.string;
 import clangparser;
-import export_d;
+import dexporter;
 
 int main(string[] args)
 {
@@ -22,7 +22,8 @@ int main(string[] args)
 
 	if (dir)
 	{
-		parser.exportD(header, dir);
+		auto exporter = new DExporter(parser);
+		exporter.exportD(header, dir);
 	}
 
 	return 0;

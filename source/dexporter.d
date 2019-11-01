@@ -1,4 +1,4 @@
-module export_d;
+module dexporter;
 import std.string;
 import std.stdio;
 import std.path;
@@ -150,25 +150,52 @@ class DSource
     }
 }
 
-void exportD(Parser parser, string header, string dir)
+class DExporter
 {
-    auto parsed_header = parser.headers[header];
-    if (!parsed_header)
+    Parser m_parser;
+
+    this(Parser parser)
     {
-        return;
+        m_parser = parser;
     }
 
-    if (exists(dir))
+    DSource[string] m_sourceMap;
+
+    DSource getOrCreateSource(string path)
     {
-        // clear dir
-        writefln("rmdir %s ...", dir);
-        rmdirRecurse(dir);
+        auto source = m_sourceMap.get(path, null);
+        if (!source)
+        {
+            source = new DSource(path);
+            m_sourceMap[path] = source;
+        }
+        return source;
     }
 
-    auto dsource = new DSource(header);
-    foreach (decl; parsed_header.types)
+    void exportD(string header, string dir)
     {
-        dsource.addDecl(decl);
+        Header parsed_header = m_parser.headers[header];
+        if (!parsed_header)
+        {
+            throw new Exception("header not found");
+        }
+
+        if (exists(dir))
+        {
+            // clear dir
+            writefln("rmdir %s ...", dir);
+            rmdirRecurse(dir);
+        }
+
+        foreach (decl; parsed_header.types)
+        {
+            auto dsource = getOrCreateSource(decl.m_path);
+            dsource.addDecl(decl);
+        }
+
+        foreach(k, dsource; m_sourceMap)
+        {
+            dsource.writeTo(dir, m_parser);
+        }
     }
-    dsource.writeTo(dir, parser);
 }
