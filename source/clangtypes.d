@@ -4,27 +4,12 @@ import libclang;
 
 class Type
 {
-    override string toString() const
-    {
-        throw new Exception("type");
-    }
 }
 
 struct TypeRef
 {
     Type type;
     bool isConst;
-    string toString() const
-    {
-        if (isConst)
-        {
-            return format("const %s", type);
-        }
-        else
-        {
-            return format("%s", type);
-        }
-    }
 }
 
 class Pointer : Type
@@ -35,11 +20,6 @@ class Pointer : Type
     {
         m_typeref = TypeRef(type, isConst);
     }
-
-    override string toString() const
-    {
-        return format("%s*", m_typeref.type);
-    }
 }
 
 class Primitive : Type
@@ -48,82 +28,50 @@ class Primitive : Type
 
 class Void : Primitive
 {
-    override string toString() const
-    {
-        return "void";
-    }
 }
 
 class Bool : Primitive
 {
-    override string toString() const
-    {
-        return "bool";
-    }
 }
 
 class Int8 : Primitive
 {
-    override string toString() const
-    {
-        return "int8";
-    }
 }
 
 class Int16 : Primitive
 {
-    override string toString() const
-    {
-        return "int16";
-    }
 }
 
 class Int32 : Primitive
 {
-    override string toString() const
-    {
-        return "int32";
-    }
 }
 
 class Int64 : Primitive
 {
-    override string toString() const
-    {
-        return "int64";
-    }
 }
 
 class UInt8 : Primitive
 {
-    override string toString() const
-    {
-        return "uint8";
-    }
 }
 
 class UInt16 : Primitive
 {
-    override string toString() const
-    {
-        return "uint16";
-    }
 }
 
 class UInt32 : Primitive
 {
-    override string toString() const
-    {
-        return "uint32";
-    }
 }
 
 class UInt64 : Primitive
 {
-    override string toString() const
-    {
-        return "uint64";
-    }
+}
+
+class Float : Primitive
+{
+}
+
+class Double : Primitive
+{
 }
 
 class UserType : Type
@@ -146,11 +94,6 @@ class Struct : UserType
     {
         super(path, line, name);
     }
-
-    override string toString() const
-    {
-        return format("struct %s", m_name);
-    }
 }
 
 class Enum : UserType
@@ -158,11 +101,6 @@ class Enum : UserType
     this(string path, int line, string name)
     {
         super(path, line, name);
-    }
-
-    override string toString() const
-    {
-        return format("enum %s", m_name);
     }
 }
 
@@ -174,11 +112,6 @@ class Typedef : UserType
     {
         super(path, line, name);
         m_typeref = TypeRef(type, isConst);
-    }
-
-    override string toString() const
-    {
-        return format("typedef %s = %s", m_name, m_typeref);
     }
 }
 
@@ -200,11 +133,6 @@ class Function : UserType
         m_ret = ret;
         m_params = params;
     }
-
-    override string toString() const
-    {
-        return format("function");
-    }
 }
 
 Primitive KindToPrimitive(CXTypeKind kind)
@@ -215,19 +143,31 @@ Primitive KindToPrimitive(CXTypeKind kind)
         return new Void();
     case CXTypeKind.CXType_Bool:
         return new Bool();
+        // Int
     case CXTypeKind.CXType_Char_S:
         return new Int8();
+    case CXTypeKind.CXType_Short:
+        return new Int16();
     case CXTypeKind.CXType_Int:
     case CXTypeKind.CXType_Long:
         return new Int32();
     case CXTypeKind.CXType_LongLong:
         return new Int64();
+        // UInt
     case CXTypeKind.CXType_Char_U:
         return new UInt8();
     case CXTypeKind.CXType_UShort:
+    case CXTypeKind.CXType_WChar:
         return new UInt16();
+    case CXTypeKind.CXType_UInt:
+        return new UInt32();
     case CXTypeKind.CXType_ULongLong:
         return new UInt64();
+        // Float
+    case CXTypeKind.CXType_Float:
+        return new Float();
+    case CXTypeKind.CXType_Double:
+        return new Double();
 
     default:
         return null;

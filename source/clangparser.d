@@ -105,17 +105,39 @@ class Parser
         {
             // pointer
             auto isConst = clang_isConstQualifiedType(type);
-            auto pointee = kindToType(cursor, clang_getPointeeType(type));
+            auto pointeeType = clang_getPointeeType(type);
+            auto pointee = kindToType(cursor, pointeeType);
+            if (!pointee)
+            {
+                auto location = getCursorLocation(cursor);
+                auto spelling = getCursorSpelling(cursor);
+                int a = 0;
+            }
+            // auto typeName = pointee.toString();
             return new Pointer(pointee, isConst != 0);
         }
 
         if (type.kind == CXTypeKind.CXType_Elaborated)
         {
             // struct
-            auto children = CXCursorIterator(cursor).array();
-            auto child = children[0];
-            auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
-            auto kind = getCursorKindName(childKind);
+            CXCursor child;
+            CXCursorKind childKind = CXCursorKind.CXCursor_UnexposedAttr;
+            foreach (x; CXCursorIterator(cursor))
+            {
+                auto xKind = cast(CXCursorKind) clang_getCursorKind(x);
+                if (xKind != CXCursorKind.CXCursor_UnexposedAttr)
+                {
+                    child = x;
+                    childKind = xKind;
+                    break;
+                }
+            }
+            if (childKind == CXCursorKind.CXCursor_UnexposedAttr)
+            {
+                throw new Exception("no child");
+            }
+
+            auto childKindName = getCursorKindName(childKind);
             // writeln(kind);
             if (childKind == CXCursorKind.CXCursor_StructDecl
                     || childKind == CXCursorKind.CXCursor_UnionDecl
@@ -227,7 +249,7 @@ class Parser
         auto location = getCursorLocation(cursor);
         auto name = getCursorSpelling(cursor);
 
-        auto retType = clang_getCursorType(cursor);
+        auto retType = clang_getCursorResultType(cursor);
         auto ret = kindToType(cursor, retType);
 
         Param[] params;

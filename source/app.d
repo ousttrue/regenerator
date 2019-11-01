@@ -5,13 +5,56 @@ import std.file;
 import std.getopt;
 import std.conv;
 import std.algorithm;
+import std.array;
 import clangtypes;
 import clangparser;
 
-void DFucntion(File f, Function decl)
+string DPointer(Pointer t)
 {
-	auto extern_c = decl.m_externC ? "extern(C) " : "";
-	f.writef("// %s%s %s(", extern_c, decl.m_ret, decl.m_name);
+	return format("%s*", DType(t.m_typeref.type));
+}
+
+string DEnum(Enum t)
+{
+	return t.toString();
+}
+
+string DStruct(Struct t)
+{
+	return t.toString();
+}
+
+string DTypedef(Typedef t)
+{
+	return t.toString();
+}
+
+string DType(Type t)
+{
+	return castSwitch!((Pointer decl) => DPointer(decl),
+			(Typedef decl) => DTypedef(decl), (Enum decl) => DEnum(decl),
+			(Struct decl) => DStruct(decl), (Function decl) => DFucntion(decl),
+			//
+			(Void _) => "void", (Bool _) => "bool", (Int8 _) => "byte",
+			(Int16 _) => "short", (Int32 _) => "int", (Int64 _) => "long",
+			(UInt8 _) => "ubyte", (UInt16 _) => "ushort", (UInt32 _) => "uint",
+			(UInt64 _) => "ulong", (Float _) => "float", (Double _) => "double",
+			//
+			() => format("unknown(%s)", t))(t);
+}
+
+string DFucntion(Function decl, bool extern_c = false)
+{
+	auto sb = appender!string;
+	if (extern_c)
+	{
+		sb.put("extern(C) ");
+	}
+	sb.put(DType(decl.m_ret));
+	sb.put(" ");
+	sb.put(decl.m_name);
+	sb.put("(");
+
 	auto isFirst = true;
 	foreach (param; decl.m_params)
 	{
@@ -21,11 +64,12 @@ void DFucntion(File f, Function decl)
 		}
 		else
 		{
-			f.write(", ");
+			sb.put(", ");
 		}
-		f.writef("%s %s", param.typeRef.type, param.name);
+		sb.put(format("%s %s", DType(param.typeRef.type), param.name));
 	}
-	f.writeln(");");
+	sb.put(");");
+	return sb.data;
 }
 
 class DSource
@@ -61,7 +105,7 @@ class DSource
 			castSwitch!((Typedef decl) => f.writefln("// typedef %s",
 					decl.m_name), (Enum decl) => f.writefln("// enum %s", decl.m_name),
 					(Struct decl) => f.writefln("// struct %s", decl.m_name),
-					(Function decl) => DFucntion(f, decl), () => f.writefln("// %s", decl))(decl);
+					(Function decl) => f.writefln("// %s", DFucntion(decl)))(decl);
 		}
 	}
 }
