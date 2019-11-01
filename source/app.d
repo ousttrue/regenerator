@@ -8,6 +8,12 @@ import std.algorithm;
 import clangtypes;
 import clangparser;
 
+void DFucntion(File f, Function decl)
+{
+	auto extern_c = decl.m_externC ? "extern(C) " : "";
+	f.writefln("// %s%s %s()", extern_c, decl.m_ret, decl.m_name);
+}
+
 class DSource
 {
 	string m_path;
@@ -41,8 +47,7 @@ class DSource
 			castSwitch!((Typedef decl) => f.writefln("// typedef %s",
 					decl.m_name), (Enum decl) => f.writefln("// enum %s", decl.m_name),
 					(Struct decl) => f.writefln("// struct %s", decl.m_name),
-					(Function decl) => f.writefln("// function %s", decl.m_name),
-					() => f.writefln("// %s", decl))(decl);
+					(Function decl) => DFucntion(f, decl), () => f.writefln("// %s", decl))(decl);
 		}
 	}
 }

@@ -184,9 +184,13 @@ class Typedef : UserType
 
 class Function : UserType
 {
-    this(string path, int line, string name)
+    Type m_ret;
+    bool m_externC;
+
+    this(string path, int line, string name, Type ret)
     {
         super(path, line, name);
+        m_ret = ret;
     }
 
     override string toString() const

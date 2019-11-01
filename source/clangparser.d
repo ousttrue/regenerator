@@ -59,7 +59,7 @@ class Parser
             break;
 
         case CXCursorKind.CXCursor_FunctionDecl:
-            parseFunction(cursor);
+            parseFunction(cursor, context.isExternC);
             break;
 
         case CXCursorKind.CXCursor_StructDecl:
@@ -222,16 +222,20 @@ class Parser
         header.types ~= decl;
     }
 
-    void parseFunction(CXCursor cursor)
+    void parseFunction(CXCursor cursor, bool externC)
     {
         auto location = getCursorLocation(cursor);
         auto name = getCursorSpelling(cursor);
-        auto decl = new Function(location.path, location.line, name);
-        // auto hash = clang_hashCursor(cursor);
-        // typeMap[hash] = decl;
+
+        auto retType = clang_getCursorType(cursor);
+        auto ret = kindToType(cursor, retType);
+
+        auto decl = new Function(location.path, location.line, name, ret);
+        decl.m_externC = externC;
+
         auto header = getOrCreateHeader(cursor);
         header.types ~= decl;
-     }
+    }
 
     bool parse(string header, string[] params)
     {
