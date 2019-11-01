@@ -8,7 +8,7 @@ import std.conv;
 import std.algorithm;
 import libclang;
 import clanghelper;
-import parser;
+import clangtypes;
 import cursoriterator;
 
 class DSource

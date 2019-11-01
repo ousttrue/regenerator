@@ -1,4 +1,4 @@
-module parser;
+module clangtypes;
 import std.string;
 import libclang;
 
