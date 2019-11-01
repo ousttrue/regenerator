@@ -23,6 +23,18 @@ class Pointer : Type
     }
 }
 
+class Array : Type
+{
+    TypeRef m_typeref;
+    long m_size;
+
+    this(Type type, long size, bool isConst = false)
+    {
+        m_typeref = TypeRef(type, isConst);
+        m_size = size;
+    }
+}
+
 class Primitive : Type
 {
 }

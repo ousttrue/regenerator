@@ -60,12 +60,12 @@ void DStructDecl(File* f, Struct decl, Parser parser)
 	f.writefln("struct %s{", decl.m_name);
 	foreach (field; decl.m_fields)
 	{
-		f.writefln("%s %s;", DType(field.type, parser), field.name);
+		f.writefln("   %s %s;", DType(field.type, parser), field.name);
 	}
 	f.writeln("}");
 }
 
-void DEnumDecl(File* f, Enum decl, Parser parser)
+void DEnumDecl(File* f, Enum decl, Parser _)
 {
 	if (!decl.m_name)
 	{
@@ -144,25 +144,6 @@ class DSource
 		// writeln(stem);
 
 		auto f = File(stem, "w");
-
-		f.writeln("
-alias time_t = ulong;
-struct CXString
-{
-}
-struct CXSourceLocation
-{
-}
-struct CXSourceRange
-{
-}
-struct CXSourceRangeList
-{
-}
-struct CXCursor
-{
-}
-");
 
 		foreach (decl; m_types)
 		{

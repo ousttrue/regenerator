@@ -106,20 +106,23 @@ class Parser
             // pointer
             auto isConst = clang_isConstQualifiedType(type);
             auto pointeeType = clang_getPointeeType(type);
-            auto pointee = typeToDecl(cursor, pointeeType);
-            if (!pointee)
+            auto pointeeDecl = typeToDecl(cursor, pointeeType);
+            if (!pointeeDecl)
             {
                 auto location = getCursorLocation(cursor);
                 auto spelling = getCursorSpelling(cursor);
                 throw new Exception("no pointee");
             }
-            // auto typeName = pointee.toString();
-            return new Pointer(pointee, isConst != 0);
+            // auto typeName = pointeeDecl.toString();
+            return new Pointer(pointeeDecl, isConst != 0);
         }
 
         if (type.kind == CXTypeKind.CXType_ConstantArray)
         {
-            throw new Exception("not implemented");
+            auto arrayType = clang_getArrayElementType(type);
+            auto arrayDecl = typeToDecl(cursor, arrayType);
+            auto arraySize = clang_getArraySize(type);
+            return new Array(arrayDecl, arraySize);
         }
 
         if (type.kind == CXTypeKind.CXType_Record)
@@ -199,6 +202,7 @@ class Parser
 
                 case CXCursorKind.CXCursor_DLLImport:
                 case CXCursorKind.CXCursor_DLLExport:
+                case CXCursorKind.CXCursor_UnexposedAttr:
                     break;
 
                 default:
