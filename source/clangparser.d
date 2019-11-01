@@ -120,45 +120,46 @@ class Parser
         if (type.kind == CXTypeKind.CXType_Elaborated)
         {
             // struct
-            CXCursor child;
-            CXCursorKind childKind = CXCursorKind.CXCursor_UnexposedAttr;
-            foreach (x; CXCursorIterator(cursor))
+            auto children = CXCursorIterator(cursor).array();
+            foreach (child; children)
             {
-                auto xKind = cast(CXCursorKind) clang_getCursorKind(x);
-                if (xKind != CXCursorKind.CXCursor_UnexposedAttr)
+                auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
+                auto childKindName = getCursorKindName(childKind);
+                // writeln(kind);
+                switch (childKind)
                 {
-                    child = x;
-                    childKind = xKind;
+                case CXCursorKind.CXCursor_StructDecl:
+                case CXCursorKind.CXCursor_UnionDecl:
+                case CXCursorKind.CXCursor_EnumDecl:
+                    {
+                        auto hash = clang_hashCursor(child);
+                        auto decl = typeMap[hash];
+                        return decl;
+                    }
+
+                case CXCursorKind.CXCursor_TypeRef:
+                    {
+                        auto referenced = clang_getCursorReferenced(child);
+                        auto hash = clang_hashCursor(referenced);
+                        auto decl = typeMap[hash];
+                        return decl;
+                    }
+
+                case CXCursorKind.CXCursor_DLLImport:
+                case CXCursorKind.CXCursor_DLLExport:
+                case CXCursorKind.CXCursor_UnexposedAttr:
+                    // skip
                     break;
+
+                default:
+                    {
+                        writeln("hoge");
+                        throw new Exception("not implemented");
+                    }
                 }
             }
-            if (childKind == CXCursorKind.CXCursor_UnexposedAttr)
-            {
-                throw new Exception("no child");
-            }
 
-            auto childKindName = getCursorKindName(childKind);
-            // writeln(kind);
-            if (childKind == CXCursorKind.CXCursor_StructDecl
-                    || childKind == CXCursorKind.CXCursor_UnionDecl
-                    || childKind == CXCursorKind.CXCursor_EnumDecl)
-            {
-                auto hash = clang_hashCursor(child);
-                auto decl = typeMap[hash];
-                return decl;
-            }
-            else if (childKind == CXCursorKind.CXCursor_TypeRef)
-            {
-                auto referenced = clang_getCursorReferenced(child);
-                auto hash = clang_hashCursor(referenced);
-                auto decl = typeMap[hash];
-                return decl;
-            }
-            else
-            {
-                writeln("hoge");
-                throw new Exception("not implemented");
-            }
+            throw new Exception("not implemented");
         }
 
         if (type.kind == CXTypeKind.CXType_Typedef)
