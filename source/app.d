@@ -1,6 +1,5 @@
 import std.getopt;
 import std.string;
-import std.conv;
 import clangparser;
 import export_d;
 
@@ -23,9 +22,7 @@ int main(string[] args)
 
 	if (dir)
 	{
-		auto x = toStringz(dir);
-		auto y = x[0 .. dir.length + 1];
-		parser.exportD(header, to!string(y.ptr));
+		parser.exportD(header, dir);
 	}
 
 	return 0;

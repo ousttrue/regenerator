@@ -90,3 +90,10 @@ CXToken[] getTokens(CXCursor cursor)
 
     return tokens[0 .. num];
 }
+
+string TerminatedString(string src)
+{
+    auto x = toStringz(src);
+    auto y = x[0 .. src.length + 1];
+    return to!string(y.ptr);
+}
