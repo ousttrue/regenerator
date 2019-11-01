@@ -182,15 +182,23 @@ class Typedef : UserType
     }
 }
 
+struct Param
+{
+    string name;
+    TypeRef typeRef;
+}
+
 class Function : UserType
 {
     Type m_ret;
     bool m_externC;
+    Param[] m_params;
 
-    this(string path, int line, string name, Type ret)
+    this(string path, int line, string name, Type ret, Param[] params)
     {
         super(path, line, name);
         m_ret = ret;
+        m_params = params;
     }
 
     override string toString() const

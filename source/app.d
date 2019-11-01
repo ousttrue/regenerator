@@ -11,7 +11,21 @@ import clangparser;
 void DFucntion(File f, Function decl)
 {
 	auto extern_c = decl.m_externC ? "extern(C) " : "";
-	f.writefln("// %s%s %s()", extern_c, decl.m_ret, decl.m_name);
+	f.writef("// %s%s %s(", extern_c, decl.m_ret, decl.m_name);
+	auto isFirst = true;
+	foreach (param; decl.m_params)
+	{
+		if (isFirst)
+		{
+			isFirst = false;
+		}
+		else
+		{
+			f.write(", ");
+		}
+		f.writef("%s %s", param.typeRef.type, param.name);
+	}
+	f.writeln(");");
 }
 
 class DSource

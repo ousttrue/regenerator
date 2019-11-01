@@ -230,7 +230,30 @@ class Parser
         auto retType = clang_getCursorType(cursor);
         auto ret = kindToType(cursor, retType);
 
-        auto decl = new Function(location.path, location.line, name, ret);
+        Param[] params;
+        foreach (child; CXCursorIterator(cursor))
+        {
+            auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
+            switch (childKind)
+            {
+            case CXCursorKind.CXCursor_ParmDecl:
+                {
+                    auto paramName = getCursorSpelling(cursor);
+                    auto paramCursorType = clang_getCursorType(cursor);
+                    auto paramType = kindToType(cursor, paramCursorType);
+                    auto paramConst = clang_isConstQualifiedType(paramCursorType);
+                    auto param = Param(paramName, TypeRef(paramType, paramConst != 0));
+                    params ~= param;
+                }
+                break;
+
+            default:
+                writeln(childKind);
+                break;
+            }
+        }
+
+        auto decl = new Function(location.path, location.line, name, ret, params);
         decl.m_externC = externC;
 
         auto header = getOrCreateHeader(cursor);
