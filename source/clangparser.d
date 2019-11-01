@@ -111,7 +111,7 @@ class Parser
             {
                 auto location = getCursorLocation(cursor);
                 auto spelling = getCursorSpelling(cursor);
-                int a = 0;
+                throw new Exception("no pointee");
             }
             // auto typeName = pointee.toString();
             return new Pointer(pointee, isConst != 0);
@@ -164,19 +164,24 @@ class Parser
         if (type.kind == CXTypeKind.CXType_Typedef)
         {
             auto children = CXCursorIterator(cursor).array();
-            auto child = children[0];
-            auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
-            if (childKind == CXCursorKind.CXCursor_TypeRef)
+            foreach (child; children)
             {
-                auto referenced = clang_getCursorReferenced(child);
-                auto hash = clang_hashCursor(referenced);
-                auto decl = typeMap[hash];
-                return decl;
+                auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
+                if (childKind == CXCursorKind.CXCursor_TypeRef)
+                {
+                    auto referenced = clang_getCursorReferenced(child);
+                    auto hash = clang_hashCursor(referenced);
+                    auto decl = typeMap[hash];
+                    return decl;
+                }
+                else
+                {
+                    auto childKindName = getCursorKindName(childKind);
+                    int a = 0;
+                }
             }
-            else
-            {
-                throw new Exception("not implemented");
-            }
+
+            throw new Exception("no TypeRef");
         }
 
         if (type.kind == CXTypeKind.CXType_FunctionProto)
