@@ -1,4 +1,4 @@
-module cursoriterator;
+module clangcursor;
 import std.outbuffer;
 import libclang;
 
