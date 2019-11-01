@@ -14,11 +14,6 @@ string DPointer(Pointer t, Parser parser)
 	return format("%s*", DType(t.m_typeref.type, parser));
 }
 
-string DStruct(Struct t)
-{
-	return t.toString();
-}
-
 string DType(Type t, Parser parser)
 {
 	return castSwitch!((Pointer decl) => DPointer(decl, parser),
@@ -62,7 +57,12 @@ void DStructDecl(File* f, Struct decl, Parser parser)
 		f.writeln("// struct nameless");
 		return;
 	}
-	f.writefln("struct %s;", decl.m_name);
+	f.writefln("struct %s{", decl.m_name);
+	foreach (field; decl.m_fields)
+	{
+		f.writefln("%s %s;", DType(field.type, parser), field.name);
+	}
+	f.writeln("}");
 }
 
 void DEnumDecl(File* f, Enum decl, Parser parser)

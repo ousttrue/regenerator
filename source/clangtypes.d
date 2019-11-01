@@ -89,11 +89,20 @@ class UserType : Type
     }
 }
 
+struct Field
+{
+    string name;
+    Type type;
+}
+
 class Struct : UserType
 {
-    this(string path, int line, string name)
+    Field[] m_fields;
+
+    this(string path, int line, string name, Field[] fields)
     {
         super(path, line, name);
+        m_fields = fields;
     }
 }
 
@@ -170,6 +179,7 @@ Primitive KindToPrimitive(CXTypeKind kind)
     case CXTypeKind.CXType_WChar:
         return new UInt16();
     case CXTypeKind.CXType_UInt:
+    case CXTypeKind.CXType_ULong:
         return new UInt32();
     case CXTypeKind.CXType_ULongLong:
         return new UInt64();

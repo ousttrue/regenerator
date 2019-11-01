@@ -63,7 +63,7 @@ class Parser
             break;
 
         case CXCursorKind.CXCursor_StructDecl:
-            parseStruct(cursor);
+            parseStruct(cursor, context.getChild());
             break;
 
         case CXCursorKind.CXCursor_EnumDecl:
@@ -93,7 +93,7 @@ class Parser
         }
     }
 
-    Type kindToType(CXCursor cursor, CXType type)
+    Type typeToDecl(CXCursor cursor, CXType type)
     {
         auto primitive = KindToPrimitive(type.kind);
         if (primitive)
@@ -106,7 +106,7 @@ class Parser
             // pointer
             auto isConst = clang_isConstQualifiedType(type);
             auto pointeeType = clang_getPointeeType(type);
-            auto pointee = kindToType(cursor, pointeeType);
+            auto pointee = typeToDecl(cursor, pointeeType);
             if (!pointee)
             {
                 auto location = getCursorLocation(cursor);
@@ -115,6 +115,25 @@ class Parser
             }
             // auto typeName = pointee.toString();
             return new Pointer(pointee, isConst != 0);
+        }
+
+        if (type.kind == CXTypeKind.CXType_ConstantArray)
+        {
+            throw new Exception("not implemented");
+        }
+
+        if (type.kind == CXTypeKind.CXType_Record)
+        {
+            auto children = CXCursorIterator(cursor).array();
+            foreach (child; children)
+            {
+                auto hash = clang_hashCursor(child);
+                auto decl = typeMap[hash];
+                return decl;
+            }
+
+            int a = 0;
+            throw new Exception("record");
         }
 
         if (type.kind == CXTypeKind.CXType_Elaborated)
@@ -168,20 +187,24 @@ class Parser
             foreach (child; children)
             {
                 auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
-                if (childKind == CXCursorKind.CXCursor_TypeRef)
+                switch (childKind)
                 {
-                    auto referenced = clang_getCursorReferenced(child);
-                    auto hash = clang_hashCursor(referenced);
-                    auto decl = typeMap[hash];
-                    return decl;
-                }
-                else
-                {
-                    auto childKindName = getCursorKindName(childKind);
-                    int a = 0;
+                case CXCursorKind.CXCursor_TypeRef:
+                    {
+                        auto referenced = clang_getCursorReferenced(child);
+                        auto hash = clang_hashCursor(referenced);
+                        auto decl = typeMap[hash];
+                        return decl;
+                    }
+
+                case CXCursorKind.CXCursor_DLLImport:
+                case CXCursorKind.CXCursor_DLLExport:
+                    break;
+
+                default:
+                    throw new Exception("unknown");
                 }
             }
-
             throw new Exception("no TypeRef");
         }
 
@@ -224,15 +247,44 @@ class Parser
     void parseTypedef(CXCursor cursor)
     {
         auto underlying = clang_getTypedefDeclUnderlyingType(cursor);
-        auto type = kindToType(cursor, underlying);
+        auto type = typeToDecl(cursor, underlying);
         pushTypedef(cursor, type);
     }
 
-    void parseStruct(CXCursor cursor)
+    void parseStruct(CXCursor cursor, Context context)
     {
         auto location = getCursorLocation(cursor);
         auto name = getCursorSpelling(cursor);
-        auto decl = new Struct(location.path, location.line, name);
+
+        Field[] fields;
+        foreach (child; CXCursorIterator(cursor))
+        {
+            auto fieldName = getCursorSpelling(child);
+            auto fieldKind = cast(CXCursorKind) clang_getCursorKind(child);
+            auto fieldType = clang_getCursorType(child);
+            switch (fieldKind)
+            {
+            case CXCursorKind.CXCursor_FieldDecl:
+                {
+                    auto fieldDecl = typeToDecl(child, fieldType);
+                    fields ~= Field(fieldName, fieldDecl);
+                    break;
+                }
+
+            case CXCursorKind.CXCursor_StructDecl:
+                traverse(child, context);
+                break;
+
+            case CXCursorKind.CXCursor_ObjCClassMethodDecl:
+                break;
+
+            default:
+                // traverse(con)
+                throw new Exception("unknown");
+            }
+        }
+
+        auto decl = new Struct(location.path, location.line, name, fields);
         auto hash = clang_hashCursor(cursor);
         typeMap[hash] = decl;
         auto header = getOrCreateHeader(cursor);
@@ -276,7 +328,7 @@ class Parser
         auto name = getCursorSpelling(cursor);
 
         auto retType = clang_getCursorResultType(cursor);
-        auto ret = kindToType(cursor, retType);
+        auto ret = typeToDecl(cursor, retType);
 
         Param[] params;
         foreach (child; CXCursorIterator(cursor))
@@ -288,7 +340,7 @@ class Parser
                 {
                     auto paramName = getCursorSpelling(cursor);
                     auto paramCursorType = clang_getCursorType(cursor);
-                    auto paramType = kindToType(cursor, paramCursorType);
+                    auto paramType = typeToDecl(cursor, paramCursorType);
                     auto paramConst = clang_isConstQualifiedType(paramCursorType);
                     auto param = Param(paramName, TypeRef(paramType, paramConst != 0));
                     params ~= param;
