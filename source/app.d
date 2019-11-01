@@ -41,6 +41,7 @@ class DSource
 			castSwitch!((Typedef decl) => f.writefln("// typedef %s",
 					decl.m_name), (Enum decl) => f.writefln("// enum %s", decl.m_name),
 					(Struct decl) => f.writefln("// struct %s", decl.m_name),
+					(Function decl) => f.writefln("// function %s", decl.m_name),
 					() => f.writefln("// %s", decl))(decl);
 		}
 	}

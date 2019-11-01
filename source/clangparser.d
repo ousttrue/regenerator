@@ -59,6 +59,7 @@ class Parser
             break;
 
         case CXCursorKind.CXCursor_FunctionDecl:
+            parseFunction(cursor);
             break;
 
         case CXCursorKind.CXCursor_StructDecl:
@@ -158,7 +159,7 @@ class Parser
 
         if (type.kind == CXTypeKind.CXType_FunctionProto)
         {
-            return new Function();
+            return new Pointer(new Void());
         }
 
         int a = 0;
@@ -221,6 +222,17 @@ class Parser
         header.types ~= decl;
     }
 
+    void parseFunction(CXCursor cursor)
+    {
+        auto location = getCursorLocation(cursor);
+        auto name = getCursorSpelling(cursor);
+        auto decl = new Function(location.path, location.line, name);
+        // auto hash = clang_hashCursor(cursor);
+        // typeMap[hash] = decl;
+        auto header = getOrCreateHeader(cursor);
+        header.types ~= decl;
+     }
+
     bool parse(string header, string[] params)
     {
         auto index = clang_createIndex(0, 1);
@@ -240,10 +252,9 @@ class Parser
         foreach (cursor; CXCursorIterator(rootCursor))
         {
             traverse(cursor);
-       }
+        }
 
         return true;
     }
-
 
 }

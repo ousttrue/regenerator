@@ -182,8 +182,13 @@ class Typedef : UserType
     }
 }
 
-class Function : Type
+class Function : UserType
 {
+    this(string path, int line, string name)
+    {
+        super(path, line, name);
+    }
+
     override string toString() const
     {
         return format("function");
