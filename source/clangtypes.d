@@ -1,5 +1,6 @@
 module clangtypes;
 import std.string;
+import std.typecons;
 import libclang;
 
 class Type
@@ -96,11 +97,20 @@ class Struct : UserType
     }
 }
 
+struct EnumValue
+{
+    string name;
+    long value;
+}
+
 class Enum : UserType
 {
-    this(string path, int line, string name)
+    EnumValue[] m_values;
+
+    this(string path, int line, string name, EnumValue[] values)
     {
         super(path, line, name);
+        m_values = values;
     }
 }
 

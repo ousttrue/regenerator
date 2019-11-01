@@ -243,7 +243,27 @@ class Parser
     {
         auto location = getCursorLocation(cursor);
         auto name = getCursorSpelling(cursor);
-        auto decl = new Enum(location.path, location.line, name);
+
+        EnumValue[] values;
+        foreach (child; CXCursorIterator(cursor))
+        {
+            auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
+            switch (childKind)
+            {
+            case CXCursorKind.CXCursor_EnumConstantDecl:
+                {
+                    auto name = getCursorSpelling(child);
+                    auto value = clang_getEnumConstantDeclValue(child);
+                    values ~= EnumValue(name, value);
+                }
+                break;
+
+            default:
+                throw new Exception("unknown");
+            }
+        }
+
+        auto decl = new Enum(location.path, location.line, name, values);
         auto hash = clang_hashCursor(cursor);
         typeMap[hash] = decl;
         auto header = getOrCreateHeader(cursor);

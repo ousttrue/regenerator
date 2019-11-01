@@ -9,14 +9,9 @@ import std.array;
 import clangtypes;
 import clangparser;
 
-string DPointer(Pointer t)
+string DPointer(Pointer t, Parser parser)
 {
-	return format("%s*", DType(t.m_typeref.type));
-}
-
-string DEnum(Enum t)
-{
-	return t.toString();
+	return format("%s*", DType(t.m_typeref.type, parser));
 }
 
 string DStruct(Struct t)
@@ -24,36 +19,79 @@ string DStruct(Struct t)
 	return t.toString();
 }
 
-string DTypedef(Typedef t)
+string DType(Type t, Parser parser)
 {
-	return t.toString();
-}
-
-string DType(Type t)
-{
-	return castSwitch!((Pointer decl) => DPointer(decl),
-			(Typedef decl) => DTypedef(decl), (Enum decl) => DEnum(decl),
-			(Struct decl) => DStruct(decl), (Function decl) => DFucntion(decl),
-			//
-			(Void _) => "void", (Bool _) => "bool", (Int8 _) => "byte",
-			(Int16 _) => "short", (Int32 _) => "int", (Int64 _) => "long",
-			(UInt8 _) => "ubyte", (UInt16 _) => "ushort", (UInt32 _) => "uint",
-			(UInt64 _) => "ulong", (Float _) => "float", (Double _) => "double",
-			//
+	return castSwitch!((Pointer decl) => DPointer(decl, parser),
+			(UserType decl) => decl.m_name, //
+			(Void _) => "void", (Bool _) => "bool",
+			(Int8 _) => "byte", (Int16 _) => "short", (Int32 _) => "int",
+			(Int64 _) => "long", (UInt8 _) => "ubyte", (UInt16 _) => "ushort",
+			(UInt32 _) => "uint", (UInt64 _) => "ulong", (Float _) => "float",
+			(Double _) => "double", //
 			() => format("unknown(%s)", t))(t);
 }
 
-string DFucntion(Function decl, bool extern_c = false)
+void DTypedefDecl(File* f, Typedef t, Parser parser)
 {
-	auto sb = appender!string;
-	if (extern_c)
+	// return format("alias %s = %s;", t.m_name, DType(t.m_typeref.type, parser));
+	auto dst = DType(t.m_typeref.type, parser);
+	if (dst)
 	{
-		sb.put("extern(C) ");
+		if (t.m_name == dst)
+		{
+			f.writeln("// samename");
+		}
+		else
+		{
+			f.writefln("alias %s = %s;", t.m_name, dst);
+		}
+		return;
 	}
-	sb.put(DType(decl.m_ret));
-	sb.put(" ");
-	sb.put(decl.m_name);
-	sb.put("(");
+
+	// nameless
+	f.writeln("// typedef nameless");
+	// DDecl(f, t.m_typeref.type, parser);
+	// int a = 0;
+	// throw new Exception("");
+}
+
+void DStructDecl(File* f, Struct decl, Parser parser)
+{
+	if (!decl.m_name)
+	{
+		f.writeln("// struct nameless");
+		return;
+	}
+	f.writefln("struct %s;", decl.m_name);
+}
+
+void DEnumDecl(File* f, Enum decl, Parser parser)
+{
+	if (!decl.m_name)
+	{
+		f.writeln("// enum nameless");
+		return;
+	}
+	f.write("enum ");
+	f.write(decl.m_name);
+	f.writeln("{");
+	foreach (value; decl.m_values)
+	{
+		f.writefln("    %s = 0x%x,", value.name, value.value);
+	}
+	f.writeln("}");
+}
+
+void DFucntionDecl(File* f, Function decl, Parser parser)
+{
+	if (decl.m_externC)
+	{
+		f.write("extern(C) ");
+	}
+	f.write(DType(decl.m_ret, parser));
+	f.write(" ");
+	f.write(decl.m_name);
+	f.write("(");
 
 	auto isFirst = true;
 	foreach (param; decl.m_params)
@@ -64,12 +102,18 @@ string DFucntion(Function decl, bool extern_c = false)
 		}
 		else
 		{
-			sb.put(", ");
+			f.write(", ");
 		}
-		sb.put(format("%s %s", DType(param.typeRef.type), param.name));
+		f.write(format("%s %s", DType(param.typeRef.type, parser), param.name));
 	}
-	sb.put(");");
-	return sb.data;
+	f.writeln(");");
+}
+
+void DDecl(File* f, Type decl, Parser parser)
+{
+	castSwitch!((Typedef decl) => DTypedefDecl(f, decl, parser),
+			(Enum decl) => DEnumDecl(f, decl, parser), (Struct decl) => DStructDecl(f,
+				decl, parser), (Function decl) => DFucntionDecl(f, decl, parser))(decl);
 }
 
 class DSource
@@ -87,7 +131,7 @@ class DSource
 		m_types ~= type;
 	}
 
-	void writeTo(string dir)
+	void writeTo(string dir, Parser parser)
 	{
 		writeln(dir);
 		writeln(m_path);
@@ -100,12 +144,29 @@ class DSource
 		// writeln(stem);
 
 		auto f = File(stem, "w");
+
+		f.writeln("
+alias time_t = ulong;
+struct CXString
+{
+}
+struct CXSourceLocation
+{
+}
+struct CXSourceRange
+{
+}
+struct CXSourceRangeList
+{
+}
+struct CXCursor
+{
+}
+");
+
 		foreach (decl; m_types)
 		{
-			castSwitch!((Typedef decl) => f.writefln("// typedef %s",
-					decl.m_name), (Enum decl) => f.writefln("// enum %s", decl.m_name),
-					(Struct decl) => f.writefln("// struct %s", decl.m_name),
-					(Function decl) => f.writefln("// %s", DFucntion(decl)))(decl);
+			DDecl(&f, decl, parser);
 		}
 	}
 }
@@ -130,7 +191,7 @@ void exportD(Parser parser, string header, string dir)
 	{
 		dsource.addDecl(decl);
 	}
-	dsource.writeTo(dir);
+	dsource.writeTo(dir, parser);
 }
 
 int main(string[] args)
