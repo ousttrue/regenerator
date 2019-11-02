@@ -7,20 +7,36 @@ import std.algorithm;
 import clangtypes;
 import clangparser;
 
+string DEscapeName(string src)
+{
+    switch (src)
+    {
+    case "module":
+        return "_module";
+
+    default:
+        return src;
+    }
+}
+
 string DPointer(Pointer t, Parser parser)
 {
     return format("%s*", DType(t.m_typeref.type, parser));
 }
 
+string DArray(Array t, Parser parser)
+{
+    return format("%s[%d]", DType(t.m_typeref.type, parser), t.m_size);
+}
+
 string DType(Type t, Parser parser)
 {
     return castSwitch!((Pointer decl) => DPointer(decl, parser),
-            (UserType decl) => decl.m_name, //
-            (Void _) => "void", (Bool _) => "bool",
-            (Int8 _) => "byte", (Int16 _) => "short", (Int32 _) => "int",
-            (Int64 _) => "long", (UInt8 _) => "ubyte", (UInt16 _) => "ushort",
-            (UInt32 _) => "uint", (UInt64 _) => "ulong", (Float _) => "float",
-            (Double _) => "double", //
+            (Array decl) => DArray(decl, parser), (UserType decl) => decl.m_name, //
+            (Void _) => "void", (Bool _) => "bool", (Int8 _) => "byte",
+            (Int16 _) => "short", (Int32 _) => "int", (Int64 _) => "long",
+            (UInt8 _) => "ubyte", (UInt16 _) => "ushort", (UInt32 _) => "uint",
+            (UInt64 _) => "ulong", (Float _) => "float", (Double _) => "double", //
             () => format("unknown(%s)", t))(t);
 }
 
@@ -41,6 +57,13 @@ void DTypedefDecl(File* f, Typedef t, Parser parser)
         return;
     }
 
+    auto structDecl = cast(Struct) t.m_typeref.type;
+    if (structDecl)
+    {
+        DStructDecl(f, structDecl, parser, t.m_name);
+        return;
+    }
+
     // nameless
     f.writeln("// typedef nameless");
     // DDecl(f, t.m_typeref.type, parser);
@@ -48,17 +71,19 @@ void DTypedefDecl(File* f, Typedef t, Parser parser)
     // throw new Exception("");
 }
 
-void DStructDecl(File* f, Struct decl, Parser parser)
+void DStructDecl(File* f, Struct decl, Parser parser, string typedefName = null)
 {
-    if (!decl.m_name)
+    auto name = typedefName ? typedefName : decl.m_name;
+    if (!name)
     {
         f.writeln("// struct nameless");
         return;
     }
-    f.writefln("struct %s{", decl.m_name);
+    f.writefln("struct %s", name);
+    f.writeln("{");
     foreach (field; decl.m_fields)
     {
-        f.writefln("   %s %s;", DType(field.type, parser), field.name);
+        f.writefln("   %s %s;", DType(field.type, parser), DEscapeName(field.name));
     }
     f.writeln("}");
 }
@@ -70,8 +95,7 @@ void DEnumDecl(File* f, Enum decl, Parser _)
         f.writeln("// enum nameless");
         return;
     }
-    f.write("enum ");
-    f.write(decl.m_name);
+    f.writefln("enum %s", decl.m_name);
     f.writeln("{");
     foreach (value; decl.m_values)
     {
@@ -102,7 +126,7 @@ void DFucntionDecl(File* f, Function decl, Parser parser)
         {
             f.write(", ");
         }
-        f.write(format("%s %s", DType(param.typeRef.type, parser), param.name));
+        f.write(format("%s %s", DType(param.typeRef.type, parser), DEscapeName(param.name)));
     }
     f.writeln(");");
 }
@@ -118,6 +142,7 @@ class DSource
 {
     string m_path;
     UserType[] m_types;
+    DSource[] m_imports;
 
     this(string path)
     {
@@ -126,26 +151,48 @@ class DSource
 
     void addDecl(UserType type)
     {
+        if (m_types.find(type).any())
+        {
+            return;
+        }
         m_types ~= type;
+    }
+
+    void addImport(DSource source)
+    {
+        if (m_path == source.m_path)
+        {
+            return;
+        }
+        if (m_imports.find(source).any())
+        {
+            return;
+        }
+        m_imports ~= source;
     }
 
     void writeTo(string dir, Parser parser)
     {
-        writeln(dir);
-        writeln(m_path);
-
-        mkdirRecurse(dir);
-
         // open
         auto name = m_path.baseName().stripExtension();
         auto stem = format("%s/%s.d", dir, name);
         // writeln(stem);
+        writefln("writeTo: %s(%d)", stem, m_types.length);
 
-        auto f = File(stem, "w");
-
-        foreach (decl; m_types)
+        mkdirRecurse(dir);
         {
-            DDecl(&f, decl, parser);
+            auto f = File(stem, "w");
+            f.writefln("module %s;", m_path.baseName.stripExtension);
+
+            foreach (src; m_imports)
+            {
+                f.writefln("import %s;", src.m_path.baseName.stripExtension);
+            }
+
+            foreach (decl; m_types)
+            {
+                DDecl(&f, decl, parser);
+            }
         }
     }
 }
@@ -172,6 +219,36 @@ class DExporter
         return source;
     }
 
+    void addDecl(UserType decl, DSource from = null)
+    {
+        auto dsource = getOrCreateSource(decl.m_path);
+        dsource.addDecl(decl);
+
+        if (from)
+        {
+            from.addImport(dsource);
+        }
+
+        Function functionDecl = cast(Function) decl;
+        Typedef typedefDecl = cast(Typedef) decl;
+        if (functionDecl)
+        {
+            UserType retDecl = cast(UserType) functionDecl.m_ret;
+            if (retDecl)
+            {
+                addDecl(retDecl, dsource);
+            }
+        }
+        else if (typedefDecl)
+        {
+            UserType dstDecl = cast(UserType) typedefDecl.m_typeref.type;
+            if (dstDecl)
+            {
+                addDecl(dstDecl, dsource);
+            }
+        }
+    }
+
     void exportD(string header, string dir)
     {
         Header parsed_header = m_parser.headers[header];
@@ -189,11 +266,10 @@ class DExporter
 
         foreach (decl; parsed_header.types)
         {
-            auto dsource = getOrCreateSource(decl.m_path);
-            dsource.addDecl(decl);
+            addDecl(decl);
         }
 
-        foreach(k, dsource; m_sourceMap)
+        foreach (k, dsource; m_sourceMap)
         {
             dsource.writeTo(dir, m_parser);
         }
