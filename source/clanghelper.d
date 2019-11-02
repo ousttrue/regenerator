@@ -1,17 +1,45 @@
 module clanghelper;
 import std.string;
 import std.conv;
+import std.file;
 import libclang;
 
-CXTranslationUnitImpl* getTU(void* index, string header, string[] params)
+struct Source
+{
+    string path;
+    byte[] content;
+}
+
+CXTranslationUnitImpl* getTU(void* index, string[] headers, string[] params)
 {
     byte*[] c_params;
     foreach (param; params)
     {
         c_params ~= cast(byte*) param.toStringz();
     }
-    return clang_createTranslationUnitFromSourceFile(index,
-            cast(byte*) header.toStringz(), cast(int) params.length, c_params.ptr, 0, null);
+    if (headers.length == 1)
+    {
+        return clang_createTranslationUnitFromSourceFile(index,
+                cast(byte*) headers[0].toStringz(), cast(int) params.length, c_params.ptr, 0, null);
+    }
+    else
+    {
+        Source[] sources;
+        foreach (header; headers)
+        {
+            sources ~= Source(cast(string) header.toStringz()[0 .. header.length + 1],
+                    cast(byte[]) read(header));
+        }
+
+        // use unsaved files
+        CXUnsavedFile[] files;
+        foreach (source; sources)
+        {
+            files ~= CXUnsavedFile(cast(byte*)source.path.ptr, source.content.ptr, cast(uint)source.content.length);
+        }
+        return clang_createTranslationUnitFromSourceFile(index, cast(byte*) headers[0].toStringz(),
+                cast(int) params.length, c_params.ptr, cast(uint) files.length, files.ptr);
+    }
 }
 
 string CXStringToString(CXString cxs)

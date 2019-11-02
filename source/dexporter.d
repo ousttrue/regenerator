@@ -267,14 +267,8 @@ class DExporter
         }
     }
 
-    void exportD(string header, string dir)
+    void exportD(string[] headers, string dir)
     {
-        Header parsed_header = m_parser.headers[header];
-        if (!parsed_header)
-        {
-            throw new Exception("header not found");
-        }
-
         if (exists(dir))
         {
             // clear dir
@@ -282,6 +276,7 @@ class DExporter
             rmdirRecurse(dir);
         }
 
+        // resolve typedef
         foreach (k, v; m_parser.typeMap)
         {
             Typedef typedefDecl = cast(Typedef) v;
@@ -296,11 +291,24 @@ class DExporter
             }
         }
 
-        foreach (decl; parsed_header.types)
+        // gather export items
+        foreach (header; headers)
         {
-            addDecl(decl);
+            Header mainHeader = m_parser.getHeader(header);
+            if (mainHeader)
+            {
+                foreach (decl; mainHeader.types)
+                {
+                    addDecl(decl);
+                }
+            }
+            else
+            {
+                writefln("%s: not found", header);
+            }
         }
 
+        // write each source
         foreach (k, dsource; m_sourceMap)
         {
             dsource.writeTo(dir, m_parser);

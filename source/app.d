@@ -5,11 +5,11 @@ import dexporter;
 
 int main(string[] args)
 {
-	string header;
+	string[] headers;
 	string dir;
 	string[] includes;
 	getopt(args, "include|I", &includes, "outdir", &dir,
-			std.getopt.config.required, "header|H", &header);
+			std.getopt.config.required, "header|H", &headers);
 
 	string[] params = ["-x", "c++"];
 	foreach (include; includes)
@@ -18,12 +18,13 @@ int main(string[] args)
 	}
 
 	auto parser = new Parser();
-	parser.parse(header, params);
+
+	parser.parse(headers, params);
 
 	if (dir)
 	{
 		auto exporter = new DExporter(parser);
-		exporter.exportD(header, dir);
+		exporter.exportD(headers, dir);
 	}
 
 	return 0;

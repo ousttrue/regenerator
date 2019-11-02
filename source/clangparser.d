@@ -214,26 +214,37 @@ class Parser
 
         if (type.kind == CXTypeKind.CXType_FunctionProto)
         {
-            return new Pointer(new Void());
+            // return new Function(null, 0, null, null, null);
+            return new Void();
         }
 
         int a = 0;
         throw new Exception("not implemented");
     }
 
-    Header[string] headers;
+    private Header[string] m_headers;
+
+    string escapePath(string src)
+    {
+        return src.replace("\\", "/");
+    }
+
+    Header getHeader(string path)
+    {
+        return m_headers.get(escapePath(path), null);
+    }
 
     Header getOrCreateHeader(CXCursor cursor)
     {
         auto location = getCursorLocation(cursor);
-        auto found = headers.get(location.path, null);
+        auto found = getHeader(location.path);
         if (found)
         {
             return found;
         }
 
         found = new Header();
-        headers[location.path] = found;
+        m_headers[escapePath(location.path)] = found;
         return found;
     }
 
@@ -352,7 +363,7 @@ class Parser
                 break;
 
             default:
-                writeln(childKind);
+                // writeln(childKind);
                 break;
             }
         }
@@ -364,13 +375,13 @@ class Parser
         header.types ~= decl;
     }
 
-    bool parse(string header, string[] params)
+    bool parse(string[] headers, string[] params)
     {
         auto index = clang_createIndex(0, 1);
         scope (exit)
             clang_disposeIndex(index);
 
-        auto tu = getTU(index, header, params);
+        auto tu = getTU(index, headers, params);
         if (!tu)
         {
             return false;
