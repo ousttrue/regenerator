@@ -6,6 +6,7 @@ import std.file;
 import std.algorithm;
 import clangtypes;
 import clangparser;
+import sliceview;
 
 string DEscapeName(string src)
 {

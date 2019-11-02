@@ -1,4 +1,7 @@
 {
+    "files.associations": {
+        "*.natvis": "xml"
+    },
     "cSpell.words": [
         "cpptypeinfo",
         "dlang",

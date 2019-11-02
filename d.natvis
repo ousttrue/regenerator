@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+    <Type Name="string">
+        <DisplayString>"{ptr,[length]s8b}"</DisplayString>
+        <StringView>ptr,length</StringView>
+        <Expand>
+            <Item Name="[size]">length</Item>
+            <ArrayItems>
+                <Size>length</Size>
+                <ValuePointer>ptr</ValuePointer>
+            </ArrayItems>
+        </Expand>
+    </Type>
+    <Type Name="sliceview.SliceView">
+        <DisplayString>{{size = {size}}}</DisplayString>
+        <Expand>
+            <Item Name="[size]">size</Item>
+            <ArrayItems>
+                <Size>size</Size>
+                <ValuePointer>ptr</ValuePointer>
+            </ArrayItems>
+        </Expand>
+    </Type>
+</AutoVisualizer>

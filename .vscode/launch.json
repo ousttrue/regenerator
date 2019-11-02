@@ -46,7 +46,8 @@
                     "value": "C:/Program Files/LLVM/bin"
                 }
             ],
-            "externalConsole": false
+            "externalConsole": false,
+            "visualizerFile": "${workspaceFolder}/d.natvis"
         },
         {
             "name": "clang_sample",
