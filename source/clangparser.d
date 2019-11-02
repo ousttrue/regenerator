@@ -342,9 +342,9 @@ class Parser
             {
             case CXCursorKind.CXCursor_ParmDecl:
                 {
-                    auto paramName = getCursorSpelling(cursor);
-                    auto paramCursorType = clang_getCursorType(cursor);
-                    auto paramType = typeToDecl(cursor, paramCursorType);
+                    auto paramName = getCursorSpelling(child);
+                    auto paramCursorType = clang_getCursorType(child);
+                    auto paramType = typeToDecl(child, paramCursorType);
                     auto paramConst = clang_isConstQualifiedType(paramCursorType);
                     auto param = Param(paramName, TypeRef(paramType, paramConst != 0));
                     params ~= param;

@@ -48,24 +48,16 @@ void DTypedefDecl(Parser parser, File* f, Typedef t)
     {
         if (t.m_name == dst)
         {
-            f.writeln("// samename");
+            // f.writefln("// samename: %s", t.m_name);
+            return;
         }
-        else
-        {
-            f.writefln("alias %s = %s;", t.m_name, dst);
-        }
-        return;
-    }
 
-    auto structDecl = cast(Struct) t.m_typeref.type;
-    if (structDecl)
-    {
-        parser.DStructDecl(f, structDecl, t.m_name);
+        f.writefln("alias %s = %s;", t.m_name, dst);
         return;
     }
 
     // nameless
-    f.writeln("// typedef nameless");
+    f.writeln("// typedef target nameless");
     // DDecl(f, t.m_typeref.type, parser);
     // int a = 0;
     // throw new Exception("");
@@ -219,6 +211,22 @@ class DExporter
         return source;
     }
 
+    Type stripPointer(Type decl)
+    {
+        while (true)
+        {
+            Pointer pointer = cast(Pointer) decl;
+            if (!pointer)
+            {
+                return decl;
+            }
+
+            decl = pointer.m_typeref.type;
+        }
+
+        // throw new Exception("not reach here");
+    }
+
     void addDecl(UserType decl, DSource from = null)
     {
         auto dsource = getOrCreateSource(decl.m_path);
@@ -228,23 +236,26 @@ class DExporter
         {
             from.addImport(dsource);
         }
+        else{
+            from = dsource;
+        }
 
         Function functionDecl = cast(Function) decl;
         Typedef typedefDecl = cast(Typedef) decl;
         if (functionDecl)
         {
-            UserType retDecl = cast(UserType) functionDecl.m_ret;
+            UserType retDecl = cast(UserType) stripPointer(functionDecl.m_ret);
             if (retDecl)
             {
-                addDecl(retDecl, dsource);
+                addDecl(retDecl, from);
             }
         }
         else if (typedefDecl)
         {
-            UserType dstDecl = cast(UserType) typedefDecl.m_typeref.type;
+            UserType dstDecl = cast(UserType) stripPointer(typedefDecl.m_typeref.type);
             if (dstDecl)
             {
-                addDecl(dstDecl, dsource);
+                addDecl(dstDecl, from);
             }
         }
     }
@@ -262,6 +273,20 @@ class DExporter
             // clear dir
             writefln("rmdir %s ...", dir);
             rmdirRecurse(dir);
+        }
+
+        foreach(k, v; m_parser.typeMap)
+        {
+            Typedef typedefDecl = cast(Typedef)v;
+            if(typedefDecl)
+            {
+                UserType userType = cast(UserType)typedefDecl.m_typeref.type;
+                if(userType && !userType.m_name)
+                {
+                    // set typedef name
+                    userType.m_name = typedefDecl.m_name;
+                }
+            }
         }
 
         foreach (decl; parsed_header.types)
