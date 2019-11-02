@@ -133,6 +133,11 @@ void DDecl(Parser parser, File* f, Type decl)
 class DSource
 {
     string m_path;
+    string getName()
+    {
+        return m_path.baseName.stripExtension;
+    }
+
     UserType[] m_types;
     DSource[] m_imports;
 
@@ -165,20 +170,21 @@ class DSource
 
     void writeTo(string dir, Parser parser)
     {
+        auto packageName = dir.baseName.stripExtension;
+
         // open
-        auto name = m_path.baseName().stripExtension();
-        auto stem = format("%s/%s.d", dir, name);
+        auto path = format("%s/%s.d", dir, getName());
         // writeln(stem);
-        writefln("writeTo: %s(%d)", stem, m_types.length);
+        writefln("writeTo: %s(%d)", path, m_types.length);
 
         mkdirRecurse(dir);
         {
-            auto f = File(stem, "w");
-            f.writefln("module %s;", m_path.baseName.stripExtension);
+            auto f = File(path, "w");
+            f.writefln("module %s.%s;", packageName, getName());
 
             foreach (src; m_imports)
             {
-                f.writefln("import %s;", src.m_path.baseName.stripExtension);
+                f.writefln("import %s;", src.getName());
             }
 
             foreach (decl; m_types)
@@ -236,7 +242,8 @@ class DExporter
         {
             from.addImport(dsource);
         }
-        else{
+        else
+        {
             from = dsource;
         }
 
@@ -275,13 +282,13 @@ class DExporter
             rmdirRecurse(dir);
         }
 
-        foreach(k, v; m_parser.typeMap)
+        foreach (k, v; m_parser.typeMap)
         {
-            Typedef typedefDecl = cast(Typedef)v;
-            if(typedefDecl)
+            Typedef typedefDecl = cast(Typedef) v;
+            if (typedefDecl)
             {
-                UserType userType = cast(UserType)typedefDecl.m_typeref.type;
-                if(userType && !userType.m_name)
+                UserType userType = cast(UserType) typedefDecl.m_typeref.type;
+                if (userType && !userType.m_name)
                 {
                     // set typedef name
                     userType.m_name = typedefDecl.m_name;
@@ -297,6 +304,18 @@ class DExporter
         foreach (k, dsource; m_sourceMap)
         {
             dsource.writeTo(dir, m_parser);
+        }
+
+        // write package.d
+        {
+            auto packageName = dir.baseName.stripExtension;
+            auto path = format("%s/package.d", dir);
+            auto f = File(path, "w");
+            f.writefln("module %s;", packageName);
+            foreach (k, dsource; m_sourceMap)
+            {
+                f.writefln("import %s.%s;", packageName, dsource.getName());
+            }
         }
     }
 }
