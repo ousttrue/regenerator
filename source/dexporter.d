@@ -184,7 +184,7 @@ class DSource
 
             foreach (src; m_imports)
             {
-                f.writefln("import %s;", src.getName());
+                f.writefln("import %s.%s;", packageName, src.getName());
             }
 
             foreach (decl; m_types)
@@ -314,7 +314,7 @@ class DExporter
             f.writefln("module %s;", packageName);
             foreach (k, dsource; m_sourceMap)
             {
-                f.writefln("import %s.%s;", packageName, dsource.getName());
+                f.writefln("public import %s.%s;", packageName, dsource.getName());
             }
         }
     }
