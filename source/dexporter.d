@@ -19,20 +19,20 @@ string DEscapeName(string src)
     }
 }
 
-string DPointer(Pointer t, Parser parser)
+string DPointer(Parser parser, Pointer t)
 {
-    return format("%s*", DType(t.m_typeref.type, parser));
+    return format("%s*", parser.DType(t.m_typeref.type));
 }
 
-string DArray(Array t, Parser parser)
+string DArray(Parser parser, Array t)
 {
-    return format("%s[%d]", DType(t.m_typeref.type, parser), t.m_size);
+    return format("%s[%d]", parser.DType(t.m_typeref.type), t.m_size);
 }
 
-string DType(Type t, Parser parser)
+string DType(Parser parser, Type t)
 {
-    return castSwitch!((Pointer decl) => DPointer(decl, parser),
-            (Array decl) => DArray(decl, parser), (UserType decl) => decl.m_name, //
+    return castSwitch!((Pointer decl) => parser.DPointer(decl),
+            (Array decl) => parser.DArray(decl), (UserType decl) => decl.m_name, //
             (Void _) => "void", (Bool _) => "bool", (Int8 _) => "byte",
             (Int16 _) => "short", (Int32 _) => "int", (Int64 _) => "long",
             (UInt8 _) => "ubyte", (UInt16 _) => "ushort", (UInt32 _) => "uint",
@@ -40,10 +40,10 @@ string DType(Type t, Parser parser)
             () => format("unknown(%s)", t))(t);
 }
 
-void DTypedefDecl(File* f, Typedef t, Parser parser)
+void DTypedefDecl(Parser parser, File* f, Typedef t)
 {
     // return format("alias %s = %s;", t.m_name, DType(t.m_typeref.type, parser));
-    auto dst = DType(t.m_typeref.type, parser);
+    auto dst = parser.DType(t.m_typeref.type);
     if (dst)
     {
         if (t.m_name == dst)
@@ -60,7 +60,7 @@ void DTypedefDecl(File* f, Typedef t, Parser parser)
     auto structDecl = cast(Struct) t.m_typeref.type;
     if (structDecl)
     {
-        DStructDecl(f, structDecl, parser, t.m_name);
+        parser.DStructDecl(f, structDecl, t.m_name);
         return;
     }
 
@@ -71,7 +71,7 @@ void DTypedefDecl(File* f, Typedef t, Parser parser)
     // throw new Exception("");
 }
 
-void DStructDecl(File* f, Struct decl, Parser parser, string typedefName = null)
+void DStructDecl(Parser parser, File* f, Struct decl, string typedefName = null)
 {
     auto name = typedefName ? typedefName : decl.m_name;
     if (!name)
@@ -83,12 +83,12 @@ void DStructDecl(File* f, Struct decl, Parser parser, string typedefName = null)
     f.writeln("{");
     foreach (field; decl.m_fields)
     {
-        f.writefln("   %s %s;", DType(field.type, parser), DEscapeName(field.name));
+        f.writefln("   %s %s;", parser.DType(field.type), DEscapeName(field.name));
     }
     f.writeln("}");
 }
 
-void DEnumDecl(File* f, Enum decl, Parser _)
+void DEnumDecl(Parser _, File* f, Enum decl)
 {
     if (!decl.m_name)
     {
@@ -104,13 +104,13 @@ void DEnumDecl(File* f, Enum decl, Parser _)
     f.writeln("}");
 }
 
-void DFucntionDecl(File* f, Function decl, Parser parser)
+void DFucntionDecl(Parser parser, File* f, Function decl)
 {
     if (decl.m_externC)
     {
         f.write("extern(C) ");
     }
-    f.write(DType(decl.m_ret, parser));
+    f.write(parser.DType(decl.m_ret));
     f.write(" ");
     f.write(decl.m_name);
     f.write("(");
@@ -126,16 +126,16 @@ void DFucntionDecl(File* f, Function decl, Parser parser)
         {
             f.write(", ");
         }
-        f.write(format("%s %s", DType(param.typeRef.type, parser), DEscapeName(param.name)));
+        f.write(format("%s %s", parser.DType(param.typeRef.type), DEscapeName(param.name)));
     }
     f.writeln(");");
 }
 
-void DDecl(File* f, Type decl, Parser parser)
+void DDecl(Parser parser, File* f, Type decl)
 {
-    castSwitch!((Typedef decl) => DTypedefDecl(f, decl, parser),
-            (Enum decl) => DEnumDecl(f, decl, parser), (Struct decl) => DStructDecl(f,
-                decl, parser), (Function decl) => DFucntionDecl(f, decl, parser))(decl);
+    castSwitch!((Typedef decl) => parser.DTypedefDecl(f, decl),
+            (Enum decl) => parser.DEnumDecl(f, decl), (Struct decl) => parser.DStructDecl(f,
+                decl), (Function decl) => parser.DFucntionDecl(f, decl))(decl);
 }
 
 class DSource
@@ -191,7 +191,7 @@ class DSource
 
             foreach (decl; m_types)
             {
-                DDecl(&f, decl, parser);
+                parser.DDecl(&f, decl);
             }
         }
     }
