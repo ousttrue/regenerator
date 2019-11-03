@@ -6,6 +6,7 @@ struct Context
 {
     int level;
     bool isExternC;
+    bool inStruct;
 
     string getIndent()
     {
@@ -19,7 +20,12 @@ struct Context
 
     Context getChild()
     {
-        return Context(level + 1, isExternC);
+        return Context(level + 1, isExternC, inStruct);
+    }
+
+    Context enterStruct()
+    {
+        return Context(level + 1, isExternC, true);
     }
 }
 

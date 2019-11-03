@@ -1,10 +1,12 @@
 module clangparser;
 import std.array;
 import std.stdio;
+import std.uni;
 import libclang;
 import clangcursor;
 import clangdecl;
 import clanghelper;
+import sliceview;
 
 class Header
 {
@@ -21,13 +23,20 @@ class Parser
         auto _ = getCursorKindName(cursorKind);
 
         auto spelling = getCursorSpelling(cursor);
-        if (spelling == "EXCEPTION_RECORD")
+        debug
         {
-            auto a = 0;
-        }
-        else if (spelling == "_EXCEPTION_RECORD")
-        {
-            auto a = 0;
+            if (spelling == "EXCEPTION_RECORD")
+            {
+                auto a = 0;
+            }
+            else if (spelling == "_EXCEPTION_RECORD")
+            {
+                auto a = 0;
+            }
+            else if (spelling == "PMemoryAllocator")
+            {
+                auto a = 0;
+            }
         }
 
         // writefln("%s%s", context.getIndent(), kind);
@@ -39,8 +48,18 @@ class Parser
         case CXCursorKind.CXCursor_ClassTemplate:
         case CXCursorKind.CXCursor_ClassTemplatePartialSpecialization:
         case CXCursorKind.CXCursor_FunctionTemplate:
+        case CXCursorKind.CXCursor_UsingDeclaration:
             // skip
             break;
+
+        case CXCursorKind.CXCursor_Namespace:
+            {
+                foreach (child; CXCursorIterator(cursor))
+                {
+                    traverse(child, context.getChild());
+                }
+                break;
+            }
 
         case CXCursorKind.CXCursor_UnexposedDecl:
             {
@@ -74,7 +93,9 @@ class Parser
             break;
 
         case CXCursorKind.CXCursor_StructDecl:
-            parseStruct(cursor, context.getChild());
+        case CXCursorKind.CXCursor_UnionDecl:
+        case CXCursorKind.CXCursor_ClassDecl:
+            parseStruct(cursor, context.enterStruct());
             break;
 
         case CXCursorKind.CXCursor_EnumDecl:
@@ -85,7 +106,7 @@ class Parser
             break;
 
         default:
-            throw new Exception("");
+            throw new Exception("unknwon CXCursorKind");
         }
     }
 
@@ -117,9 +138,26 @@ class Parser
 
     Decl getDeclFromCursor(CXCursor cursor)
     {
-        auto hash = clang_hashCursor(cursor);
-        auto decl = m_declMap[hash];
-        return decl;
+        // cursor = getRootCanonical(cursor);
+        // hash = clang_hashCursor(cursor);
+        // return m_declMap[hash];
+        auto current = cursor;
+        while (true)
+        {
+            auto hash = clang_hashCursor(current);
+            auto decl = m_declMap.get(hash, null);
+            if (decl)
+            {
+                return decl;
+            }
+
+            auto canonical = clang_getCanonicalCursor(current);
+            if (canonical == current)
+            {
+                throw new Exception("not found");
+            }
+            current = canonical;
+        }
     }
 
     Decl typeToDecl(CXCursor cursor, CXType type)
@@ -130,7 +168,8 @@ class Parser
             return primitive;
         }
 
-        if (type.kind == CXTypeKind.CXType_Pointer)
+        if (type.kind == CXTypeKind.CXType_Pointer || type.kind == CXTypeKind
+                .CXType_LValueReference)
         {
             // pointer
             auto isConst = clang_isConstQualifiedType(type);
@@ -146,6 +185,16 @@ class Parser
             return new Pointer(pointeeDecl, isConst != 0);
         }
 
+        if (type.kind == CXTypeKind.CXType_IncompleteArray)
+        {
+            // treat as pointer
+            auto isConst = clang_isConstQualifiedType(type);
+            auto arrayType = clang_getArrayElementType(type);
+            auto arrayDecl = typeToDecl(cursor, arrayType);
+            auto arraySize = clang_getArraySize(type);
+            return new Pointer(arrayDecl, isConst != 0);
+        }
+
         if (type.kind == CXTypeKind.CXType_ConstantArray)
         {
             auto arrayType = clang_getArrayElementType(type);
@@ -159,7 +208,16 @@ class Parser
             auto children = CXCursorIterator(cursor).array();
             foreach (child; children)
             {
-                return getDeclFromCursor(child);
+                auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
+                if (childKind == CXCursorKind.CXCursor_TypeRef)
+                {
+                    auto referenced = clang_getCursorReferenced(child);
+                    return getDeclFromCursor(referenced);
+                }
+                else
+                {
+                    return getDeclFromCursor(child);
+                }
             }
 
             int a = 0;
@@ -241,20 +299,38 @@ class Parser
             return new Void();
         }
 
+        if (type.kind == CXTypeKind.CXType_Unexposed)
+        {
+            // nullptr_t
+            return new Pointer(new Void());
+        }
+
         int a = 0;
         throw new Exception("not implemented");
     }
 
-    private Header[string] m_headers;
+    Header[string] m_headers;
 
     string escapePath(string src)
     {
-        return src.replace("\\", "/");
+        auto escaped =  src.replace("\\", "/");
+        version(Windows)
+        {
+            escaped = escaped.toLower();
+        }
+        return escaped;        
     }
 
     Header getHeader(string path)
     {
-        return m_headers.get(escapePath(path), null);
+        auto escaped = escapePath(path);
+        auto header = m_headers.get(escaped, null);
+        if (header)
+        {
+            return header;
+        }
+        debug auto view = makeView(m_headers);
+        return null;
     }
 
     Header getOrCreateHeader(CXCursor cursor)
@@ -298,7 +374,7 @@ class Parser
         pushDecl(cursor, decl);
         auto header = getOrCreateHeader(cursor);
         header.types ~= decl;
- 
+
         // after fields
         foreach (child; CXCursorIterator(cursor))
         {
@@ -314,20 +390,27 @@ class Parser
                     break;
                 }
 
-            case CXCursorKind.CXCursor_StructDecl:
-                traverse(child, context);
+            case CXCursorKind.CXCursor_CXXMethod:
+            case CXCursorKind.CXCursor_Constructor:
+            case CXCursorKind.CXCursor_Destructor:
+            case CXCursorKind.CXCursor_ConversionFunction:
                 break;
 
             case CXCursorKind.CXCursor_ObjCClassMethodDecl:
+            case CXCursorKind.CXCursor_UnexposedExpr:
+            case CXCursorKind.CXCursor_AlignedAttr:
+            case CXCursorKind.CXCursor_UnexposedAttr:
+            case CXCursorKind.CXCursor_CXXBaseSpecifier:
+            case CXCursorKind.CXCursor_CXXAccessSpecifier:
                 break;
 
             default:
-                // traverse(con)
-                throw new Exception("unknown");
+                traverse(child, context);
+                break;
             }
         }
 
-   }
+    }
 
     void parseEnum(CXCursor cursor)
     {

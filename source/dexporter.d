@@ -293,6 +293,7 @@ class DExporter
         }
 
         // gather export items
+        debug auto parsedHeaders = makeView(m_parser.m_headers);
         foreach (header; headers)
         {
             Header mainHeader = m_parser.getHeader(header);
@@ -307,6 +308,10 @@ class DExporter
             {
                 writefln("%s: not found", header);
             }
+        }
+        if(m_sourceMap.empty)
+        {
+            throw new Exception("empty");
         }
 
         // write each source

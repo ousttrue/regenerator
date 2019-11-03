@@ -87,6 +87,10 @@ class Double : Primitive
 {
 }
 
+class LongDouble : Primitive
+{
+}
+
 class UserDecl : Decl
 {
     string m_path;
@@ -166,6 +170,7 @@ class Function : UserDecl
     }
 }
 
+// http://clang-developers.42468.n3.nabble.com/llibclang-CXTypeKind-char-types-td3754411.html
 Primitive KindToPrimitive(CXTypeKind kind)
 {
     switch (kind)
@@ -176,6 +181,7 @@ Primitive KindToPrimitive(CXTypeKind kind)
         return new Bool();
         // Int
     case CXTypeKind.CXType_Char_S:
+    case CXTypeKind.CXType_SChar:
         return new Int8();
     case CXTypeKind.CXType_Short:
         return new Int16();
@@ -186,6 +192,7 @@ Primitive KindToPrimitive(CXTypeKind kind)
         return new Int64();
         // UInt
     case CXTypeKind.CXType_Char_U:
+    case CXTypeKind.CXType_UChar:
         return new UInt8();
     case CXTypeKind.CXType_UShort:
     case CXTypeKind.CXType_WChar:
@@ -200,6 +207,8 @@ Primitive KindToPrimitive(CXTypeKind kind)
         return new Float();
     case CXTypeKind.CXType_Double:
         return new Double();
+    case CXTypeKind.CXType_LongDouble:
+        return new LongDouble();
 
     default:
         return null;
