@@ -87,7 +87,7 @@ class Double : Primitive
 {
 }
 
-class UserType : Decl
+class UserDecl : Decl
 {
     string m_path;
     int m_line;
@@ -107,7 +107,7 @@ struct Field
     Decl type;
 }
 
-class Struct : UserType
+class Struct : UserDecl
 {
     Field[] m_fields;
 
@@ -124,7 +124,7 @@ struct EnumValue
     long value;
 }
 
-class Enum : UserType
+class Enum : UserDecl
 {
     EnumValue[] m_values;
 
@@ -135,7 +135,7 @@ class Enum : UserType
     }
 }
 
-class Typedef : UserType
+class Typedef : UserDecl
 {
     TypeRef m_typeref;
 
@@ -152,7 +152,7 @@ struct Param
     TypeRef typeRef;
 }
 
-class Function : UserType
+class Function : UserDecl
 {
     Decl m_ret;
     bool m_externC;

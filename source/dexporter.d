@@ -33,7 +33,7 @@ string DArray(Parser parser, Array t)
 string DType(Parser parser, Decl t)
 {
     return castSwitch!((Pointer decl) => parser.DPointer(decl),
-            (Array decl) => parser.DArray(decl), (UserType decl) => decl.m_name, //
+            (Array decl) => parser.DArray(decl), (UserDecl decl) => decl.m_name, //
             (Void _) => "void", (Bool _) => "bool", (Int8 _) => "byte",
             (Int16 _) => "short", (Int32 _) => "int", (Int64 _) => "long",
             (UInt8 _) => "ubyte", (UInt16 _) => "ushort", (UInt32 _) => "uint",
@@ -139,7 +139,7 @@ class DSource
         return m_path.baseName.stripExtension;
     }
 
-    UserType[] m_types;
+    UserDecl[] m_types;
     DSource[] m_imports;
 
     this(string path)
@@ -147,7 +147,7 @@ class DSource
         m_path = path;
     }
 
-    void addDecl(UserType type)
+    void addDecl(UserDecl type)
     {
         if (m_types.find(type).any())
         {
@@ -234,7 +234,7 @@ class DExporter
         // throw new Exception("not reach here");
     }
 
-    void addDecl(UserType decl, DSource from = null)
+    void addDecl(UserDecl decl, DSource from = null)
     {
         auto dsource = getOrCreateSource(decl.m_path);
         dsource.addDecl(decl);
@@ -252,7 +252,7 @@ class DExporter
         Typedef typedefDecl = cast(Typedef) decl;
         if (functionDecl)
         {
-            UserType retDecl = cast(UserType) stripPointer(functionDecl.m_ret);
+            UserDecl retDecl = cast(UserDecl) stripPointer(functionDecl.m_ret);
             if (retDecl)
             {
                 addDecl(retDecl, from);
@@ -260,7 +260,7 @@ class DExporter
         }
         else if (typedefDecl)
         {
-            UserType dstDecl = cast(UserType) stripPointer(typedefDecl.m_typeref.type);
+            UserDecl dstDecl = cast(UserDecl) stripPointer(typedefDecl.m_typeref.type);
             if (dstDecl)
             {
                 addDecl(dstDecl, from);
@@ -283,7 +283,7 @@ class DExporter
             Typedef typedefDecl = cast(Typedef) v;
             if (typedefDecl)
             {
-                UserType userType = cast(UserType) typedefDecl.m_typeref.type;
+                UserDecl userType = cast(UserDecl) typedefDecl.m_typeref.type;
                 if (userType && !userType.m_name)
                 {
                     // set typedef name

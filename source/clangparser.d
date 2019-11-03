@@ -8,7 +8,7 @@ import clanghelper;
 
 class Header
 {
-    UserType[] types;
+    UserDecl[] types;
 }
 
 class Parser
