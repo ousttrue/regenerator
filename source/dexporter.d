@@ -4,7 +4,7 @@ import std.stdio;
 import std.path;
 import std.file;
 import std.algorithm;
-import clangtypes;
+import clangdecl;
 import clangparser;
 import sliceview;
 
@@ -30,7 +30,7 @@ string DArray(Parser parser, Array t)
     return format("%s[%d]", parser.DType(t.m_typeref.type), t.m_size);
 }
 
-string DType(Parser parser, Type t)
+string DType(Parser parser, Decl t)
 {
     return castSwitch!((Pointer decl) => parser.DPointer(decl),
             (Array decl) => parser.DArray(decl), (UserType decl) => decl.m_name, //
@@ -124,7 +124,7 @@ void DFucntionDecl(Parser parser, File* f, Function decl)
     f.writeln(");");
 }
 
-void DDecl(Parser parser, File* f, Type decl)
+void DDecl(Parser parser, File* f, Decl decl)
 {
     castSwitch!((Typedef decl) => parser.DTypedefDecl(f, decl),
             (Enum decl) => parser.DEnumDecl(f, decl), (Struct decl) => parser.DStructDecl(f,
@@ -218,7 +218,7 @@ class DExporter
         return source;
     }
 
-    Type stripPointer(Type decl)
+    Decl stripPointer(Decl decl)
     {
         while (true)
         {
@@ -278,7 +278,7 @@ class DExporter
         }
 
         // resolve typedef
-        foreach (k, v; m_parser.typeMap)
+        foreach (k, v; m_parser.declMap)
         {
             Typedef typedefDecl = cast(Typedef) v;
             if (typedefDecl)

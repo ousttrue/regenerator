@@ -1,41 +1,41 @@
-module clangtypes;
+module clangdecl;
 import std.string;
 import std.typecons;
 import libclang;
 
-class Type
+class Decl
 {
 }
 
 struct TypeRef
 {
-    Type type;
+    Decl type;
     bool isConst;
 }
 
-class Pointer : Type
+class Pointer : Decl
 {
     TypeRef m_typeref;
 
-    this(Type type, bool isConst = false)
+    this(Decl type, bool isConst = false)
     {
         m_typeref = TypeRef(type, isConst);
     }
 }
 
-class Array : Type
+class Array : Decl
 {
     TypeRef m_typeref;
     long m_size;
 
-    this(Type type, long size, bool isConst = false)
+    this(Decl type, long size, bool isConst = false)
     {
         m_typeref = TypeRef(type, isConst);
         m_size = size;
     }
 }
 
-class Primitive : Type
+class Primitive : Decl
 {
 }
 
@@ -87,7 +87,7 @@ class Double : Primitive
 {
 }
 
-class UserType : Type
+class UserType : Decl
 {
     string m_path;
     int m_line;
@@ -104,7 +104,7 @@ class UserType : Type
 struct Field
 {
     string name;
-    Type type;
+    Decl type;
 }
 
 class Struct : UserType
@@ -139,7 +139,7 @@ class Typedef : UserType
 {
     TypeRef m_typeref;
 
-    this(string path, int line, string name, Type type, bool isConst = false)
+    this(string path, int line, string name, Decl type, bool isConst = false)
     {
         super(path, line, name);
         m_typeref = TypeRef(type, isConst);
@@ -154,11 +154,11 @@ struct Param
 
 class Function : UserType
 {
-    Type m_ret;
+    Decl m_ret;
     bool m_externC;
     Param[] m_params;
 
-    this(string path, int line, string name, Type ret, Param[] params)
+    this(string path, int line, string name, Decl ret, Param[] params)
     {
         super(path, line, name);
         m_ret = ret;

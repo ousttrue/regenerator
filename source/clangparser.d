@@ -3,7 +3,7 @@ import std.array;
 import std.stdio;
 import libclang;
 import clangcursor;
-import clangtypes;
+import clangdecl;
 import clanghelper;
 
 class Header
@@ -89,7 +89,12 @@ class Parser
         }
     }
 
-    private Type[uint] m_typeMap;
+    private Decl[uint] m_declMap;
+    Decl[uint] declMap()
+    {
+        return m_declMap;
+    }
+
     CXCursor getRootCanonical(CXCursor cursor)
     {
         auto current = cursor;
@@ -104,14 +109,20 @@ class Parser
         }
     }
 
-    Type getFromCursor(CXCursor cursor)
+    void pushDecl(CXCursor cursor, Decl decl)
     {
-        auto hash = clang_hashCursor(child);
-        auto decl = m_typeMap[hash];
+        auto hash = clang_hashCursor(cursor);
+        m_declMap[hash] = decl;
+    }
+
+    Decl getDeclFromCursor(CXCursor cursor)
+    {
+        auto hash = clang_hashCursor(cursor);
+        auto decl = m_declMap[hash];
         return decl;
     }
 
-    Type typeToDecl(CXCursor cursor, CXType type)
+    Decl typeToDecl(CXCursor cursor, CXType type)
     {
         auto primitive = KindToPrimitive(type.kind);
         if (primitive)
@@ -148,7 +159,7 @@ class Parser
             auto children = CXCursorIterator(cursor).array();
             foreach (child; children)
             {
-                return getFromCursor(child);
+                return getDeclFromCursor(child);
             }
 
             int a = 0;
@@ -170,19 +181,15 @@ class Parser
                 case CXCursorKind.CXCursor_UnionDecl:
                 case CXCursorKind.CXCursor_EnumDecl:
                     {
-                        auto hash = clang_hashCursor(child);
-                        auto decl = typeMap[hash];
-                        return decl;
+                        return getDeclFromCursor(child);
                     }
 
                 case CXCursorKind.CXCursor_TypeRef:
                     {
                         auto referenced = clang_getCursorReferenced(child);
-                        auto referencedName = getCursorSpelling(referenced);
-                        auto referencedKind = cast(CXCursorKind) clang_getCursorKind(referenced);
-                        auto hash = clang_hashCursor(referenced);
-                        auto decl = typeMap[hash];
-                        return decl;
+                        // auto referencedName = getCursorSpelling(referenced);
+                        // auto referencedKind = cast(CXCursorKind) clang_getCursorKind(referenced);
+                        return getDeclFromCursor(referenced);
                     }
 
                 case CXCursorKind.CXCursor_DLLImport:
@@ -213,9 +220,7 @@ class Parser
                 case CXCursorKind.CXCursor_TypeRef:
                     {
                         auto referenced = clang_getCursorReferenced(child);
-                        auto hash = clang_hashCursor(referenced);
-                        auto decl = typeMap[hash];
-                        return decl;
+                        return getDeclFromCursor(referenced);
                     }
 
                 case CXCursorKind.CXCursor_DLLImport:
@@ -266,13 +271,12 @@ class Parser
         return found;
     }
 
-    void pushTypedef(CXCursor cursor, Type type)
+    void pushTypedef(CXCursor cursor, Decl type)
     {
         auto location = getCursorLocation(cursor);
         auto name = getCursorSpelling(cursor);
         auto decl = new Typedef(location.path, location.line, name, type);
-        auto hash = clang_hashCursor(cursor);
-        typeMap[hash] = decl;
+        pushDecl(cursor, decl);
         auto header = getOrCreateHeader(cursor);
         header.types ~= decl;
     }
@@ -291,8 +295,7 @@ class Parser
 
         // first regist
         auto decl = new Struct(location.path, location.line, name, []);
-        auto hash = clang_hashCursor(cursor);
-        typeMap[hash] = decl;
+        pushDecl(cursor, decl);
         auto header = getOrCreateHeader(cursor);
         header.types ~= decl;
  
@@ -351,8 +354,7 @@ class Parser
         }
 
         auto decl = new Enum(location.path, location.line, name, values);
-        auto hash = clang_hashCursor(cursor);
-        typeMap[hash] = decl;
+        pushDecl(cursor, decl);
         auto header = getOrCreateHeader(cursor);
         header.types ~= decl;
     }
