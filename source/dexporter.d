@@ -310,6 +310,7 @@ class DExporter
         }
 
         // write each source
+        // auto sourcemap = makeView(m_sourceMap);
         foreach (k, dsource; m_sourceMap)
         {
             dsource.writeTo(dir, m_parser);

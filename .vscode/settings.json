@@ -3,9 +3,14 @@
         "*.natvis": "xml"
     },
     "cSpell.words": [
+        "LLVM",
+        "cindex",
         "cpptypeinfo",
+        "dclangen",
         "dlang",
-        "nargs"
+        "libclang",
+        "nargs",
+        "outdir"
     ],
     "dscanner.ignoredKeys": [
         "dscanner.style.undocumented_declaration",
