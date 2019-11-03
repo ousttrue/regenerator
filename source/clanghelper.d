@@ -2,6 +2,7 @@ module clanghelper;
 import std.string;
 import std.conv;
 import std.file;
+import std.array;
 import libclang;
 
 struct Source
@@ -24,19 +25,18 @@ CXTranslationUnitImpl* getTU(void* index, string[] headers, string[] params)
     }
     else
     {
-        Source[] sources;
-        foreach (header; headers)
+        auto sb=appender!string;
+        foreach(header; headers)
         {
-            sources ~= Source(cast(string) header.toStringz()[0 .. header.length + 1],
-                    cast(byte[]) read(header));
+            sb.put(format("#include \"%s\"\n", header));
         }
+
+        auto source = Source("__tmp__dclangen__.h", cast(byte[])sb.data);
 
         // use unsaved files
         CXUnsavedFile[] files;
-        foreach (source; sources)
-        {
-            files ~= CXUnsavedFile(cast(byte*)source.path.ptr, source.content.ptr, cast(uint)source.content.length);
-        }
+        files ~= CXUnsavedFile(cast(byte*)source.path.ptr, source.content.ptr, cast(uint)source.content.length);
+
         return clang_createTranslationUnitFromSourceFile(index, cast(byte*) headers[0].toStringz(),
                 cast(int) params.length, c_params.ptr, cast(uint) files.length, files.ptr);
     }
