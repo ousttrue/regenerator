@@ -1,7 +1,7 @@
 {
     "version": "0.2.0",
     "configurations": [
-       {
+        {
             "name": "dclangen libclang",
             "type": "cppvsdbg",
             "request": "launch",
@@ -16,6 +16,28 @@
                 "C:/Program Files/LLVM/include/clang-c/Index.h",
                 "-H",
                 "C:/Program Files/LLVM/include/clang-c/CXString.h",
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [
+                {
+                    "name": "PATH",
+                    "value": "C:/Program Files/LLVM/bin"
+                }
+            ],
+            "externalConsole": false,
+            "visualizerFile": "${workspaceFolder}/d.natvis"
+        },
+        {
+            "name": "dclangen d3d11",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/dclangen.exe",
+            "args": [
+                "--outdir",
+                "${workspaceFolder}/source/d3d11",
+                "-H",
+                "C:/Program Files (x86)/Windows Kits/10/Include/10.0.17763.0/um/d3d11.h",
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -68,5 +90,5 @@
                 "PYTHONPATH": "${workspaceFolder}/submodules/cpptypeinfo",
             }
         },
-     ]
+    ]
 }

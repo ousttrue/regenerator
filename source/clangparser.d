@@ -19,6 +19,17 @@ class Parser
         auto tu = clang_Cursor_getTranslationUnit(cursor);
         auto cursorKind = cast(CXCursorKind) clang_getCursorKind(cursor);
         auto _ = getCursorKindName(cursorKind);
+
+        auto spelling = getCursorSpelling(cursor);
+        if (spelling == "EXCEPTION_RECORD")
+        {
+            auto a = 0;
+        }
+        else if (spelling == "_EXCEPTION_RECORD")
+        {
+            auto a = 0;
+        }
+
         // writefln("%s%s", context.getIndent(), kind);
         switch (cursorKind)
         {
@@ -78,7 +89,7 @@ class Parser
         }
     }
 
-    Type[uint] typeMap;
+    private Type[uint] m_typeMap;
     CXCursor getRootCanonical(CXCursor cursor)
     {
         auto current = cursor;
@@ -91,6 +102,13 @@ class Parser
             }
             current = canonical;
         }
+    }
+
+    Type getFromCursor(CXCursor cursor)
+    {
+        auto hash = clang_hashCursor(child);
+        auto decl = m_typeMap[hash];
+        return decl;
     }
 
     Type typeToDecl(CXCursor cursor, CXType type)
@@ -130,9 +148,7 @@ class Parser
             auto children = CXCursorIterator(cursor).array();
             foreach (child; children)
             {
-                auto hash = clang_hashCursor(child);
-                auto decl = typeMap[hash];
-                return decl;
+                return getFromCursor(child);
             }
 
             int a = 0;
@@ -162,6 +178,8 @@ class Parser
                 case CXCursorKind.CXCursor_TypeRef:
                     {
                         auto referenced = clang_getCursorReferenced(child);
+                        auto referencedName = getCursorSpelling(referenced);
+                        auto referencedKind = cast(CXCursorKind) clang_getCursorKind(referenced);
                         auto hash = clang_hashCursor(referenced);
                         auto decl = typeMap[hash];
                         return decl;
@@ -271,7 +289,14 @@ class Parser
         auto location = getCursorLocation(cursor);
         auto name = getCursorSpelling(cursor);
 
-        Field[] fields;
+        // first regist
+        auto decl = new Struct(location.path, location.line, name, []);
+        auto hash = clang_hashCursor(cursor);
+        typeMap[hash] = decl;
+        auto header = getOrCreateHeader(cursor);
+        header.types ~= decl;
+ 
+        // after fields
         foreach (child; CXCursorIterator(cursor))
         {
             auto fieldName = getCursorSpelling(child);
@@ -282,7 +307,7 @@ class Parser
             case CXCursorKind.CXCursor_FieldDecl:
                 {
                     auto fieldDecl = typeToDecl(child, fieldType);
-                    fields ~= Field(fieldName, fieldDecl);
+                    decl.m_fields ~= Field(fieldName, fieldDecl);
                     break;
                 }
 
@@ -299,12 +324,7 @@ class Parser
             }
         }
 
-        auto decl = new Struct(location.path, location.line, name, fields);
-        auto hash = clang_hashCursor(cursor);
-        typeMap[hash] = decl;
-        auto header = getOrCreateHeader(cursor);
-        header.types ~= decl;
-    }
+   }
 
     void parseEnum(CXCursor cursor)
     {
@@ -348,6 +368,7 @@ class Parser
         Param[] params;
         foreach (child; CXCursorIterator(cursor))
         {
+            auto tmp = name;
             auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
             switch (childKind)
             {
