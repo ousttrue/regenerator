@@ -147,6 +147,10 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
         }
         f.writeln();
         f.writeln("{");
+        if (!decl.m_iid.empty)
+        {
+            f.writefln("    static immutable iidof = parseUUID(\"%s\");", decl.m_iid.toString());
+        }
         // methods
         foreach (method; decl.m_methods)
         {
@@ -246,11 +250,11 @@ class DSource
 
     bool includeModule(alias targetModule)(string name)
     {
-        string[] symbols = [__traits(allMembers, targetModule)];
+        static string[] symbols = [__traits(allMembers, targetModule)];
 
         auto moduleName = moduleName!targetModule;
 
-        debug auto symbolsView = makeView(symbols);
+        // debug static auto symbolsView = makeView(symbols);
         if (!symbols.find(name).empty)
         {
             if (m_modules.find(moduleName).empty)
@@ -274,6 +278,10 @@ class DSource
             return;
         }
         if (includeModule!(core.sys.windows.basetyps)(type.m_name))
+        {
+            return;
+        }
+        if (includeModule!(core.sys.windows.winnt)(type.m_name))
         {
             return;
         }
@@ -301,6 +309,11 @@ class DSource
 
     void writeTo(string dir)
     {
+        if(m_types.empty)
+        {
+            return;
+        }
+
         auto packageName = dir.baseName.stripExtension;
 
         // open
@@ -312,6 +325,8 @@ class DSource
         {
             auto f = File(path, "w");
             f.writefln("module %s.%s;", packageName, getName());
+
+            f.writeln("import std.uuid;");
 
             string[] modules;
             foreach (src; m_imports)
