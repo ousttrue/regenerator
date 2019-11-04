@@ -66,15 +66,24 @@ void DTypedefDecl(Parser parser, File* f, Typedef t)
 
 void DStructDecl(Parser parser, File* f, Struct decl, string typedefName = null)
 {
+    // assert(!decl.m_forwardDecl);
     auto name = typedefName ? typedefName : decl.m_name;
     if (!name)
     {
         f.writeln("// struct nameless");
         return;
     }
+    debug
+    {
+        if (name == "IDXGIAdapter")
+        {
+            auto a = 0;
+        }
+    }
 
     if (decl.m_iid.empty())
     {
+        // struct
         if (decl.m_fields.empty())
         {
             return;
@@ -90,12 +99,14 @@ void DStructDecl(Parser parser, File* f, Struct decl, string typedefName = null)
     }
     else
     {
+        // interface
         f.writefln("interface %s", name);
         f.writeln("{");
-        foreach (field; decl.m_fields)
-        {
-            f.writefln("   %s %s;", parser.DType(field.type), DEscapeName(field.name));
-        }
+        // methods
+        // foreach (field; decl.m_fields)
+        // {
+        //     f.writefln("   %s %s;", parser.DType(field.type), DEscapeName(field.name));
+        // }
         f.writeln("}");
     }
 }
@@ -129,7 +140,16 @@ void DFucntionDecl(Parser parser, File* f, Function decl)
 {
     if (!decl.m_dllExport)
     {
-        return;
+        auto retType = cast(UserDecl) decl.m_ret;
+        if (!retType)
+        {
+            return;
+        }
+        if (retType.m_name != "HRESULT")
+        {
+            return;
+        }
+        debug auto isCom = true; // D3D11CreateDevice ... etc
     }
     if (decl.m_externC)
     {
@@ -273,6 +293,29 @@ class DExporter
         // throw new Exception("not reach here");
     }
 
+    UserDecl getDefinition(UserDecl decl)
+    {
+        Struct structdecl = cast(Struct) decl;
+        if (!structdecl)
+        {
+            return decl;
+        }
+        if (!structdecl.m_forwardDecl)
+        {
+            return decl;
+        }
+
+        auto definition =  structdecl.m_definition;
+        debug
+        {
+            if (decl.m_name == "IDXGIAdapter")
+            {
+                auto a = 0;
+            }
+        }
+        return definition;
+    }
+
     void addDecl(Decl _decl, DSource[] from = [])
     {
         auto decl = cast(UserDecl) stripPointer(_decl);
@@ -280,6 +323,7 @@ class DExporter
         {
             return;
         }
+        decl = getDefinition(decl);
 
         auto dsource = getOrCreateSource(decl.m_path);
         dsource.addDecl(decl);
@@ -323,19 +367,7 @@ class DExporter
         }
 
         // resolve typedef
-        foreach (k, v; m_parser.declMap)
-        {
-            Typedef typedefDecl = cast(Typedef) v;
-            if (typedefDecl)
-            {
-                UserDecl userType = cast(UserDecl) typedefDecl.m_typeref.type;
-                if (userType && !userType.m_name)
-                {
-                    // set typedef name
-                    userType.m_name = typedefDecl.m_name;
-                }
-            }
-        }
+        m_parser.resolveTypedef();
 
         // gather export items
         debug auto parsedHeaders = makeView(m_parser.m_headers);

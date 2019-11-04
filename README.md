@@ -7,7 +7,7 @@ Parse c++ source by libclang.cindex, and generate Dlang Source.
 * [ ] function pointer type
 * [x] multi source entry point
 * [ ] union
-* [ ] D3D11CreateDevice
+* [x] D3D11CreateDevice
 * [ ] interface method
 * [ ] interface reduce asterisk
 

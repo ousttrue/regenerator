@@ -388,6 +388,23 @@ class Parser
         return found;
     }
 
+    void resolveTypedef()
+    {
+        foreach (k, v; m_declMap)
+        {
+            Typedef typedefDecl = cast(Typedef) v;
+            if (typedefDecl)
+            {
+                UserDecl userType = cast(UserDecl) typedefDecl.m_typeref.type;
+                if (userType && !userType.m_name)
+                {
+                    // set typedef name
+                    userType.m_name = typedefDecl.m_name;
+                }
+            }
+        }
+    }
+
     void pushTypedef(CXCursor cursor, Decl type)
     {
         auto location = getCursorLocation(cursor);
@@ -405,13 +422,46 @@ class Parser
         pushTypedef(cursor, type);
     }
 
+    // https://joshpeterson.github.io/identifying-a-forward-declaration-with-libclang
+    static bool is_forward_declaration(CXCursor cursor)
+    {
+        auto definition = clang_getCursorDefinition(cursor);
+
+        // If the definition is null, then there is no definition in this translation
+        // unit, so this cursor must be a forward declaration.
+        if (clang_equalCursors(definition, clang_getNullCursor()))
+            return true;
+
+        // If there is a definition, then the forward declaration and the definition
+        // are in the same translation unit. This cursor is the forward declaration if
+        // it is _not_ the definition.
+        return !clang_equalCursors(cursor, definition);
+    }
+
     void parseStruct(CXCursor cursor, Context context)
     {
         auto location = getCursorLocation(cursor);
         auto name = getCursorSpelling(cursor);
+        debug
+        {
+            if (name == "IDXGIAdapter")
+            {
+                auto a = 0;
+            }
+        }
 
         // first regist
         auto decl = new Struct(location.path, location.line, name, []);
+        decl.m_forwardDecl = is_forward_declaration(cursor);
+        auto canonical = clang_getCanonicalCursor(cursor);
+        if (canonical != cursor)
+        {
+            if (!decl.m_forwardDecl)
+            {
+                Struct forwardDecl = cast(Struct) m_declMap[clang_hashCursor(canonical)];
+                forwardDecl.m_definition = decl;
+            }
+        }
         pushDecl(cursor, decl);
         auto header = getOrCreateHeader(cursor);
         header.types ~= decl;
@@ -499,6 +549,13 @@ class Parser
     {
         auto location = getCursorLocation(cursor);
         auto name = getCursorSpelling(cursor);
+        debug
+        {
+            if (name == "D3D11CreateDevice")
+            {
+                auto a = 0;
+            }
+        }
 
         auto retType = clang_getCursorResultType(cursor);
         auto ret = typeToDecl(cursor, retType);
@@ -507,17 +564,21 @@ class Parser
         Param[] params;
         foreach (child; CXCursorIterator(cursor))
         {
-            auto tmp = name;
+            debug auto tmp = name;
             auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
+            auto childName = getCursorSpelling(child);
             switch (childKind)
             {
+            case CXCursorKind.CXCursor_TypeRef:
+            case CXCursorKind.CXCursor_WarnUnusedResultAttr:
+                break;
+
             case CXCursorKind.CXCursor_ParmDecl:
                 {
-                    auto paramName = getCursorSpelling(child);
                     auto paramCursorType = clang_getCursorType(child);
                     auto paramType = typeToDecl(child, paramCursorType);
                     auto paramConst = clang_isConstQualifiedType(paramCursorType);
-                    auto param = Param(paramName, TypeRef(paramType, paramConst != 0));
+                    auto param = Param(childName, TypeRef(paramType, paramConst != 0));
                     params ~= param;
                 }
                 break;
@@ -527,9 +588,16 @@ class Parser
                 dllExport = true;
                 break;
 
+            case CXCursorKind.CXCursor_UnexposedAttr:
+                {
+
+                }
+                break;
+
             default:
                 // writeln(childKind);
-                break;
+                int a = 0;
+                throw new Exception("unknown param type");
             }
         }
 

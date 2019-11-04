@@ -118,6 +118,8 @@ class Struct : UserDecl
 {
     Field[] m_fields;
     UUID m_iid;
+    bool m_forwardDecl;
+    Struct m_definition;
 
     this(string path, int line, string name, Field[] fields)
     {
