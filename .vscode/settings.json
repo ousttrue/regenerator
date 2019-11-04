@@ -10,7 +10,8 @@
         "dlang",
         "libclang",
         "nargs",
-        "outdir"
+        "outdir",
+        "struct"
     ],
     "dscanner.ignoredKeys": [
         "dscanner.style.undocumented_declaration",

@@ -7,13 +7,15 @@ Parse c++ source by libclang.cindex, and generate Dlang Source.
 * [ ] function pointer type
 * [x] multi source entry point
 * [ ] union
+* [ ] anonymous union
+* [ ] anonymous struct
 * [x] D3D11CreateDevice
 * [x] interface method
 * [x] interface reduce asterisk
-* [ ] anonymous union
 * [x] use `core.sys.windows.windows`
 * [x] com interface uuid
 * [x] com interface inheritance
+* [ ] macro define value
 
 ## Usage
 
