@@ -4,6 +4,8 @@ import std.stdio;
 import std.path;
 import std.file;
 import std.algorithm;
+import core.sys.windows.windef;
+import core.sys.windows.basetyps;
 import clangdecl;
 import clangparser;
 import sliceview;
@@ -41,7 +43,7 @@ static bool isInterface(Decl decl)
         return false;
     }
 
-    if(structDecl.m_definition)
+    if (structDecl.m_definition)
     {
         // resolve forward decl
         structDecl = structDecl.m_definition;
@@ -229,7 +231,7 @@ void DDecl(File* f, Decl decl)
 
 class DSource
 {
-    bool m_windef;
+    string[] m_modules;
     string m_path;
     string getName()
     {
@@ -244,14 +246,57 @@ class DSource
         m_path = path;
     }
 
-    bool addDecl(UserDecl type)
+    static WINDEF = "core.sys.windows.windef";
+    static string[] windowsSymbols = [__traits(allMembers, core.sys.windows.windef)];
+    bool includeWindef(string name)
+    {
+        // import core.sys.windows.windows;
+        // に含まれていれば追加せずにフラグを立てる
+        debug auto symbols = makeView(windowsSymbols);
+        auto found = windowsSymbols.find(name);
+        if (!found.empty)
+        {
+            if (!m_modules.find(WINDEF).empty())
+            {
+                m_modules ~= WINDEF;
+                return true;
+            }
+        }
+        return false;
+    }
+    static BASETYPS = "core.sys.windows.basetyps";
+    static string[] basetypsSymbols = [__traits(allMembers, core.sys.windows.basetyps)];
+    bool includeBasetyps(string name)
+    {
+        if(!basetypsSymbols.find(name).empty)
+        {
+            if(!m_modules.find(BASETYPS).empty)
+            {
+                m_modules ~= BASETYPS;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void addDecl(UserDecl type)
     {
         if (m_types.find(type).any())
         {
-            return false;
+            return;
         }
+
+        if (includeWindef(type.m_name))
+        {
+            return;
+        }
+        if (includeBasetyps(type.m_name))
+        {
+            return;
+        }
+
         m_types ~= type;
-        return true;
+        return;
     }
 
     void addImport(DSource source)
@@ -281,17 +326,19 @@ class DSource
             auto f = File(path, "w");
             f.writefln("module %s.%s;", packageName, getName());
 
-            if (m_windef)
-            {
-                // HRESULT, DWORD, LONG ... etc
-                f.writeln("import core.sys.windows.windows;");
-            }
-
+            string[] modules;
             foreach (src; m_imports)
             {
                 f.writefln("import %s.%s;", packageName, src.getName());
+                foreach(m; src.m_modules)
+                {
+                    if(modules.find(m).empty)
+                    {
+                        f.writefln("import %s;", m);
+                        modules ~= m;
+                    }
+                }
             }
-
             foreach (decl; m_types)
             {
                 DDecl(&f, decl);
