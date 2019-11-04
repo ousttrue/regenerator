@@ -1,6 +1,7 @@
 module clangdecl;
 import std.string;
 import std.typecons;
+import std.uuid;
 import libclang;
 
 class Decl
@@ -114,6 +115,7 @@ struct Field
 class Struct : UserDecl
 {
     Field[] m_fields;
+    UUID m_iid;
 
     this(string path, int line, string name, Field[] fields)
     {
@@ -160,13 +162,16 @@ class Function : UserDecl
 {
     Decl m_ret;
     bool m_externC;
+    bool m_dllExport;
     Param[] m_params;
 
-    this(string path, int line, string name, Decl ret, Param[] params)
+    this(string path, int line, string name, Decl ret, Param[] params, bool dllExport, bool externC)
     {
         super(path, line, name);
         m_ret = ret;
         m_params = params;
+        m_dllExport = dllExport;
+        m_externC = externC;
     }
 }
 

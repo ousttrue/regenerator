@@ -72,13 +72,32 @@ void DStructDecl(Parser parser, File* f, Struct decl, string typedefName = null)
         f.writeln("// struct nameless");
         return;
     }
-    f.writefln("struct %s", name);
-    f.writeln("{");
-    foreach (field; decl.m_fields)
+
+    if (decl.m_iid.empty())
     {
-        f.writefln("   %s %s;", parser.DType(field.type), DEscapeName(field.name));
+        if (decl.m_fields.empty())
+        {
+            return;
+        }
+
+        f.writefln("struct %s", name);
+        f.writeln("{");
+        foreach (field; decl.m_fields)
+        {
+            f.writefln("   %s %s;", parser.DType(field.type), DEscapeName(field.name));
+        }
+        f.writeln("}");
     }
-    f.writeln("}");
+    else
+    {
+        f.writefln("interface %s", name);
+        f.writeln("{");
+        foreach (field; decl.m_fields)
+        {
+            f.writefln("   %s %s;", parser.DType(field.type), DEscapeName(field.name));
+        }
+        f.writeln("}");
+    }
 }
 
 void DEnumDecl(Parser _, File* f, Enum decl)
@@ -99,6 +118,10 @@ void DEnumDecl(Parser _, File* f, Enum decl)
 
 void DFucntionDecl(Parser parser, File* f, Function decl)
 {
+    if (!decl.m_dllExport)
+    {
+        return;
+    }
     if (decl.m_externC)
     {
         f.write("extern(C) ");
@@ -133,6 +156,7 @@ void DDecl(Parser parser, File* f, Decl decl)
 
 class DSource
 {
+    bool m_windef;
     string m_path;
     string getName()
     {
@@ -182,6 +206,12 @@ class DSource
         {
             auto f = File(path, "w");
             f.writefln("module %s.%s;", packageName, getName());
+
+            if (m_windef)
+            {
+                // HRESULT, DWORD, LONG ... etc
+                f.writeln("import core.sys.windows.windows;");
+            }
 
             foreach (src; m_imports)
             {
@@ -234,8 +264,14 @@ class DExporter
         // throw new Exception("not reach here");
     }
 
-    void addDecl(UserDecl decl, DSource from = null)
+    void addDecl(Decl _decl, DSource from = null)
     {
+        auto decl = cast(UserDecl) stripPointer(_decl);
+        if(!decl)
+        {
+            return;
+        }
+
         auto dsource = getOrCreateSource(decl.m_path);
         dsource.addDecl(decl);
 
@@ -250,20 +286,24 @@ class DExporter
 
         Function functionDecl = cast(Function) decl;
         Typedef typedefDecl = cast(Typedef) decl;
+        Struct structDecl = cast(Struct) decl;
         if (functionDecl)
         {
-            UserDecl retDecl = cast(UserDecl) stripPointer(functionDecl.m_ret);
-            if (retDecl)
+            addDecl(functionDecl.m_ret, from);
+            foreach (param; functionDecl.m_params)
             {
-                addDecl(retDecl, from);
+                addDecl(param.typeRef.type);
             }
         }
         else if (typedefDecl)
         {
-            UserDecl dstDecl = cast(UserDecl) stripPointer(typedefDecl.m_typeref.type);
-            if (dstDecl)
+            addDecl(typedefDecl.m_typeref.type, from);
+        }
+        else if (structDecl)
+        {
+            foreach (field; structDecl.m_fields)
             {
-                addDecl(dstDecl, from);
+                addDecl(field.type, from);
             }
         }
     }
@@ -309,7 +349,7 @@ class DExporter
                 writefln("%s: not found", header);
             }
         }
-        if(m_sourceMap.empty)
+        if (m_sourceMap.empty)
         {
             throw new Exception("empty");
         }

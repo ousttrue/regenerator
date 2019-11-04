@@ -11,15 +11,9 @@ int main(string[] args)
 	getopt(args, "include|I", &includes, "outdir", &dir,
 			std.getopt.config.required, "header|H", &headers);
 
-	string[] params = ["-x", "c++"];
-	foreach (include; includes)
-	{
-		params ~= format("-I%s", include);
-	}
-
 	auto parser = new Parser();
 
-	parser.parse(headers, params);
+	parser.parse(headers, includes);
 
 	if (dir)
 	{

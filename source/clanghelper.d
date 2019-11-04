@@ -18,27 +18,31 @@ CXTranslationUnitImpl* getTU(void* index, string[] headers, string[] params)
     {
         c_params ~= cast(byte*) param.toStringz();
     }
+
+    auto options = CXTranslationUnit_Flags.CXTranslationUnit_DetailedPreprocessingRecord
+        | CXTranslationUnit_Flags.CXTranslationUnit_SkipFunctionBodies;
     if (headers.length == 1)
     {
-        return clang_createTranslationUnitFromSourceFile(index,
-                cast(byte*) headers[0].toStringz(), cast(int) params.length, c_params.ptr, 0, null);
+        return clang_parseTranslationUnit(index, cast(byte*) headers[0].toStringz(),
+                c_params.ptr, cast(int) params.length, null, 0, cast(uint) options);
     }
     else
     {
-        auto sb=appender!string;
-        foreach(header; headers)
+        auto sb = appender!string;
+        foreach (header; headers)
         {
             sb.put(format("#include \"%s\"\n", header));
         }
 
-        auto source = Source("__tmp__dclangen__.h", cast(byte[])sb.data);
+        auto source = Source("__tmp__dclangen__.h", cast(byte[]) sb.data);
 
         // use unsaved files
         CXUnsavedFile[] files;
-        files ~= CXUnsavedFile(cast(byte*)source.path.ptr, source.content.ptr, cast(uint)source.content.length);
+        files ~= CXUnsavedFile(cast(byte*) source.path.ptr, source.content.ptr,
+                cast(uint) source.content.length);
 
-        return clang_createTranslationUnitFromSourceFile(index, cast(byte*) headers[0].toStringz(),
-                cast(int) params.length, c_params.ptr, cast(uint) files.length, files.ptr);
+        return clang_parseTranslationUnit(index, cast(byte*) headers[0].toStringz(),
+                c_params.ptr, cast(int) params.length, files.ptr, cast(uint) files.length, options);
     }
 }
 
@@ -90,6 +94,8 @@ struct Location
 {
     string path;
     int line;
+    int begin;
+    int end;
 }
 
 Location getCursorLocation(CXCursor cursor)
@@ -101,15 +107,32 @@ Location getCursorLocation(CXCursor cursor)
     uint offset;
     clang_getInstantiationLocation(location, &file, &line, &column, &offset);
     auto path = CXStringToString(clang_getFileName(file));
-    return Location(path, line);
+
+    auto extent = clang_getCursorExtent(cursor);
+    // auto begin = clang_getRangeStart(extent);
+    auto end = clang_getRangeEnd(extent);
+
+    CXFile endFile;
+    uint endLine;
+    uint endColumn;
+    uint endOffset;
+    clang_getInstantiationLocation(end, &endFile, &endLine, &endColumn, &endOffset);
+
+    return Location(path, line, offset, endOffset);
 }
 
-CXToken[] getTokens(CXCursor cursor)
+CXSourceRange getRange(CXCursor cursor)
 {
     auto extent = clang_getCursorExtent(cursor);
     auto begin = clang_getRangeStart(extent);
     auto end = clang_getRangeEnd(extent);
     auto range = clang_getRange(begin, end);
+    return range;
+}
+
+CXToken[] getTokens(CXCursor cursor)
+{
+    auto range = clang_getCursorExtent(cursor);
 
     CXToken* tokens;
     uint num;
