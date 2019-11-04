@@ -11,6 +11,7 @@ Parse c++ source by libclang.cindex, and generate Dlang Source.
 * [x] interface method
 * [x] interface reduce asterisk
 * [ ] anonymous union
+* [ ] com uuid
 * [ ] use `core.sys.windows.windows`
 
 ## Usage
@@ -23,6 +24,12 @@ $ dclangen.exe -I "C:/Program Files/LLVM/include" --outdir source/libclang -H "C
 * `-H` Process Header
 
 generate d sources to `source/libclang`
+
+### generate d3d
+
+```
+$ dclangen.exe --outdir source/d3d11 -H "C:/Program Files (x86)/Windows Kits/10/Include/10.0.17763.0/um/d3d11.h"
+```
 
 ## clang command line
 
