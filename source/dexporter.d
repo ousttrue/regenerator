@@ -107,7 +107,16 @@ void DEnumDecl(Parser _, File* f, Enum decl)
         f.writeln("// enum nameless");
         return;
     }
-    f.writefln("enum %s", decl.m_name);
+
+    debug auto values = makeView(decl.m_values);
+
+    f.writef("enum %s", decl.m_name);
+    auto maxValue = decl.maxValue;
+    if (maxValue > uint.max)
+    {
+        f.write(": ulong");
+    }
+    f.writeln();
     f.writeln("{");
     foreach (value; decl.m_values)
     {
@@ -264,25 +273,21 @@ class DExporter
         // throw new Exception("not reach here");
     }
 
-    void addDecl(Decl _decl, DSource from = null)
+    void addDecl(Decl _decl, DSource[] from = [])
     {
         auto decl = cast(UserDecl) stripPointer(_decl);
-        if(!decl)
+        if (!decl)
         {
             return;
         }
 
         auto dsource = getOrCreateSource(decl.m_path);
         dsource.addDecl(decl);
-
-        if (from)
+        foreach (f; from)
         {
-            from.addImport(dsource);
+            f.addImport(dsource);
         }
-        else
-        {
-            from = dsource;
-        }
+        from ~= dsource;
 
         Function functionDecl = cast(Function) decl;
         Typedef typedefDecl = cast(Typedef) decl;
@@ -292,7 +297,7 @@ class DExporter
             addDecl(functionDecl.m_ret, from);
             foreach (param; functionDecl.m_params)
             {
-                addDecl(param.typeRef.type);
+                addDecl(param.typeRef.type, from);
             }
         }
         else if (typedefDecl)

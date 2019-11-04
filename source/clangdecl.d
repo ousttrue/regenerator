@@ -1,7 +1,9 @@
 module clangdecl;
+import std.range;
 import std.string;
 import std.typecons;
 import std.uuid;
+import std.algorithm;
 import libclang;
 
 class Decl
@@ -127,7 +129,7 @@ class Struct : UserDecl
 struct EnumValue
 {
     string name;
-    long value;
+    ulong value;
 }
 
 class Enum : UserDecl
@@ -138,6 +140,12 @@ class Enum : UserDecl
     {
         super(path, line, name);
         m_values = values;
+    }
+
+    ulong maxValue()
+    {
+        auto indexValue  = m_values.enumerate.maxElement!"a.value.value"();
+        return indexValue[1].value;
     }
 }
 

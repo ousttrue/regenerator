@@ -479,7 +479,7 @@ class Parser
             case CXCursorKind.CXCursor_EnumConstantDecl:
                 {
                     auto name = getCursorSpelling(child);
-                    auto value = clang_getEnumConstantDeclValue(child);
+                    auto value = clang_getEnumConstantDeclUnsignedValue(child);
                     values ~= EnumValue(name, value);
                 }
                 break;
