@@ -1,4 +1,5 @@
 module dexporter;
+import std.traits;
 import std.string;
 import std.stdio;
 import std.path;
@@ -6,6 +7,7 @@ import std.file;
 import std.algorithm;
 import core.sys.windows.windef;
 import core.sys.windows.basetyps;
+import core.sys.windows.unknwn;
 import clangdecl;
 import clangparser;
 import sliceview;
@@ -109,13 +111,6 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
         f.writeln("// struct nameless");
         return;
     }
-    debug
-    {
-        if (name == "IDXGIAdapter")
-        {
-            auto a = 0;
-        }
-    }
 
     if (decl.m_iid.empty())
     {
@@ -168,8 +163,6 @@ void DEnumDecl(File* f, Enum decl)
         f.writeln("// enum nameless");
         return;
     }
-
-    debug auto values = makeView(decl.m_values);
 
     f.writef("enum %s", decl.m_name);
     auto maxValue = decl.maxValue;
@@ -251,36 +244,20 @@ class DSource
         m_path = path;
     }
 
-    static WINDEF = "core.sys.windows.windef";
-    static string[] windowsSymbols = [__traits(allMembers, core.sys.windows.windef)];
-    bool includeWindef(string name)
+    bool includeModule(alias targetModule)(string name)
     {
-        // import core.sys.windows.windows;
-        // に含まれていれば追加せずにフラグを立てる
-        debug auto symbols = makeView(windowsSymbols);
-        auto found = windowsSymbols.find(name);
-        if (!found.empty)
-        {
-            if (!m_modules.find(WINDEF).empty())
-            {
-                m_modules ~= WINDEF;
-                return true;
-            }
-        }
-        return false;
-    }
+        string[] symbols = [__traits(allMembers, targetModule)];
 
-    static BASETYPS = "core.sys.windows.basetyps";
-    static string[] basetypsSymbols = [__traits(allMembers, core.sys.windows.basetyps)];
-    bool includeBasetyps(string name)
-    {
-        if (!basetypsSymbols.find(name).empty)
+        auto moduleName = moduleName!targetModule;
+
+        debug auto symbolsView = makeView(symbols);
+        if (!symbols.find(name).empty)
         {
-            if (!m_modules.find(BASETYPS).empty)
+            if (m_modules.find(moduleName).empty)
             {
-                m_modules ~= BASETYPS;
-                return true;
+                m_modules ~= moduleName;
             }
+            return true;
         }
         return false;
     }
@@ -292,11 +269,15 @@ class DSource
             return;
         }
 
-        if (includeWindef(type.m_name))
+        if (includeModule!(core.sys.windows.windef)(type.m_name))
         {
             return;
         }
-        if (includeBasetyps(type.m_name))
+        if (includeModule!(core.sys.windows.basetyps)(type.m_name))
+        {
+            return;
+        }
+        if (includeModule!(core.sys.windows.unknwn)(type.m_name))
         {
             return;
         }
