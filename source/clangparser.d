@@ -176,10 +176,13 @@ class Parser
         }
     }
 
-    void pushDecl(CXCursor cursor, Decl decl)
+    uint pushDecl(CXCursor cursor, Decl decl)
     {
         auto hash = clang_hashCursor(cursor);
+        assert(hash !in m_declMap);
+        assert(decl);
         m_declMap[hash] = decl;
+        return hash;
     }
 
     Decl getDeclFromCursor(CXCursor cursor)
@@ -427,20 +430,43 @@ class Parser
         pushTypedef(cursor, type);
     }
 
-    void resolveForeardDecl()
-    {
-        foreach(k, v; m_declMap)
-        {
-            Struct decl = cast(Struct)v;
-            if (!decl)
-            {
-                return;
-            }
+    // private void replace(uint hash, Struct src)
+    // {
+    //     auto dst = src.m_definition;
+    //     assert(dst);
+    //     foreach (k, v; m_declMap)
+    //     {
+    //         if (v == src)
+    //         {
+    //             assert(k == hash);
+    //         }
+    //         else
+    //         {
+    //             v.replace(src, dst, []);
+    //         }
+    //     }
 
-            // replace(t.hash, decl, decl.m_definition);
-            decl.resovleForeardDeclaration();
-        }
-    }
+    //     m_declMap[hash] = dst;
+    // }
+
+    // void resolveForwardDecl()
+    // {
+    //     Decl[uint] map;
+    //     foreach (k, v; m_declMap)
+    //     {
+    //         Struct structDecl = cast(Struct) v;
+    //         if (structDecl && structDecl.m_forwardDecl && structDecl.m_definition)
+    //         {
+    //             replace(k, structDecl);
+    //             map[k] = structDecl.m_definition;
+    //         }
+    //         else
+    //         {
+    //             map[k] = v;
+    //         }
+    //     }
+    //     m_declMap = map;
+    // }
 
     // https://joshpeterson.github.io/identifying-a-forward-declaration-with-libclang
     static bool is_forward_declaration(CXCursor cursor)
@@ -462,21 +488,14 @@ class Parser
     {
         auto location = getCursorLocation(cursor);
         auto name = getCursorSpelling(cursor);
-        debug
-        {
-            if (name == "IDXGIAdapter")
-            {
-                auto a = 0;
-            }
-        }
 
         // first regist
         auto decl = new Struct(location.path, location.line, name);
         decl.m_forwardDecl = is_forward_declaration(cursor);
-        auto canonical = clang_getCanonicalCursor(cursor);
-        if (canonical != cursor)
+        if (!decl.m_forwardDecl)
         {
-            if (!decl.m_forwardDecl)
+            auto canonical = clang_getCanonicalCursor(cursor);
+            if (canonical != cursor)
             {
                 Struct forwardDecl = cast(Struct) m_declMap[clang_hashCursor(canonical)];
                 forwardDecl.m_definition = decl;
@@ -538,7 +557,6 @@ class Parser
                 break;
             }
         }
-
     }
 
     void parseEnum(CXCursor cursor)

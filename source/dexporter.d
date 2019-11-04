@@ -20,9 +20,47 @@ string DEscapeName(string src)
     }
 }
 
+static bool isInterface(Decl decl)
+{
+    Typedef typedefDecl = cast(Typedef) decl;
+    if (typedefDecl)
+    {
+        debug
+        {
+            if (typedefDecl.m_name == "ID3D11DeviceContext")
+            {
+                auto a = 0;
+            }
+        }
+        decl = typedefDecl.m_typeref.type;
+    }
+
+    Struct structDecl = cast(Struct) decl;
+    if (!structDecl)
+    {
+        return false;
+    }
+
+    if(structDecl.m_definition)
+    {
+        // resolve forward decl
+        structDecl = structDecl.m_definition;
+    }
+
+    bool empty = structDecl.m_iid.empty();
+    return !empty;
+}
+
 string DPointer(Pointer t)
 {
-    return format("%s*", DType(t.m_typeref.type));
+    if (isInterface(t.m_typeref.type))
+    {
+        return format("%s", DType(t.m_typeref.type));
+    }
+    else
+    {
+        return format("%s*", DType(t.m_typeref.type));
+    }
 }
 
 string DArray(Array t)
@@ -294,7 +332,7 @@ class DExporter
             {
                 decl = pointer.m_typeref.type;
             }
-            else if(array)
+            else if (array)
             {
                 decl = array.m_typeref.type;
             }
@@ -407,7 +445,6 @@ class DExporter
         }
 
         // prepare
-        m_parser.resolveForeardDecl();
         m_parser.resolveTypedef();
 
         // gather export items

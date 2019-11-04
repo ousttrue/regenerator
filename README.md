@@ -9,8 +9,9 @@ Parse c++ source by libclang.cindex, and generate Dlang Source.
 * [ ] union
 * [x] D3D11CreateDevice
 * [x] interface method
-* [ ] interface reduce asterisk
+* [x] interface reduce asterisk
 * [ ] anonymous union
+* [ ] use `core.sys.windows.windows`
 
 ## Usage
 
