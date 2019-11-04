@@ -11,8 +11,9 @@ Parse c++ source by libclang.cindex, and generate Dlang Source.
 * [x] interface method
 * [x] interface reduce asterisk
 * [ ] anonymous union
-* [ ] com uuid
 * [x] use `core.sys.windows.windows`
+* [ ] com interface uuid
+* [ ] com interface inheritance
 
 ## Usage
 
