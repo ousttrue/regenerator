@@ -8,8 +8,9 @@ Parse c++ source by libclang.cindex, and generate Dlang Source.
 * [x] multi source entry point
 * [ ] union
 * [x] D3D11CreateDevice
-* [ ] interface method
+* [x] interface method
 * [ ] interface reduce asterisk
+* [ ] anonymous union
 
 ## Usage
 

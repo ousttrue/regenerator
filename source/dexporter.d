@@ -93,7 +93,16 @@ void DStructDecl(Parser parser, File* f, Struct decl, string typedefName = null)
         f.writeln("{");
         foreach (field; decl.m_fields)
         {
-            f.writefln("   %s %s;", parser.DType(field.type), DEscapeName(field.name));
+            auto typeName = parser.DType(field.type);
+            if (!typeName)
+            {
+                // anonymous union, struct
+                f.writefln("   // anonymous %s;", DEscapeName(field.name));
+            }
+            else
+            {
+                f.writefln("   %s %s;", typeName, DEscapeName(field.name));
+            }
         }
         f.writeln("}");
     }
@@ -103,10 +112,11 @@ void DStructDecl(Parser parser, File* f, Struct decl, string typedefName = null)
         f.writefln("interface %s", name);
         f.writeln("{");
         // methods
-        // foreach (field; decl.m_fields)
-        // {
-        //     f.writefln("   %s %s;", parser.DType(field.type), DEscapeName(field.name));
-        // }
+        foreach (method; decl.m_methods)
+        {
+            parser.DFucntionDecl(f, method, "    ");
+            // f.writefln("   %s %s;", parser.DType(field.type), DEscapeName(field.name));
+        }
         f.writeln("}");
     }
 }
@@ -136,7 +146,7 @@ void DEnumDecl(Parser _, File* f, Enum decl)
     f.writeln("}");
 }
 
-void DFucntionDecl(Parser parser, File* f, Function decl)
+void DFucntionDecl(Parser parser, File* f, Function decl, string indent)
 {
     if (!decl.m_dllExport)
     {
@@ -151,6 +161,7 @@ void DFucntionDecl(Parser parser, File* f, Function decl)
         }
         debug auto isCom = true; // D3D11CreateDevice ... etc
     }
+    f.write(indent);
     if (decl.m_externC)
     {
         f.write("extern(C) ");
@@ -180,7 +191,7 @@ void DDecl(Parser parser, File* f, Decl decl)
 {
     castSwitch!((Typedef decl) => parser.DTypedefDecl(f, decl),
             (Enum decl) => parser.DEnumDecl(f, decl), (Struct decl) => parser.DStructDecl(f,
-                decl), (Function decl) => parser.DFucntionDecl(f, decl))(decl);
+                decl), (Function decl) => parser.DFucntionDecl(f, decl, ""))(decl);
 }
 
 class DSource
@@ -200,13 +211,14 @@ class DSource
         m_path = path;
     }
 
-    void addDecl(UserDecl type)
+    bool addDecl(UserDecl type)
     {
         if (m_types.find(type).any())
         {
-            return;
+            return false;
         }
         m_types ~= type;
+        return true;
     }
 
     void addImport(DSource source)
@@ -282,12 +294,19 @@ class DExporter
         while (true)
         {
             Pointer pointer = cast(Pointer) decl;
-            if (!pointer)
+            Array array = cast(Array) decl;
+            if (pointer)
+            {
+                decl = pointer.m_typeref.type;
+            }
+            else if(array)
+            {
+                decl = array.m_typeref.type;
+            }
+            else
             {
                 return decl;
             }
-
-            decl = pointer.m_typeref.type;
         }
 
         // throw new Exception("not reach here");
@@ -305,7 +324,7 @@ class DExporter
             return decl;
         }
 
-        auto definition =  structdecl.m_definition;
+        auto definition = structdecl.m_definition;
         debug
         {
             if (decl.m_name == "IDXGIAdapter")
@@ -316,9 +335,18 @@ class DExporter
         return definition;
     }
 
-    void addDecl(Decl _decl, DSource[] from = [])
+    void addDecl(Decl[] _decl, DSource[] from = [])
     {
-        auto decl = cast(UserDecl) stripPointer(_decl);
+        foreach (d; _decl[0 .. $ - 1])
+        {
+            if (d == _decl[$ - 1])
+            {
+                // stop resursion
+                return;
+            }
+        }
+
+        auto decl = cast(UserDecl) stripPointer(_decl[$ - 1]);
         if (!decl)
         {
             return;
@@ -327,32 +355,49 @@ class DExporter
 
         auto dsource = getOrCreateSource(decl.m_path);
         dsource.addDecl(decl);
+
+        bool found = false;
         foreach (f; from)
         {
             f.addImport(dsource);
+            if (f == dsource)
+            {
+                found = true;
+            }
         }
-        from ~= dsource;
+        if (!found)
+        {
+            from ~= dsource;
+        }
 
         Function functionDecl = cast(Function) decl;
         Typedef typedefDecl = cast(Typedef) decl;
         Struct structDecl = cast(Struct) decl;
         if (functionDecl)
         {
-            addDecl(functionDecl.m_ret, from);
+            addDecl(_decl ~ functionDecl.m_ret, from);
             foreach (param; functionDecl.m_params)
             {
-                addDecl(param.typeRef.type, from);
+                addDecl(_decl ~ param.typeRef.type, from);
             }
         }
         else if (typedefDecl)
         {
-            addDecl(typedefDecl.m_typeref.type, from);
+            addDecl(_decl ~ typedefDecl.m_typeref.type, from);
         }
         else if (structDecl)
         {
             foreach (field; structDecl.m_fields)
             {
-                addDecl(field.type, from);
+                addDecl(_decl ~ field.type, from);
+            }
+            foreach (method; structDecl.m_methods)
+            {
+                addDecl(_decl ~ method.m_ret, from);
+                foreach (param; method.m_params)
+                {
+                    addDecl(_decl ~ param.typeRef.type, from);
+                }
             }
         }
     }
@@ -366,7 +411,8 @@ class DExporter
             rmdirRecurse(dir);
         }
 
-        // resolve typedef
+        // prepare
+        m_parser.resolveForeardDecl();
         m_parser.resolveTypedef();
 
         // gather export items
@@ -378,7 +424,7 @@ class DExporter
             {
                 foreach (decl; mainHeader.types)
                 {
-                    addDecl(decl);
+                    addDecl([decl]);
                 }
             }
             else

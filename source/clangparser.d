@@ -1,4 +1,5 @@
 module clangparser;
+import std.typecons : Tuple;
 import std.file;
 import std.string;
 import std.array;
@@ -130,7 +131,11 @@ class Parser
             break;
 
         case CXCursorKind.CXCursor_FunctionDecl:
-            parseFunction(cursor, context.isExternC);
+            {
+                auto decl = parseFunction(cursor, context.isExternC);
+                auto header = getOrCreateHeader(cursor);
+                header.types ~= decl;
+            }
             break;
 
         case CXCursorKind.CXCursor_StructDecl:
@@ -422,6 +427,21 @@ class Parser
         pushTypedef(cursor, type);
     }
 
+    void resolveForeardDecl()
+    {
+        foreach(k, v; m_declMap)
+        {
+            Struct decl = cast(Struct)v;
+            if (!decl)
+            {
+                return;
+            }
+
+            // replace(t.hash, decl, decl.m_definition);
+            decl.resovleForeardDeclaration();
+        }
+    }
+
     // https://joshpeterson.github.io/identifying-a-forward-declaration-with-libclang
     static bool is_forward_declaration(CXCursor cursor)
     {
@@ -451,7 +471,7 @@ class Parser
         }
 
         // first regist
-        auto decl = new Struct(location.path, location.line, name, []);
+        auto decl = new Struct(location.path, location.line, name);
         decl.m_forwardDecl = is_forward_declaration(cursor);
         auto canonical = clang_getCanonicalCursor(cursor);
         if (canonical != cursor)
@@ -495,6 +515,12 @@ class Parser
                 break;
 
             case CXCursorKind.CXCursor_CXXMethod:
+                {
+                    Function method = parseFunction(child, false);
+                    decl.m_methods ~= method;
+                }
+                break;
+
             case CXCursorKind.CXCursor_Constructor:
             case CXCursorKind.CXCursor_Destructor:
             case CXCursorKind.CXCursor_ConversionFunction:
@@ -545,7 +571,7 @@ class Parser
         header.types ~= decl;
     }
 
-    void parseFunction(CXCursor cursor, bool externC)
+    Function parseFunction(CXCursor cursor, bool externC)
     {
         auto location = getCursorLocation(cursor);
         auto name = getCursorSpelling(cursor);
@@ -603,9 +629,7 @@ class Parser
 
         auto decl = new Function(location.path, location.line, name, ret,
                 params, dllExport, externC);
-
-        auto header = getOrCreateHeader(cursor);
-        header.types ~= decl;
+        return decl;
     }
 
     bool parse(string[] headers, string[] includes)
@@ -640,5 +664,4 @@ class Parser
 
         return true;
     }
-
 }

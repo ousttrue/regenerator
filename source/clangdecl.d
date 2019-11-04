@@ -117,14 +117,38 @@ struct Field
 class Struct : UserDecl
 {
     Field[] m_fields;
-    UUID m_iid;
+    Function[] m_methods;
+
+    // no fields and no moethods, but different CXCursor
     bool m_forwardDecl;
+
+    // forwardDecl definition
     Struct m_definition;
 
-    this(string path, int line, string name, Field[] fields)
+    // Windows COM IID
+    UUID m_iid;
+
+    this(string path, int line, string name)
     {
         super(path, line, name);
-        m_fields = fields;
+    }
+
+    void resovleForeardDeclaration()
+    {
+        if(!m_forwardDecl)
+        {
+            return;
+        }
+        if (!m_definition)
+        {
+            return;
+        }
+
+        m_forwardDecl = false;
+        m_fields = m_definition.m_fields;
+        m_methods = m_definition.m_methods;
+        m_iid = m_definition.m_iid;
+        m_definition = null;
     }
 }
 
@@ -146,7 +170,7 @@ class Enum : UserDecl
 
     ulong maxValue()
     {
-        auto indexValue  = m_values.enumerate.maxElement!"a.value.value"();
+        auto indexValue = m_values.enumerate.maxElement!"a.value.value"();
         return indexValue[1].value;
     }
 }
