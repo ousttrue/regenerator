@@ -548,8 +548,25 @@ class Parser
             case CXCursorKind.CXCursor_ObjCClassMethodDecl:
             case CXCursorKind.CXCursor_UnexposedExpr:
             case CXCursorKind.CXCursor_AlignedAttr:
-            case CXCursorKind.CXCursor_CXXBaseSpecifier:
             case CXCursorKind.CXCursor_CXXAccessSpecifier:
+                break;
+
+            case CXCursorKind.CXCursor_CXXBaseSpecifier:
+                {
+                    foreach (base; CXCursorIterator(child))
+                    {
+                        auto baseKind = cast(CXCursorKind) clang_getCursorKind(base);
+                        if (baseKind == CXCursorKind.CXCursor_TypeRef)
+                        {
+                            auto referenced = clang_getCursorReferenced(base);
+                            auto referencedKind = cast(CXCursorKind) clang_getCursorKind(referenced);
+                            debug auto referencedKindName = getCursorKindName(referencedKind);
+                            auto baseDecl = cast(UserDecl) getDeclFromCursor(referenced);
+                            assert(baseDecl);
+                            decl.m_base = baseDecl;
+                        }
+                    }
+                }
                 break;
 
             default:

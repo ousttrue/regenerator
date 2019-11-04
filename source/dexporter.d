@@ -145,7 +145,12 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
     else
     {
         // interface
-        f.writefln("interface %s", name);
+        f.writef("interface %s", name);
+        if (decl.m_base)
+        {
+            f.writef(": %s", decl.m_base.m_name);
+        }
+        f.writeln();
         f.writeln("{");
         // methods
         foreach (method; decl.m_methods)
@@ -264,13 +269,14 @@ class DSource
         }
         return false;
     }
+
     static BASETYPS = "core.sys.windows.basetyps";
     static string[] basetypsSymbols = [__traits(allMembers, core.sys.windows.basetyps)];
     bool includeBasetyps(string name)
     {
-        if(!basetypsSymbols.find(name).empty)
+        if (!basetypsSymbols.find(name).empty)
         {
-            if(!m_modules.find(BASETYPS).empty)
+            if (!m_modules.find(BASETYPS).empty)
             {
                 m_modules ~= BASETYPS;
                 return true;
@@ -330,9 +336,9 @@ class DSource
             foreach (src; m_imports)
             {
                 f.writefln("import %s.%s;", packageName, src.getName());
-                foreach(m; src.m_modules)
+                foreach (m; src.m_modules)
                 {
-                    if(modules.find(m).empty)
+                    if (modules.find(m).empty)
                     {
                         f.writefln("import %s;", m);
                         modules ~= m;
@@ -467,6 +473,10 @@ class DExporter
         }
         else if (structDecl)
         {
+            if (structDecl.m_base)
+            {
+                addDecl(_decl ~ structDecl.m_base, from);
+            }
             foreach (field; structDecl.m_fields)
             {
                 addDecl(_decl ~ field.type, from);

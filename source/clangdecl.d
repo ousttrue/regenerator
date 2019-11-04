@@ -116,6 +116,7 @@ struct Field
 
 class Struct : UserDecl
 {
+    UserDecl m_base;
     Field[] m_fields;
     Function[] m_methods;
 
@@ -135,7 +136,7 @@ class Struct : UserDecl
 
     void resovleForeardDeclaration()
     {
-        if(!m_forwardDecl)
+        if (!m_forwardDecl)
         {
             return;
         }
