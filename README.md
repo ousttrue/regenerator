@@ -23,7 +23,7 @@ $ dclangen.exe -I "C:/Program Files/LLVM/include" --outdir source/libclang -H "C
 * `-I` IncludeDirectory
 * `-H` Process Header
 
-generate d sources to `source/libclang`
+generate d sources to [source/libclang](./source/libclang)
 
 ### generate d3d
 
