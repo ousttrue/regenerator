@@ -185,6 +185,25 @@ class Typedef : UserDecl
         super(path, line, name);
         m_typeref = TypeRef(type, isConst);
     }
+
+    Decl getConcreteDecl(Decl[] path = [])
+    {
+        foreach (x; path)
+        {
+            if (x == this)
+            {
+                return null;
+            }
+        }
+
+        auto nest = cast(Typedef) m_typeref.type;
+        if (!nest)
+        {
+            return nest;
+        }
+
+        return nest.getConcreteDecl(path ~ this);
+    }
 }
 
 struct Param

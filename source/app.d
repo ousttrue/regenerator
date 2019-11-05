@@ -1,7 +1,8 @@
 import std.getopt;
 import std.string;
 import clangparser;
-import dexporter;
+import exporter.processor;
+import exporter.dlangexporter;
 
 int main(string[] args)
 {
@@ -13,12 +14,21 @@ int main(string[] args)
 
 	auto parser = new Parser();
 
+	// 型情報を集める
 	parser.parse(headers, includes);
+
+	// 出力する情報を整理する
+	auto sourceMap = process(parser, headers);
 
 	if (dir)
 	{
-		auto exporter = new DExporter(parser);
-		exporter.exportD(headers, dir);
+		if (sourceMap.empty)
+		{
+			throw new Exception("empty");
+		}
+
+		// D言語に変換する
+		dlangExport(sourceMap, dir);
 	}
 
 	return 0;
