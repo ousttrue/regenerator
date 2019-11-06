@@ -120,7 +120,6 @@ class Struct : UserDecl
     Field[] m_fields;
     Function[] m_methods;
 
-    // no fields and no moethods, but different CXCursor
     bool m_forwardDecl;
 
     // forwardDecl definition

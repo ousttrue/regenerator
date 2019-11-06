@@ -5,12 +5,6 @@ import std.file;
 import std.array;
 import libclang;
 
-struct Source
-{
-    string path;
-    byte[] content;
-}
-
 CXTranslationUnitImpl* getTU(void* index, string[] headers, string[] params)
 {
     byte*[] c_params;
@@ -34,6 +28,11 @@ CXTranslationUnitImpl* getTU(void* index, string[] headers, string[] params)
             sb.put(format("#include \"%s\"\n", header));
         }
 
+        struct Source
+        {
+            string path;
+            byte[] content;
+        }
         auto source = Source("__tmp__dclangen__.h", cast(byte[]) sb.data);
 
         // use unsaved files
@@ -142,9 +141,28 @@ CXToken[] getTokens(CXCursor cursor)
     return tokens[0 .. num];
 }
 
+string tokenToString(CXCursor cursor, CXToken token)
+{
+    auto tu = clang_Cursor_getTranslationUnit(cursor);
+    auto tokenSpelling = clang_getTokenSpelling(tu, token);
+    scope (exit)
+        clang_disposeString(tokenSpelling);
+    return CXStringToString(tokenSpelling);
+}
+
 string TerminatedString(string src)
 {
     auto x = toStringz(src);
     auto y = x[0 .. src.length + 1];
     return to!string(y.ptr);
+}
+
+string escapePath(string src)
+{
+    auto escaped = src.replace("\\", "/");
+    version (Windows)
+    {
+        escaped = escaped.toLower();
+    }
+    return escaped;
 }

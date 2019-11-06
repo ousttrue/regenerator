@@ -1,5 +1,6 @@
 module clangparser;
 import std.typecons : Tuple;
+import std.algorithm;
 import std.file;
 import std.string;
 import std.array;
@@ -12,10 +13,17 @@ import clangdecl;
 import clanghelper;
 import sliceview;
 
+struct MacroDefinition
+{
+    string name;
+    string value;
+}
+
 class Header
 {
     string source;
     UserDecl[] types;
+    MacroDefinition[] m_macros;
 }
 
 auto D3D11_KEY = "MIDL_INTERFACE(\"";
@@ -93,11 +101,7 @@ class Parser
             break;
 
         case CXCursorKind.CXCursor_MacroDefinition:
-            // D3D11_SDK_VERSION
-            // DXGI_USAGE_RENDER_TARGET_OUTPUT
-            {
-                debug auto a = 0;
-            }
+            parseMacroDefinition(cursor);
             break;
 
         case CXCursorKind.CXCursor_Namespace:
@@ -118,9 +122,8 @@ class Parser
                 if (tokens.length >= 2)
                 {
                     // extern C
-                    auto token0 = CXStringToString(clang_getTokenSpelling(tu, tokens[0]));
-                    auto token1 = CXStringToString(clang_getTokenSpelling(tu, tokens[1]));
-                    if (token0 == "extern" && token1 == "\"C\"")
+                    if (tokenToString(cursor, tokens[0]) == "extern"
+                            && tokenToString(cursor, tokens[1]) == "\"C\"")
                     {
                         context.isExternC = true;
                     }
@@ -366,16 +369,6 @@ class Parser
 
     Header[string] m_headers;
 
-    string escapePath(string src)
-    {
-        auto escaped = src.replace("\\", "/");
-        version (Windows)
-        {
-            escaped = escaped.toLower();
-        }
-        return escaped;
-    }
-
     Header getHeader(string path)
     {
         auto escaped = escapePath(path);
@@ -529,8 +522,6 @@ class Parser
             case CXCursorKind.CXCursor_UnexposedAttr:
                 {
                     auto src = getSource(child);
-                    // auto spelling = getCursorSpelling(child);
-                    // auto tokens = getTokens(child);
                     auto uuid = getUUID(src);
                     if (!uuid.empty())
                     {
@@ -671,6 +662,46 @@ class Parser
         auto decl = new Function(location.path, location.line, name, ret,
                 params, dllExport, externC);
         return decl;
+    }
+
+    void parseMacroDefinition(CXCursor cursor)
+    {
+        auto location = getCursorLocation(cursor);
+        if (!location.path)
+        {
+            return;
+        }
+
+        // auto src = getSource(cursor);
+        auto tu = clang_Cursor_getTranslationUnit(cursor);
+        auto tokens = getTokens(cursor);
+        scope (exit)
+            clang_disposeTokens(tu, tokens.ptr, cast(uint) tokens.length);
+        assert(tokens.length);
+        if (tokens.length == 1)
+        {
+            return;
+        }
+
+        string[] tokenSpellings = tokens.map!(t => tokenToString(cursor, t)).array();
+        // debug auto view = makeView(tokenSpellings);
+        if (tokenSpellings[1] == "(" && !tokenSpellings[2 .. $ - 1].find(")").empty)
+        {
+            // #define hoge() body
+            return;
+        }
+
+        debug
+        {
+            if (tokenSpellings[0] == "D3D11_SDK_VERSION")
+            {
+                auto a = 0;
+            }
+            // DXGI_USAGE_RENDER_TARGET_OUTPUT
+        }
+
+        auto header = getOrCreateHeader(cursor);
+        header.m_macros ~= MacroDefinition(tokenSpellings[0], tokenSpellings[1 .. $].join(" "));
     }
 
     bool parse(string[] headers, string[] includes)

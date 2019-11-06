@@ -1,6 +1,7 @@
 module exporter.dlangexporter;
 import exporter.source;
 import clangdecl;
+import std.ascii;
 import std.stdio;
 import std.string;
 import std.path;
@@ -123,7 +124,7 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
         f.writeln("{");
         if (!decl.m_iid.empty)
         {
-            f.writefln("    static immutable iidof = parseUUID(\"%s\");", decl.m_iid.toString());
+            f.writefln("    enum iidof = parseUUID(\"%s\");", decl.m_iid.toString());
         }
         // methods
         foreach (method; decl.m_methods)
@@ -283,6 +284,19 @@ void dlangExport(Source[string] sourceMap, string dir)
                         }
                     }
                 }
+            }
+
+            // const
+            foreach (macroDefinition; source.m_macros)
+            {
+                if (macroDefinition.value[0].isAlpha)
+                {
+                    // typedef ?
+                    // IID_ID3DBlob = IID_ID3D10Blob;
+                    // INTERFACE = ID3DInclude;
+                    continue;
+                }
+                f.writefln("enum %s = %s;", macroDefinition.name, macroDefinition.value);
             }
 
             // types

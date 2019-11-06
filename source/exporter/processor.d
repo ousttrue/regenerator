@@ -2,6 +2,7 @@ module exporter.processor;
 import exporter.source;
 import clangdecl;
 import clangparser;
+import clanghelper;
 import sliceview;
 import std.stdio;
 import std.string;
@@ -24,8 +25,15 @@ class Processor
 {
     Source[string] m_sourceMap;
 
+    Source getSource(string path)
+    {
+        return m_sourceMap[escapePath(path)];
+    }
+
     Source getOrCreateSource(string path)
     {
+        path = escapePath(path);
+
         auto source = m_sourceMap.get(path, null);
         if (!source)
         {
@@ -164,13 +172,17 @@ class Processor
         debug auto parsedHeaders = makeView(parser.m_headers);
         foreach (header; headers)
         {
-            Header mainHeader = parser.getHeader(header);
-            if (mainHeader)
+            Header exportHeader = parser.getHeader(header);
+            if (exportHeader)
             {
-                foreach (decl; mainHeader.types)
+                foreach (decl; exportHeader.types)
                 {
                     addDecl([decl]);
                 }
+
+                debug auto sourceView = makeView(m_sourceMap);
+                auto target = getSource(header);
+                target.m_macros = exportHeader.m_macros;
             }
             else
             {

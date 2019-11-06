@@ -1,5 +1,6 @@
 module exporter.source;
 import clangdecl;
+import clangparser;
 import std.path;
 import std.file;
 import std.range;
@@ -26,6 +27,8 @@ class Source
 
     Source[] m_imports;
     UserDecl[] m_types;
+
+    MacroDefinition[] m_macros;
 
     bool empty()
     {
