@@ -85,13 +85,19 @@ class Parser
         switch (cursorKind)
         {
         case CXCursorKind.CXCursor_InclusionDirective:
-        case CXCursorKind.CXCursor_MacroDefinition:
         case CXCursorKind.CXCursor_MacroExpansion:
         case CXCursorKind.CXCursor_ClassTemplate:
         case CXCursorKind.CXCursor_ClassTemplatePartialSpecialization:
         case CXCursorKind.CXCursor_FunctionTemplate:
-        case CXCursorKind.CXCursor_UsingDeclaration:
-            // skip
+        case CXCursorKind.CXCursor_UsingDeclaration: // skip
+            break;
+
+        case CXCursorKind.CXCursor_MacroDefinition:
+            // D3D11_SDK_VERSION
+            // DXGI_USAGE_RENDER_TARGET_OUTPUT
+            {
+                debug auto a = 0;
+            }
             break;
 
         case CXCursorKind.CXCursor_Namespace:

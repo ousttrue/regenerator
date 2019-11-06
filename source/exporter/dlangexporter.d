@@ -51,8 +51,7 @@ static bool isInterface(Decl decl)
         structDecl = structDecl.m_definition;
     }
 
-    bool empty = structDecl.m_iid.empty();
-    return !empty;
+    return structDecl.isInterface;
 }
 
 string DPointer(Pointer t)
@@ -112,7 +111,28 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
         return;
     }
 
-    if (decl.m_iid.empty())
+    if (decl.isInterface)
+    {
+        // interface
+        f.writef("interface %s", name);
+        if (decl.m_base)
+        {
+            f.writef(": %s", decl.m_base.m_name);
+        }
+        f.writeln();
+        f.writeln("{");
+        if (!decl.m_iid.empty)
+        {
+            f.writefln("    static immutable iidof = parseUUID(\"%s\");", decl.m_iid.toString());
+        }
+        // methods
+        foreach (method; decl.m_methods)
+        {
+            DFucntionDecl(f, method, "    ");
+        }
+        f.writeln("}");
+    }
+    else
     {
         // struct
         if (decl.m_fields.empty())
@@ -134,27 +154,6 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
             {
                 f.writefln("   %s %s;", typeName, DEscapeName(field.name));
             }
-        }
-        f.writeln("}");
-    }
-    else
-    {
-        // interface
-        f.writef("interface %s", name);
-        if (decl.m_base)
-        {
-            f.writef(": %s", decl.m_base.m_name);
-        }
-        f.writeln();
-        f.writeln("{");
-        if (!decl.m_iid.empty)
-        {
-            f.writefln("    static immutable iidof = parseUUID(\"%s\");", decl.m_iid.toString());
-        }
-        // methods
-        foreach (method; decl.m_methods)
-        {
-            DFucntionDecl(f, method, "    ");
         }
         f.writeln("}");
     }

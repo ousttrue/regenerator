@@ -128,6 +128,22 @@ class Struct : UserDecl
 
     // Windows COM IID
     UUID m_iid;
+    bool isInterface()
+    {
+        if (!m_iid.empty)
+        {
+            return true;
+        }
+
+        // 例外
+        // ID3DInclude
+        if (m_name[0] == 'I' && m_fields.length == 0 && m_methods.length > 0)
+        {
+            return true;
+        }
+
+        return false;
+    }
 
     this(string path, int line, string name)
     {
