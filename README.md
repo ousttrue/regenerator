@@ -23,7 +23,8 @@ Parse c++ source by libclang.cindex, and generate Dlang Source.
 $ dclangen.exe -I "C:/Program Files/LLVM/include" --outdir source/libclang -H "C:/Program Files/LLVM/include/clang-c/Index.h" -H "C:/Program Files/LLVM/include/clang-c/CXString.h"
 ```
 
-* `-I` IncludeDirectory: clang argument
+* `--outdir` Output Directory: remove if exists, then write exported files
+* `-I` Include Directory: clang argument
 * `-H` Process Header: file that contains functions and macro definitions
 
 generate d sources to [source/libclang](./source/libclang)
