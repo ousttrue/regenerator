@@ -31,7 +31,7 @@ generate d sources to [source/libclang](./source/libclang)
 ### generate d3d
 
 ```
-$ dclangen.exe --outdir source/d3d11 -H "C:/Program Files (x86)/Windows Kits/10/Include/10.0.17763.0/um/d3d11.h"
+$ dclangen.exe --outdir source/d3d11 -H "C:/Program Files (x86)/Windows Kits/10/Include/10.0.17763.0/um/d3d11.h -H "C:/Program Files (x86)/Windows Kits/10/Include/10.0.17763.0/shared/dxgi.h"
 ```
 
 ## clang command line
