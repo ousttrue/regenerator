@@ -15,7 +15,7 @@ Parse c++ source by libclang.cindex, and generate Dlang Source.
 * [x] use `core.sys.windows.windows`
 * [x] com interface uuid
 * [x] com interface inheritance
-* [ ] macro define value
+* [x] macro definition value
 
 ## Usage
 
