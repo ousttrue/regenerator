@@ -148,9 +148,12 @@ class Parser
             break;
 
         case CXCursorKind.CXCursor_StructDecl:
-        case CXCursorKind.CXCursor_UnionDecl:
         case CXCursorKind.CXCursor_ClassDecl:
-            parseStruct(cursor, context.enterStruct());
+            parseStruct(cursor, context.enterStruct(), false);
+            break;
+
+        case CXCursorKind.CXCursor_UnionDecl:
+            parseStruct(cursor, context.enterStruct(), true);
             break;
 
         case CXCursorKind.CXCursor_EnumDecl:
@@ -483,13 +486,14 @@ class Parser
         return !clang_equalCursors(cursor, definition);
     }
 
-    void parseStruct(CXCursor cursor, Context context)
+    void parseStruct(CXCursor cursor, Context context, bool isUnion)
     {
         auto location = getCursorLocation(cursor);
         auto name = getCursorSpelling(cursor);
 
         // first regist
         auto decl = new Struct(location.path, location.line, name);
+        decl.m_isUnion = isUnion;
         decl.m_forwardDecl = is_forward_declaration(cursor);
         if (!decl.m_forwardDecl)
         {
@@ -568,6 +572,16 @@ class Parser
 
             default:
                 traverse(child, context);
+                if (CXCursorKind.CXCursor_StructDecl
+                        || CXCursorKind.CXCursor_ClassDecl || CXCursorKind.CXCursor_UnionDecl)
+                {
+                    if (fieldName == "")
+                    {
+                        // anonymous
+                        auto fieldDecl = getDeclFromCursor(child);
+                        decl.m_fields ~= Field(fieldName, fieldDecl);
+                    }
+                }
                 break;
             }
         }

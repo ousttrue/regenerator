@@ -150,8 +150,36 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
             auto typeName = DType(field.type);
             if (!typeName)
             {
-                // anonymous union, struct
-                f.writefln("   // anonymous %s;", DEscapeName(field.name));
+                auto structDecl = cast(Struct) field.type;
+                if (structDecl)
+                {
+                    if (structDecl.m_isUnion)
+                    {
+                        // typedef struct D3D11_VIDEO_COLOR
+                        // {
+                        // union 
+                        //     {
+                        //     int YCbCr;
+                        //     float RGBA;
+                        //     } 	;
+                        // }                        
+                        f.writefln("    union {");
+                        foreach(unionField; structDecl.m_fields)
+                        {
+                            auto unionFieldTypeName = DType(unionField.type);
+                            f.writefln("       %s %s;", unionFieldTypeName, DEscapeName(unionField.name));
+                        }
+                        f.writefln("    }");
+                    }
+                    else
+                    {
+                        f.writefln("   // anonymous struct %s;", DEscapeName(field.name));
+                    }
+                }
+                else
+                {
+                    throw new Exception("unknown");
+                }
             }
             else
             {

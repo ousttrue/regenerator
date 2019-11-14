@@ -116,6 +116,8 @@ struct Field
 
 class Struct : UserDecl
 {
+    bool m_isUnion;
+
     UserDecl m_base;
     Field[] m_fields;
     Function[] m_methods;
