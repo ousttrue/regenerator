@@ -8,6 +8,7 @@ import std.path;
 import std.traits;
 import std.file;
 import std.algorithm;
+import sliceview;
 
 ///
 /// D言語向けに出力する
@@ -30,13 +31,6 @@ static bool isInterface(Decl decl)
     Typedef typedefDecl = cast(Typedef) decl;
     if (typedefDecl)
     {
-        debug
-        {
-            if (typedefDecl.m_name == "ID3D11DeviceContext")
-            {
-                auto a = 0;
-            }
-        }
         decl = typedefDecl.m_typeref.type;
     }
 
@@ -52,6 +46,14 @@ static bool isInterface(Decl decl)
         structDecl = structDecl.m_definition;
     }
 
+    debug
+    {
+        if (structDecl.m_name == "ID3D11DeviceContext")
+        {
+            auto methods = makeView(structDecl.m_methods);
+            auto a = 0;
+        }
+    }
     return structDecl.isInterface;
 }
 
@@ -129,7 +131,7 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
         // methods
         foreach (method; decl.m_methods)
         {
-            DFucntionDecl(f, method, "    ");
+            DFucntionDecl(f, method, "    ", true);
         }
         f.writeln("}");
     }
@@ -183,9 +185,9 @@ void DEnumDecl(File* f, Enum decl)
     f.writeln("}");
 }
 
-void DFucntionDecl(File* f, Function decl, string indent)
+void DFucntionDecl(File* f, Function decl, string indent, bool isMethod)
 {
-    if (!decl.m_dllExport)
+    if (!isMethod && !decl.m_dllExport)
     {
         auto retType = cast(UserDecl) decl.m_ret;
         if (!retType)
@@ -228,7 +230,7 @@ void DDecl(File* f, Decl decl)
 {
     castSwitch!((Typedef decl) => DTypedefDecl(f, decl),
             (Enum decl) => DEnumDecl(f, decl), (Struct decl) => DStructDecl(f,
-                decl), (Function decl) => DFucntionDecl(f, decl, ""))(decl);
+                decl), (Function decl) => DFucntionDecl(f, decl, "", false))(decl);
 }
 
 void dlangExport(Source[string] sourceMap, string dir)
