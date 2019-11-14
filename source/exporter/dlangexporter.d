@@ -167,7 +167,7 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
                         foreach(unionField; structDecl.m_fields)
                         {
                             auto unionFieldTypeName = DType(unionField.type);
-                            f.writefln("       %s %s;", unionFieldTypeName, DEscapeName(unionField.name));
+                            f.writefln("        %s %s;", unionFieldTypeName, DEscapeName(unionField.name));
                         }
                         f.writefln("    }");
                     }
@@ -183,7 +183,7 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
             }
             else
             {
-                f.writefln("   %s %s;", typeName, DEscapeName(field.name));
+                f.writefln("    %s %s;", typeName, DEscapeName(field.name));
             }
         }
         f.writeln("}");
