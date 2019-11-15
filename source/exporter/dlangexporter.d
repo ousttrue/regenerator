@@ -126,7 +126,7 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
         f.writeln("{");
         if (!decl.m_iid.empty)
         {
-            f.writefln("    enum iidof = parseGUID(\"%s\");", decl.m_iid.toString());
+            f.writefln("    static const iidof = parseGUID(\"%s\");", decl.m_iid.toString());
         }
         // methods
         foreach (method; decl.m_methods)
