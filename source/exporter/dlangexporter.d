@@ -126,7 +126,7 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
         f.writeln("{");
         if (!decl.m_iid.empty)
         {
-            f.writefln("    enum iidof = parseUUID(\"%s\");", decl.m_iid.toString());
+            f.writefln("    enum iidof = parseGUID(\"%s\");", decl.m_iid.toString());
         }
         // methods
         foreach (method; decl.m_methods)
@@ -164,10 +164,11 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
                         //     } 	;
                         // }                        
                         f.writefln("    union {");
-                        foreach(unionField; structDecl.m_fields)
+                        foreach (unionField; structDecl.m_fields)
                         {
                             auto unionFieldTypeName = DType(unionField.type);
-                            f.writefln("        %s %s;", unionFieldTypeName, DEscapeName(unionField.name));
+                            f.writefln("        %s %s;", unionFieldTypeName,
+                                    DEscapeName(unionField.name));
                         }
                         f.writefln("    }");
                     }
@@ -249,6 +250,10 @@ void DFucntionDecl(File* f, Function decl, string indent, bool isMethod)
         {
             f.write(", ");
         }
+        if(param.typeRef.isConst)
+        {
+            f.write("const ");
+        }
         f.write(format("%s %s", DType(param.typeRef.type), DEscapeName(param.name)));
     }
     f.writeln(");");
@@ -272,6 +277,7 @@ void dlangExport(Source[string] sourceMap, string dir)
 
     // write each source
     // auto sourcemap = makeView(m_sourceMap);
+    auto useGuid = false;
     foreach (k, source; sourceMap)
     {
         // source.writeTo(dir);
@@ -310,7 +316,8 @@ void dlangExport(Source[string] sourceMap, string dir)
 
                         if (m == moduleName!(core.sys.windows.unknwn))
                         {
-                            f.writeln("import std.uuid;");
+                            f.writefln("import %s.guidutil;", packageName);
+                            useGuid = true;
                         }
                     }
                 }
@@ -335,6 +342,42 @@ void dlangExport(Source[string] sourceMap, string dir)
                 DDecl(&f, decl);
             }
         }
+    }
+
+    if (useGuid)
+    {
+        // write utility
+        auto packageName = dir.baseName.stripExtension;
+        auto path = format("%s/guidutil.d", dir);
+        auto f = File(path, "w");
+        f.writefln("module %s.guidutil;", packageName);
+        f.writeln("
+import std.uuid;
+import core.sys.windows.basetyps;
+
+GUID parseGUID(string guid)
+{
+    return toGUID(parseUUID(guid));
+}
+GUID toGUID(immutable std.uuid.UUID uuid)
+{
+    ubyte[8] data=uuid.data[8..$];
+    return GUID(
+                uuid.data[0] << 24
+                |uuid.data[1] << 16
+                |uuid.data[2] << 8
+                |uuid.data[3],
+
+                uuid.data[4] << 8
+                |uuid.data[5],
+
+                uuid.data[6] << 8
+                |uuid.data[7],
+
+                data
+                );
+}
+");
     }
 
     // write package.d
