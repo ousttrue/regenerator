@@ -73,10 +73,8 @@ class Parser
         auto _ = getCursorKindName(cursorKind);
         debug
         {
-            auto locatoin = getCursorLocation(cursor);
-            if (
-                locatoin.path
-                    == "C:/Program Files (x86)/Windows Kits/10/Include/10.0.17763.0/um/d3dcompiler.h")
+            auto location = getCursorLocation(cursor);
+            if (location.path.endsWith("d3dcompiler.h"))
             {
                 if (cursorKind == CXCursorKind.CXCursor_MacroDefinition
                         || cursorKind == CXCursorKind.CXCursor_MacroExpansion)
@@ -90,13 +88,6 @@ class Parser
         }
 
         auto spelling = getCursorSpelling(cursor);
-        debug
-        {
-            if (spelling == "ID3D10Blob")
-            {
-                auto a = 0;
-            }
-        }
 
         // writefln("%s%s", context.getIndent(), kind);
         switch (cursorKind)
@@ -149,6 +140,10 @@ class Parser
             break;
 
         case CXCursorKind.CXCursor_FunctionDecl:
+            debug if (spelling == "D3DCompile")
+            {
+                auto a = 0;
+            }
             {
                 auto decl = parseFunction(cursor, context.isExternC);
                 if (decl)
@@ -318,8 +313,9 @@ class Parser
                 case CXCursorKind.CXCursor_TypeRef:
                     {
                         auto referenced = clang_getCursorReferenced(child);
-                        // auto referencedName = getCursorSpelling(referenced);
-                        // auto referencedKind = cast(CXCursorKind) clang_getCursorKind(referenced);
+                        debug auto referencedName = getCursorSpelling(referenced);
+                        debug auto referencedKind = cast(CXCursorKind) clang_getCursorKind(
+                                referenced);
                         return getDeclFromCursor(referenced);
                     }
 
@@ -502,11 +498,6 @@ class Parser
     {
         auto location = getCursorLocation(cursor);
         auto name = getCursorSpelling(cursor);
-        if (name == "ID3D10Effect")
-        {
-            debug auto a = 0;
-            return;
-        }
 
         // first regist
         auto decl = new Struct(location.path, location.line, name);
@@ -617,9 +608,9 @@ class Parser
             {
             case CXCursorKind.CXCursor_EnumConstantDecl:
                 {
-                    auto name = getCursorSpelling(child);
-                    auto value = clang_getEnumConstantDeclUnsignedValue(child);
-                    values ~= EnumValue(name, value);
+                    auto childName = getCursorSpelling(child);
+                    auto childValue = clang_getEnumConstantDeclUnsignedValue(child);
+                    values ~= EnumValue(childName, childValue);
                 }
                 break;
 

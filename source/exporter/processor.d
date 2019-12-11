@@ -110,7 +110,11 @@ class Processor
             return;
         }
         // get forward decl body
-        decl = getDefinition(decl);
+        auto forwardDecl = getDefinition(decl);
+        if (forwardDecl)
+        {
+            decl = forwardDecl;
+        }
 
         auto dsource = getOrCreateSource(decl.m_path);
         dsource.addDecl(decl);
