@@ -81,6 +81,10 @@ class Processor
         auto definition = structdecl.m_definition;
         debug
         {
+            if (!definition)
+            {
+                auto a = 0;
+            }
             if (decl.m_name == "IDXGIAdapter")
             {
                 auto a = 0;
@@ -105,6 +109,7 @@ class Processor
         {
             return;
         }
+        // get forward decl body
         decl = getDefinition(decl);
 
         auto dsource = getOrCreateSource(decl.m_path);

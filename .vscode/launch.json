@@ -40,6 +40,30 @@
                 "C:/Program Files (x86)/Windows Kits/10/Include/10.0.17763.0/um/d3d11.h",
                 "-H",
                 "C:/Program Files (x86)/Windows Kits/10/Include/10.0.17763.0/um/d3dcommon.h",
+                "-H",
+                "C:/Program Files (x86)/Windows Kits/10/Include/10.0.17763.0/um/d3dcompiler.h",
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [
+                {
+                    "name": "PATH",
+                    "value": "C:/Program Files/LLVM/bin"
+                }
+            ],
+            "externalConsole": false,
+            "visualizerFile": "${workspaceFolder}/d.natvis"
+        },
+        {
+            "name": "dclangen d3dcompiler",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/dclangen.exe",
+            "args": [
+                "--outdir",
+                "${workspaceFolder}/source/d3d11",
+                "-H",
+                "C:/Program Files (x86)/Windows Kits/10/Include/10.0.17763.0/um/d3dcompiler.h",
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

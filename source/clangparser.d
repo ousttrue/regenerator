@@ -71,19 +71,28 @@ class Parser
         auto tu = clang_Cursor_getTranslationUnit(cursor);
         auto cursorKind = cast(CXCursorKind) clang_getCursorKind(cursor);
         auto _ = getCursorKindName(cursorKind);
+        debug
+        {
+            auto locatoin = getCursorLocation(cursor);
+            if (
+                locatoin.path
+                    == "C:/Program Files (x86)/Windows Kits/10/Include/10.0.17763.0/um/d3dcompiler.h")
+            {
+                if (cursorKind == CXCursorKind.CXCursor_MacroDefinition
+                        || cursorKind == CXCursorKind.CXCursor_MacroExpansion)
+                {
+                }
+                else
+                {
+                    int a = 0;
+                }
+            }
+        }
 
         auto spelling = getCursorSpelling(cursor);
         debug
         {
-            if (spelling == "EXCEPTION_RECORD")
-            {
-                auto a = 0;
-            }
-            else if (spelling == "_EXCEPTION_RECORD")
-            {
-                auto a = 0;
-            }
-            else if (spelling == "PMemoryAllocator")
+            if (spelling == "ID3D10Blob")
             {
                 auto a = 0;
             }
@@ -142,8 +151,11 @@ class Parser
         case CXCursorKind.CXCursor_FunctionDecl:
             {
                 auto decl = parseFunction(cursor, context.isExternC);
-                auto header = getOrCreateHeader(cursor);
-                header.types ~= decl;
+                if (decl)
+                {
+                    auto header = getOrCreateHeader(cursor);
+                    header.types ~= decl;
+                }
             }
             break;
 
@@ -490,6 +502,11 @@ class Parser
     {
         auto location = getCursorLocation(cursor);
         auto name = getCursorSpelling(cursor);
+        if (name == "ID3D10Effect")
+        {
+            debug auto a = 0;
+            return;
+        }
 
         // first regist
         auto decl = new Struct(location.path, location.line, name);
@@ -623,9 +640,9 @@ class Parser
         auto name = getCursorSpelling(cursor);
         debug
         {
-            if (name == "D3D11CreateDevice")
+            if (name == "D3DDisassemble10Effect")
             {
-                auto a = 0;
+                return null;
             }
         }
 
