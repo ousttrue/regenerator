@@ -440,44 +440,6 @@ class Parser
         pushTypedef(cursor, type);
     }
 
-    // private void replace(uint hash, Struct src)
-    // {
-    //     auto dst = src.m_definition;
-    //     assert(dst);
-    //     foreach (k, v; m_declMap)
-    //     {
-    //         if (v == src)
-    //         {
-    //             assert(k == hash);
-    //         }
-    //         else
-    //         {
-    //             v.replace(src, dst, []);
-    //         }
-    //     }
-
-    //     m_declMap[hash] = dst;
-    // }
-
-    // void resolveForwardDecl()
-    // {
-    //     Decl[uint] map;
-    //     foreach (k, v; m_declMap)
-    //     {
-    //         Struct structDecl = cast(Struct) v;
-    //         if (structDecl && structDecl.m_forwardDecl && structDecl.m_definition)
-    //         {
-    //             replace(k, structDecl);
-    //             map[k] = structDecl.m_definition;
-    //         }
-    //         else
-    //         {
-    //             map[k] = v;
-    //         }
-    //     }
-    //     m_declMap = map;
-    // }
-
     // https://joshpeterson.github.io/identifying-a-forward-declaration-with-libclang
     static bool is_forward_declaration(CXCursor cursor)
     {
