@@ -18,7 +18,7 @@ CXTranslationUnitImpl* getTU(void* index, string[] headers, string[] params)
     if (headers.length == 1)
     {
         return clang_parseTranslationUnit(index, cast(byte*) headers[0].toStringz(),
-                c_params.ptr, cast(int) params.length, null, 0, cast(uint) options);
+                c_params.ptr, cast(int) params.length, null, 0, options);
     }
     else
     {
@@ -31,14 +31,15 @@ CXTranslationUnitImpl* getTU(void* index, string[] headers, string[] params)
         struct Source
         {
             string path;
-            byte[] content;
+            string content;
         }
-        auto source = Source("__tmp__dclangen__.h", cast(byte[]) sb.data);
+
+        auto source = Source("__tmp__dclangen__.h", sb.data);
 
         // use unsaved files
         CXUnsavedFile[] files;
-        files ~= CXUnsavedFile(cast(byte*) source.path.ptr, source.content.ptr,
-                cast(uint) source.content.length);
+        files ~= CXUnsavedFile(cast(byte*) source.path.ptr,
+                cast(byte*) source.content.ptr, cast(uint) source.content.length);
 
         return clang_parseTranslationUnit(index, cast(byte*) headers[0].toStringz(),
                 c_params.ptr, cast(int) params.length, files.ptr, cast(uint) files.length, options);

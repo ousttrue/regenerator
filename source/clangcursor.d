@@ -40,7 +40,7 @@ struct CXCursorIterator
 {
     CXCursor cursor;
     applyCallback callback;
-    int end;
+    // int end;
 
     this(CXCursor cursor)
     {
@@ -51,14 +51,14 @@ struct CXCursorIterator
     {
         callback = dg;
         clang_visitChildren(cursor, &visitor, &this);
-        return end;
+        return 0;
     }
 
     CXChildVisitResult call(CXCursor cursor)
     {
         if (callback(cursor))
         {
-            end = 1;
+            // end = 1;
             return CXChildVisitResult.CXChildVisit_Break;
         }
 
