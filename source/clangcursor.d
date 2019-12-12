@@ -29,39 +29,20 @@ struct Context
     }
 }
 
-alias applyCallback = int delegate(CXCursor);
-
-extern (C) CXChildVisitResult visitor(CXCursor cursor, CXCursor /* parent */ , CXCursorIterator* it)
+struct CursorList
 {
-    return it.call(cursor);
+    CXCursor[] cursors;
 }
 
-struct CXCursorIterator
+extern (C) CXChildVisitResult visitor(CXCursor cursor, CXCursor /* parent */ , CursorList* list)
 {
-    CXCursor cursor;
-    applyCallback callback;
-    // int end;
+    list.cursors ~= cursor;
+    return CXChildVisitResult.CXChildVisit_Continue;
+}
 
-    this(CXCursor cursor)
-    {
-        this.cursor = cursor;
-    }
-
-    int opApply(applyCallback dg)
-    {
-        callback = dg;
-        clang_visitChildren(cursor, &visitor, &this);
-        return 0;
-    }
-
-    CXChildVisitResult call(CXCursor cursor)
-    {
-        if (callback(cursor))
-        {
-            // end = 1;
-            return CXChildVisitResult.CXChildVisit_Break;
-        }
-
-        return CXChildVisitResult.CXChildVisit_Continue;
-    }
+CXCursor[] getChildren(CXCursor cursor)
+{
+    CursorList list;
+    clang_visitChildren(cursor, &visitor, &list);
+    return list.cursors;
 }

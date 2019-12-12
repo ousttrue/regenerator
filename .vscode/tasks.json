@@ -18,9 +18,12 @@
                 "reveal": "always",
                 "panel": "new"
             },
-            "problemMatcher": []
+            "problemMatcher": [
+                "$dmd"
+            ],
         },
         {
+            "label": "dub",
             "type": "dub",
             "run": false,
             "compiler": "dmd",

@@ -107,6 +107,11 @@ Location getCursorLocation(CXCursor cursor)
     uint offset;
     clang_getInstantiationLocation(location, &file, &line, &column, &offset);
     auto path = CXStringToString(clang_getFileName(file));
+    if(!path.length)
+    {
+        return Location();
+    }
+    path = escapePath(path);
 
     auto extent = clang_getCursorExtent(cursor);
     // auto begin = clang_getRangeStart(extent);

@@ -97,7 +97,9 @@ class Parser
         case CXCursorKind.CXCursor_ClassTemplate:
         case CXCursorKind.CXCursor_ClassTemplatePartialSpecialization:
         case CXCursorKind.CXCursor_FunctionTemplate:
-        case CXCursorKind.CXCursor_UsingDeclaration: // skip
+        case CXCursorKind.CXCursor_UsingDeclaration:
+        case CXCursorKind.CXCursor_StaticAssert:
+            // skip
             break;
 
         case CXCursorKind.CXCursor_MacroDefinition:
@@ -106,7 +108,7 @@ class Parser
 
         case CXCursorKind.CXCursor_Namespace:
             {
-                foreach (child; CXCursorIterator(cursor))
+                foreach (child; cursor.getChildren())
                 {
                     traverse(child, context.getChild());
                 }
@@ -128,7 +130,7 @@ class Parser
                         context.isExternC = true;
                     }
                 }
-                foreach (child; CXCursorIterator(cursor))
+                foreach (child; cursor.getChildren())
                 {
                     traverse(child, context.getChild());
                 }
@@ -273,7 +275,7 @@ class Parser
 
         if (type.kind == CXTypeKind.CXType_Record)
         {
-            auto children = CXCursorIterator(cursor).array();
+            auto children = cursor.getChildren();
             foreach (child; children)
             {
                 auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
@@ -282,10 +284,10 @@ class Parser
                     auto referenced = clang_getCursorReferenced(child);
                     return getDeclFromCursor(referenced);
                 }
-                else
-                {
-                    return getDeclFromCursor(child);
-                }
+                // else
+                // {
+                //     return getDeclFromCursor(child);
+                // }
             }
 
             int a = 0;
@@ -295,8 +297,7 @@ class Parser
         if (type.kind == CXTypeKind.CXType_Elaborated)
         {
             // struct
-            auto children = CXCursorIterator(cursor).array();
-            foreach (child; children)
+            foreach (child; cursor.getChildren())
             {
                 auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
                 auto childKindName = getCursorKindName(childKind);
@@ -338,8 +339,7 @@ class Parser
 
         if (type.kind == CXTypeKind.CXType_Typedef)
         {
-            auto children = CXCursorIterator(cursor).array();
-            foreach (child; children)
+            foreach (child; cursor.getChildren())
             {
                 auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
                 switch (childKind)
@@ -517,7 +517,7 @@ class Parser
         header.types ~= decl;
 
         // after fields
-        foreach (child; CXCursorIterator(cursor))
+        foreach (child; cursor.getChildren())
         {
             auto fieldName = getCursorSpelling(child);
             auto fieldKind = cast(CXCursorKind) clang_getCursorKind(child);
@@ -562,7 +562,7 @@ class Parser
 
             case CXCursorKind.CXCursor_CXXBaseSpecifier:
                 {
-                    foreach (base; CXCursorIterator(child))
+                    foreach (base; child.getChildren())
                     {
                         auto baseKind = cast(CXCursorKind) clang_getCursorKind(base);
                         if (baseKind == CXCursorKind.CXCursor_TypeRef)
@@ -601,7 +601,7 @@ class Parser
         auto name = getCursorSpelling(cursor);
 
         EnumValue[] values;
-        foreach (child; CXCursorIterator(cursor))
+        foreach (child; cursor.getChildren())
         {
             auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
             switch (childKind)
@@ -642,7 +642,7 @@ class Parser
 
         bool dllExport = false;
         Param[] params;
-        foreach (child; CXCursorIterator(cursor))
+        foreach (child; cursor.getChildren())
         {
             debug auto tmp = name;
             auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
@@ -750,8 +750,8 @@ class Parser
             clang_disposeTranslationUnit(tu);
 
         auto rootCursor = clang_getTranslationUnitCursor(tu);
-
-        foreach (cursor; CXCursorIterator(rootCursor))
+        auto children = rootCursor.getChildren();
+        foreach (cursor; children)
         {
             traverse(cursor);
         }
