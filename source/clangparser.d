@@ -713,10 +713,25 @@ class Parser
 
         auto rootCursor = clang_getTranslationUnitCursor(tu);
         auto children = rootCursor.getChildren();
+        // int[string] pathMap;
         foreach (cursor; children)
         {
+            // auto location = getCursorLocation(cursor);
+            // if (location.path.length && location.path !in pathMap)
+            // {
+            //     pathMap[location.path] = 1;
+            // }
+            // else
+            // {
+            //     pathMap[location.path]++;
+            // }
             traverse(cursor);
         }
+
+        // foreach (k, v; pathMap)
+        // {
+        //     writeln(k, v);
+        // }
 
         return true;
     }

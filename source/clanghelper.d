@@ -41,7 +41,7 @@ CXTranslationUnitImpl* getTU(void* index, string[] headers, string[] params)
         files ~= CXUnsavedFile(cast(byte*) source.path.ptr,
                 cast(byte*) source.content.ptr, cast(uint) source.content.length);
 
-        return clang_parseTranslationUnit(index, cast(byte*) headers[0].toStringz(),
+        return clang_parseTranslationUnit(index, cast(byte*) "__tmp__dclangen__.h".toStringz(),
                 c_params.ptr, cast(int) params.length, files.ptr, cast(uint) files.length, options);
     }
 }
@@ -101,13 +101,21 @@ struct Location
 Location getCursorLocation(CXCursor cursor)
 {
     auto location = clang_getCursorLocation(cursor);
+    if (clang_equalLocations(location, clang_getNullLocation()))
+    {
+        return Location();
+    }
     void* file;
     uint line;
     uint column;
     uint offset;
     clang_getInstantiationLocation(location, &file, &line, &column, &offset);
+    if (!file)
+    {
+        return Location();
+    }
     auto path = CXStringToString(clang_getFileName(file));
-    if(!path.length)
+    if (!path.length)
     {
         return Location();
     }
