@@ -46,20 +46,26 @@ static bool isInterface(Decl decl)
         structDecl = structDecl.m_definition;
     }
 
-    debug
-    {
-        if (structDecl.m_name == "ID3D11DeviceContext")
-        {
-            auto methods = makeView(structDecl.m_methods);
-            auto a = 0;
-        }
-    }
     return structDecl.isInterface;
+}
+
+string GetName(Decl decl)
+{
+    auto userDecl = cast(UserDecl) decl;
+    if (!userDecl)
+    {
+        return "";
+    }
+    return userDecl.m_name;
 }
 
 string DPointer(Pointer t)
 {
-    if (isInterface(t.m_typeref.type))
+    if (t.m_typeref.type.GetName() == "ID3DInclude")
+    {
+        return "void*";
+    }
+    else if (isInterface(t.m_typeref.type))
     {
         return format("%s", DType(t.m_typeref.type));
     }
@@ -250,7 +256,7 @@ void DFucntionDecl(File* f, Function decl, string indent, bool isMethod)
         {
             f.write(", ");
         }
-        if(param.typeRef.isConst)
+        if (param.typeRef.isConst)
         {
             f.write("const ");
         }
@@ -326,14 +332,22 @@ void dlangExport(Source[string] sourceMap, string dir)
             // const
             foreach (macroDefinition; source.m_macros)
             {
-                if (macroDefinition.value[0].isAlpha)
+                if (macroDefinition.tokens[0][0].isAlpha)
                 {
                     // typedef ?
                     // IID_ID3DBlob = IID_ID3D10Blob;
                     // INTERFACE = ID3DInclude;
                     continue;
                 }
-                f.writefln("enum %s = %s;", macroDefinition.name, macroDefinition.value);
+                if (macroDefinition.name == "D3D_COMPILE_STANDARD_FILE_INCLUDE")
+                {
+                    f.writeln("enum D3D_COMPILE_STANDARD_FILE_INCLUDE = cast(void*)1;");
+                }
+                else
+                {
+                    f.writefln("enum %s = %s;", macroDefinition.name,
+                            macroDefinition.tokens.join(" "));
+                }
             }
 
             // types

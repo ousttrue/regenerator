@@ -16,7 +16,7 @@ import sliceview;
 struct MacroDefinition
 {
     string name;
-    string value;
+    string[] tokens;
 }
 
 class Header
@@ -656,36 +656,34 @@ class Parser
             return;
         }
 
+        if (clang_Cursor_isMacroFunctionLike(cursor))
+        {
+            return;
+        }
+
         // auto src = getSource(cursor);
         auto tu = clang_Cursor_getTranslationUnit(cursor);
         auto tokens = getTokens(cursor);
         scope (exit)
             clang_disposeTokens(tu, tokens.ptr, cast(uint) tokens.length);
-        assert(tokens.length);
+        // assert(tokens.length);
         if (tokens.length == 1)
         {
+            // #define DEBUG
             return;
         }
 
         string[] tokenSpellings = tokens.map!(t => tokenToString(cursor, t)).array();
-        // debug auto view = makeView(tokenSpellings);
-        if (tokenSpellings[1] == "(" && !tokenSpellings[2 .. $ - 1].find(")").empty)
-        {
-            // #define hoge() body
-            return;
-        }
 
-        debug
-        {
-            if (tokenSpellings[0] == "D3D11_SDK_VERSION")
-            {
-                auto a = 0;
-            }
-            // DXGI_USAGE_RENDER_TARGET_OUTPUT
-        }
+        // debug if (tokenSpellings[0] == "MAKE_D3D11_HRESULT")
+        // {
+        //     auto a = 0;
+        // }
+
+        // debug auto view = makeView(tokenSpellings);
 
         auto header = getOrCreateHeader(cursor);
-        header.m_macros ~= MacroDefinition(tokenSpellings[0], tokenSpellings[1 .. $].join(" "));
+        header.m_macros ~= MacroDefinition(tokenSpellings[0], tokenSpellings[1 .. $]);
     }
 
     bool parse(string[] headers, string[] includes)
