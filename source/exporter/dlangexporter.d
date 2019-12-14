@@ -256,6 +256,7 @@ shared static this()
 
 immutable string[] suffixes = [
     "_PRIMITIVE", "_FLAGS", "_FLAG", "_MODE", "_CLASSIFICATION", // d3d
+    "_Flags", // clang
 ];
 
 string getOmitEnumNameForWindows(string name)
@@ -282,7 +283,7 @@ string getOmitEnumNameForWindows(string name)
     return name;
 }
 
-immutable clangEnumSuffix = ["Kind", "Flags", "Severity"];
+immutable clangEnumSuffix = ["Kind", "Flags", "Severity", "DisplayOptions",];
 
 string getOmitEnumName(string name)
 {

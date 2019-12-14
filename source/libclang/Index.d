@@ -107,11 +107,11 @@ extern(C) CXSourceRangeList* clang_getAllSkippedRanges(CXTranslationUnit tu);
 extern(C) void clang_disposeSourceRangeList(CXSourceRangeList* ranges);
 enum CXDiagnosticSeverity
 {
-    CXDiagnostic_Ignored = 0x0,
-    CXDiagnostic_Note = 0x1,
-    CXDiagnostic_Warning = 0x2,
-    CXDiagnostic_Error = 0x3,
-    CXDiagnostic_Fatal = 0x4,
+    _Ignored = 0x0,
+    _Note = 0x1,
+    _Warning = 0x2,
+    _Error = 0x3,
+    _Fatal = 0x4,
 }
 alias CXDiagnostic = void*;
 alias CXDiagnosticSet = void*;
@@ -133,12 +133,12 @@ extern(C) CXDiagnosticSet clang_getDiagnosticSetFromTU(CXTranslationUnit Unit);
 extern(C) void clang_disposeDiagnostic(CXDiagnostic Diagnostic);
 enum CXDiagnosticDisplayOptions
 {
-    CXDiagnostic_DisplaySourceLocation = 0x1,
-    CXDiagnostic_DisplayColumn = 0x2,
-    CXDiagnostic_DisplaySourceRanges = 0x4,
-    CXDiagnostic_DisplayOption = 0x8,
-    CXDiagnostic_DisplayCategoryId = 0x10,
-    CXDiagnostic_DisplayCategoryName = 0x20,
+    _DisplaySourceLocation = 0x1,
+    _DisplayColumn = 0x2,
+    _DisplaySourceRanges = 0x4,
+    _DisplayOption = 0x8,
+    _DisplayCategoryId = 0x10,
+    _DisplayCategoryName = 0x20,
 }
 extern(C) CXString clang_formatDiagnostic(CXDiagnostic Diagnostic, uint Options);
 extern(C) uint clang_defaultDiagnosticDisplayOptions();
@@ -159,22 +159,22 @@ extern(C) CXTranslationUnit clang_createTranslationUnit(CXIndex CIdx, byte* ast_
 extern(C) CXErrorCode clang_createTranslationUnit2(CXIndex CIdx, byte* ast_filename, CXTranslationUnit* out_TU);
 enum CXTranslationUnit_Flags
 {
-    CXTranslationUnit_None = 0x0,
-    CXTranslationUnit_DetailedPreprocessingRecord = 0x1,
-    CXTranslationUnit_Incomplete = 0x2,
-    CXTranslationUnit_PrecompiledPreamble = 0x4,
-    CXTranslationUnit_CacheCompletionResults = 0x8,
-    CXTranslationUnit_ForSerialization = 0x10,
-    CXTranslationUnit_CXXChainedPCH = 0x20,
-    CXTranslationUnit_SkipFunctionBodies = 0x40,
-    CXTranslationUnit_IncludeBriefCommentsInCodeCompletion = 0x80,
-    CXTranslationUnit_CreatePreambleOnFirstParse = 0x100,
-    CXTranslationUnit_KeepGoing = 0x200,
-    CXTranslationUnit_SingleFileParse = 0x400,
-    CXTranslationUnit_LimitSkipFunctionBodiesToPreamble = 0x800,
-    CXTranslationUnit_IncludeAttributedTypes = 0x1000,
-    CXTranslationUnit_VisitImplicitAttributes = 0x2000,
-    CXTranslationUnit_IgnoreNonErrorsFromIncludedFiles = 0x4000,
+    _None = 0x0,
+    _DetailedPreprocessingRecord = 0x1,
+    _Incomplete = 0x2,
+    _PrecompiledPreamble = 0x4,
+    _CacheCompletionResults = 0x8,
+    _ForSerialization = 0x10,
+    _CXXChainedPCH = 0x20,
+    _SkipFunctionBodies = 0x40,
+    _IncludeBriefCommentsInCodeCompletion = 0x80,
+    _CreatePreambleOnFirstParse = 0x100,
+    _KeepGoing = 0x200,
+    _SingleFileParse = 0x400,
+    _LimitSkipFunctionBodiesToPreamble = 0x800,
+    _IncludeAttributedTypes = 0x1000,
+    _VisitImplicitAttributes = 0x2000,
+    _IgnoreNonErrorsFromIncludedFiles = 0x4000,
 }
 extern(C) uint clang_defaultEditingTranslationUnitOptions();
 extern(C) CXTranslationUnit clang_parseTranslationUnit(CXIndex CIdx, byte* source_filename, byte** command_line_args, int num_command_line_args, CXUnsavedFile* unsaved_files, uint num_unsaved_files, uint options);
@@ -182,7 +182,7 @@ extern(C) CXErrorCode clang_parseTranslationUnit2(CXIndex CIdx, byte* source_fil
 extern(C) CXErrorCode clang_parseTranslationUnit2FullArgv(CXIndex CIdx, byte* source_filename, byte** command_line_args, int num_command_line_args, CXUnsavedFile* unsaved_files, uint num_unsaved_files, uint options, CXTranslationUnit* out_TU);
 enum CXSaveTranslationUnit_Flags
 {
-    CXSaveTranslationUnit_None = 0x0,
+    _None = 0x0,
 }
 extern(C) uint clang_defaultSaveOptions(CXTranslationUnit TU);
 enum CXSaveError
@@ -197,7 +197,7 @@ extern(C) uint clang_suspendTranslationUnit(CXTranslationUnit );
 extern(C) void clang_disposeTranslationUnit(CXTranslationUnit );
 enum CXReparse_Flags
 {
-    CXReparse_None = 0x0,
+    _None = 0x0,
 }
 extern(C) uint clang_defaultReparseOptions(CXTranslationUnit TU);
 extern(C) int clang_reparseTranslationUnit(CXTranslationUnit TU, uint num_unsaved_files, CXUnsavedFile* unsaved_files, uint options);
@@ -1058,11 +1058,11 @@ extern(C) uint clang_getCompletionNumFixIts(CXCodeCompleteResults* results, uint
 extern(C) CXString clang_getCompletionFixIt(CXCodeCompleteResults* results, uint completion_index, uint fixit_index, CXSourceRange* replacement_range);
 enum CXCodeComplete_Flags
 {
-    CXCodeComplete_IncludeMacros = 0x1,
-    CXCodeComplete_IncludeCodePatterns = 0x2,
-    CXCodeComplete_IncludeBriefComments = 0x4,
-    CXCodeComplete_SkipPreamble = 0x8,
-    CXCodeComplete_IncludeCompletionsWithFixIts = 0x10,
+    _IncludeMacros = 0x1,
+    _IncludeCodePatterns = 0x2,
+    _IncludeBriefComments = 0x4,
+    _SkipPreamble = 0x8,
+    _IncludeCompletionsWithFixIts = 0x10,
 }
 enum CXCompletionContext
 {
