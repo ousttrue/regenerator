@@ -263,30 +263,29 @@ string getOmitEnumNameForWindows(string name)
 {
     if (name in replace_map)
     {
-        name = replace_map[name];
+        return replace_map[name];
     }
 
     foreach (suffix; suffixes)
     {
         if (name.endsWith(suffix))
         {
-            name = name[0 .. $ - (suffix.length - 1)];
-            break;
+            return name[0 .. $ - (suffix.length - 1)];
         }
     }
 
-    if (name[$ - 1] != '_')
-    {
-        name ~= '_';
-    }
-
-    return name;
+    return name ~ '_';
 }
 
 immutable clangEnumSuffix = ["Kind", "Flags", "Severity", "DisplayOptions",];
 
 string getOmitEnumName(string name)
 {
+    debug if (name == "CXSaveError")
+    {
+        auto a = 0;
+    }
+
     if (name.indexOf('_') != -1)
     {
         return getOmitEnumNameForWindows(name);
@@ -298,11 +297,11 @@ string getOmitEnumName(string name)
         {
             if (name.endsWith(suffix))
             {
-                return name[0 .. $ - suffix.length] ~ "_";
+                return name[0 .. $ - suffix.length] ~ '_';
             }
         }
 
-        return name;
+        return name ~ '_';
     }
 }
 

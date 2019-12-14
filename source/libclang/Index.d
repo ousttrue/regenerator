@@ -187,10 +187,10 @@ enum CXSaveTranslationUnit_Flags
 extern(C) uint clang_defaultSaveOptions(CXTranslationUnit TU);
 enum CXSaveError
 {
-    r_None = 0x0,
-    r_Unknown = 0x1,
-    r_TranslationErrors = 0x2,
-    r_InvalidTU = 0x3,
+    _None = 0x0,
+    _Unknown = 0x1,
+    _TranslationErrors = 0x2,
+    _InvalidTU = 0x3,
 }
 extern(C) int clang_saveTranslationUnit(CXTranslationUnit TU, byte* FileName, uint options);
 extern(C) uint clang_suspendTranslationUnit(CXTranslationUnit );
@@ -703,26 +703,26 @@ enum CXTypeKind
 }
 enum CXCallingConv
 {
-    v_Default = 0x0,
-    v_C = 0x1,
-    v_X86StdCall = 0x2,
-    v_X86FastCall = 0x3,
-    v_X86ThisCall = 0x4,
-    v_X86Pascal = 0x5,
-    v_AAPCS = 0x6,
-    v_AAPCS_VFP = 0x7,
-    v_X86RegCall = 0x8,
-    v_IntelOclBicc = 0x9,
-    v_Win64 = 0xa,
-    v_X86_64Win64 = 0xa,
-    v_X86_64SysV = 0xb,
-    v_X86VectorCall = 0xc,
-    v_Swift = 0xd,
-    v_PreserveMost = 0xe,
-    v_PreserveAll = 0xf,
-    v_AArch64VectorCall = 0x10,
-    v_Invalid = 0x64,
-    v_Unexposed = 0xc8,
+    _Default = 0x0,
+    _C = 0x1,
+    _X86StdCall = 0x2,
+    _X86FastCall = 0x3,
+    _X86ThisCall = 0x4,
+    _X86Pascal = 0x5,
+    _AAPCS = 0x6,
+    _AAPCS_VFP = 0x7,
+    _X86RegCall = 0x8,
+    _IntelOclBicc = 0x9,
+    _Win64 = 0xa,
+    _X86_64Win64 = 0xa,
+    _X86_64SysV = 0xb,
+    _X86VectorCall = 0xc,
+    _Swift = 0xd,
+    _PreserveMost = 0xe,
+    _PreserveAll = 0xf,
+    _AArch64VectorCall = 0x10,
+    _Invalid = 0x64,
+    _Unexposed = 0xc8,
 }
 struct CXType
 {
@@ -801,12 +801,12 @@ enum CXTypeNullabilityKind
 extern(C) CXTypeNullabilityKind clang_Type_getNullability(CXType T);
 enum CXTypeLayoutError
 {
-    r_Invalid = 0xffffffff,
-    r_Incomplete = 0xfffffffe,
-    r_Dependent = 0xfffffffd,
-    r_NotConstantSize = 0xfffffffc,
-    r_InvalidFieldName = 0xfffffffb,
-    r_Undeduced = 0xfffffffa,
+    _Invalid = 0xffffffff,
+    _Incomplete = 0xfffffffe,
+    _Dependent = 0xfffffffd,
+    _NotConstantSize = 0xfffffffc,
+    _InvalidFieldName = 0xfffffffb,
+    _Undeduced = 0xfffffffa,
 }
 extern(C) long clang_Type_getAlignOf(CXType T);
 extern(C) CXType clang_Type_getClassType(CXType T);
@@ -1066,31 +1066,31 @@ enum CXCodeComplete_Flags
 }
 enum CXCompletionContext
 {
-    t_Unexposed = 0x0,
-    t_AnyType = 0x1,
-    t_AnyValue = 0x2,
-    t_ObjCObjectValue = 0x4,
-    t_ObjCSelectorValue = 0x8,
-    t_CXXClassTypeValue = 0x10,
-    t_DotMemberAccess = 0x20,
-    t_ArrowMemberAccess = 0x40,
-    t_ObjCPropertyAccess = 0x80,
-    t_EnumTag = 0x100,
-    t_UnionTag = 0x200,
-    t_StructTag = 0x400,
-    t_ClassTag = 0x800,
-    t_Namespace = 0x1000,
-    t_NestedNameSpecifier = 0x2000,
-    t_ObjCInterface = 0x4000,
-    t_ObjCProtocol = 0x8000,
-    t_ObjCCategory = 0x10000,
-    t_ObjCInstanceMessage = 0x20000,
-    t_ObjCClassMessage = 0x40000,
-    t_ObjCSelectorName = 0x80000,
-    t_MacroName = 0x100000,
-    t_NaturalLanguage = 0x200000,
-    t_IncludedFile = 0x400000,
-    t_Unknown = 0x7fffff,
+    _Unexposed = 0x0,
+    _AnyType = 0x1,
+    _AnyValue = 0x2,
+    _ObjCObjectValue = 0x4,
+    _ObjCSelectorValue = 0x8,
+    _CXXClassTypeValue = 0x10,
+    _DotMemberAccess = 0x20,
+    _ArrowMemberAccess = 0x40,
+    _ObjCPropertyAccess = 0x80,
+    _EnumTag = 0x100,
+    _UnionTag = 0x200,
+    _StructTag = 0x400,
+    _ClassTag = 0x800,
+    _Namespace = 0x1000,
+    _NestedNameSpecifier = 0x2000,
+    _ObjCInterface = 0x4000,
+    _ObjCProtocol = 0x8000,
+    _ObjCCategory = 0x10000,
+    _ObjCInstanceMessage = 0x20000,
+    _ObjCClassMessage = 0x40000,
+    _ObjCSelectorName = 0x80000,
+    _MacroName = 0x100000,
+    _NaturalLanguage = 0x200000,
+    _IncludedFile = 0x400000,
+    _Unknown = 0x7fffff,
 }
 extern(C) uint clang_defaultCodeCompleteOptions();
 extern(C) CXCodeCompleteResults* clang_codeCompleteAt(CXTranslationUnit TU, byte* complete_filename, uint complete_line, uint complete_column, CXUnsavedFile* unsaved_files, uint num_unsaved_files, uint options);
@@ -1144,9 +1144,9 @@ struct CXCursorAndRangeVisitor
 }
 enum CXResult
 {
-    t_Success = 0x0,
-    t_Invalid = 0x1,
-    t_VisitBreak = 0x2,
+    _Success = 0x0,
+    _Invalid = 0x1,
+    _VisitBreak = 0x2,
 }
 extern(C) CXResult clang_findReferencesInFile(CXCursor cursor, CXFile file, CXCursorAndRangeVisitor visitor);
 extern(C) CXResult clang_findIncludesInFile(CXTranslationUnit TU, CXFile file, CXCursorAndRangeVisitor visitor);
@@ -1336,16 +1336,16 @@ enum CXIdxEntityRefKind
 }
 enum CXSymbolRole
 {
-    e_None = 0x0,
-    e_Declaration = 0x1,
-    e_Definition = 0x2,
-    e_Reference = 0x4,
-    e_Read = 0x8,
-    e_Write = 0x10,
-    e_Call = 0x20,
-    e_Dynamic = 0x40,
-    e_AddressOf = 0x80,
-    e_Implicit = 0x100,
+    _None = 0x0,
+    _Declaration = 0x1,
+    _Definition = 0x2,
+    _Reference = 0x4,
+    _Read = 0x8,
+    _Write = 0x10,
+    _Call = 0x20,
+    _Dynamic = 0x40,
+    _AddressOf = 0x80,
+    _Implicit = 0x100,
 }
 struct CXIdxEntityRefInfo
 {
