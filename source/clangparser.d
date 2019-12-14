@@ -12,6 +12,8 @@ import clangcursor;
 import clangdecl;
 import clanghelper;
 import sliceview;
+import std.conv;
+import std.bigint;
 
 struct MacroDefinition
 {
@@ -50,8 +52,36 @@ UUID getUUID(string src)
     }
 }
 
+int fromHex(string src)
+{
+    if (src[$ - 1] == 'L')
+    {
+        src = src[0 .. $ - 1];
+    }
+    auto b = BigInt(src);
+    auto i = cast(int) b.toLong();
+    return i;
+}
+
+UUID tokensToUUID(string[] t)
+{
+    auto n = fromHex("0xA1841308");
+    assert(t.length == 22);
+    auto src = format("%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+            fromHex(t[0]), fromHex(t[2]), fromHex(t[4]), fromHex(t[6]),
+            fromHex(t[8]), fromHex(t[10]), fromHex(t[12]), fromHex(t[14]),
+            fromHex(t[16]), fromHex(t[18]), fromHex(t[20]));
+    return parseUUID(src);
+    // 138, 179, 6, 14, 44, 186, 79, 35, 183, 76, 181, 45, 179, 189, 251, 70
+    // ]);
+}
+
 class Parser
 {
+    Header[string] m_headers;
+    private Decl[uint] m_declMap;
+    UUID[string] m_uuidMap;
+
     string getSource(CXCursor cursor)
     {
         auto location = getCursorLocation(cursor);
@@ -93,7 +123,6 @@ class Parser
         switch (cursorKind)
         {
         case CXCursorKind.CXCursor_InclusionDirective:
-        case CXCursorKind.CXCursor_MacroExpansion:
         case CXCursorKind.CXCursor_ClassTemplate:
         case CXCursorKind.CXCursor_ClassTemplatePartialSpecialization:
         case CXCursorKind.CXCursor_FunctionTemplate:
@@ -104,6 +133,29 @@ class Parser
 
         case CXCursorKind.CXCursor_MacroDefinition:
             parseMacroDefinition(cursor);
+            break;
+
+        case CXCursorKind.CXCursor_MacroExpansion:
+            if (spelling == "DEFINE_GUID")
+            {
+                auto tokens = getTokens(cursor);
+                scope (exit)
+                    clang_disposeTokens(tu, tokens.ptr, cast(uint) tokens.length);
+                string[] tokenSpellings = tokens.map!(t => tokenToString(cursor, t)).array();
+                if (tokens.length == 26)
+                {
+                    auto name = tokenSpellings[2];
+                    if (name.startsWith("IID_"))
+                    {
+                        name = name[4 .. $];
+                    }
+                    m_uuidMap[name] = tokensToUUID(tokenSpellings[4 .. $]);
+                }
+                else
+                {
+                    auto a = 0;
+                }
+            }
             break;
 
         case CXCursorKind.CXCursor_Namespace:
@@ -177,7 +229,6 @@ class Parser
         }
     }
 
-    private Decl[uint] m_declMap;
     Decl[uint] declMap()
     {
         return m_declMap;
@@ -377,8 +428,6 @@ class Parser
         int a = 0;
         throw new Exception("not implemented");
     }
-
-    Header[string] m_headers;
 
     Header getHeader(string path)
     {

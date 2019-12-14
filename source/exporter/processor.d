@@ -7,16 +7,7 @@ import sliceview;
 import std.stdio;
 import std.string;
 import std.path;
-
-// import std.traits;
-// import std.string;
-// import std.stdio;
-// import std.path;
-// import std.file;
-// import std.algorithm;
-// import clangdecl;
-// import clangparser;
-// import sliceview;
+import std.uuid;
 
 ///
 /// パースした型情報を変換するためにSourceに集める
@@ -24,6 +15,13 @@ import std.path;
 class Processor
 {
     Source[string] m_sourceMap;
+
+    Parser m_parser;
+
+    this(Parser parser)
+    {
+        m_parser = parser;
+    }
 
     Source getSource(string path)
     {
@@ -134,7 +132,7 @@ class Processor
             from ~= dsource;
         }
 
-        if(!dsource.addDecl(decl))
+        if (!dsource.addDecl(decl))
         {
             return;
         }
@@ -157,6 +155,18 @@ class Processor
         }
         else if (structDecl)
         {
+            if (structDecl.m_iid.empty)
+            {
+                debug if (structDecl.m_name == "ID3D11ShaderReflection")
+                {
+                    auto a = 0;
+                }
+                if (structDecl.m_name in m_parser.m_uuidMap)
+                {
+                    structDecl.m_iid = m_parser.m_uuidMap[structDecl.m_name];
+                }
+            }
+
             if (structDecl.m_base)
             {
                 addDecl(_decl ~ structDecl.m_base, from);
@@ -179,17 +189,17 @@ class Processor
     ///
     /// 型情報を整理する(m_sourceMapを構築する)
     ///
-    void process(Parser parser, string[] headers)
+    void process(string[] headers)
     {
         // prepare
-        parser.resolveTypedef();
+        m_parser.resolveTypedef();
 
         // gather export items
         // debug auto parsedHeaders = makeView(parser.m_headers);
         foreach (header; headers)
         {
             header = escapePath(header);
-            Header exportHeader = parser.getHeader(header);
+            Header exportHeader = m_parser.getHeader(header);
             if (exportHeader)
             {
                 foreach (decl; exportHeader.types)
@@ -211,7 +221,7 @@ class Processor
 
 Source[string] process(Parser parser, string[] headers)
 {
-    auto processor = new Processor();
-    processor.process(parser, headers);
+    auto processor = new Processor(parser);
+    processor.process(headers);
     return processor.m_sourceMap;
 }
