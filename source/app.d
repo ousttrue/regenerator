@@ -9,8 +9,15 @@ int main(string[] args)
 	string[] headers;
 	string dir;
 	string[] includes;
-	getopt(args, "include|I", &includes, "outdir", &dir,
-			std.getopt.config.required, "header|H", &headers);
+	bool omitEnumPrefix = false;
+	getopt(args, //
+			"include|I", &includes, //
+			"outdir", &dir, //
+			"omitEnumPrefix|E",
+			&omitEnumPrefix, //
+			std.getopt.config.required, // 
+			"header|H", &headers //
+			);
 
 	auto parser = new Parser();
 
@@ -28,7 +35,7 @@ int main(string[] args)
 		}
 
 		// D言語に変換する
-		dlangExport(sourceMap, dir);
+		dlangExport(sourceMap, dir, omitEnumPrefix);
 	}
 
 	return 0;

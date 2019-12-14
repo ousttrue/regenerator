@@ -224,7 +224,7 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
     }
 }
 
-void DEnumDecl(File* f, Enum decl)
+void DEnumDecl(File* f, Enum decl, bool omitEnumPrefix)
 {
     if (!decl.m_name)
     {
@@ -239,10 +239,26 @@ void DEnumDecl(File* f, Enum decl)
         f.write(": ulong");
     }
     f.writeln();
+
+    auto omitName = decl.m_name;
+    if (omitName.endsWith("_FLAG"))
+    {
+        omitName = omitName[0 .. $ - 5];
+    }
+    else if (omitName.endsWith("_CLASSIFICATION"))
+    {
+        omitName = omitName[0 .. $ - 15];
+    }
     f.writeln("{");
     foreach (value; decl.m_values)
     {
-        f.writefln("    %s = 0x%x,", value.name, value.value);
+        auto name = value.name;
+        if (omitEnumPrefix && name.startsWith(omitName))
+        {
+            // "D3D_SRV_DIMENSION_UNKNOWN" => "_UNKNOWN"
+            name = name[omitName.length .. $];
+        }
+        f.writefln("    %s = 0x%x,", name, value.value);
     }
     f.writeln("}");
 }
@@ -292,14 +308,18 @@ void DFucntionDecl(File* f, Function decl, string indent, bool isMethod)
     f.writeln(");");
 }
 
-void DDecl(File* f, Decl decl)
+void DDecl(File* f, Decl decl, bool omitEnumPrefix)
 {
-    castSwitch!((Typedef decl) => DTypedefDecl(f, decl),
-            (Enum decl) => DEnumDecl(f, decl), (Struct decl) => DStructDecl(f,
-                decl), (Function decl) => DFucntionDecl(f, decl, "", false))(decl);
+    castSwitch!( //
+            (Typedef decl) => DTypedefDecl(f, decl), //
+            (Enum decl) => DEnumDecl(f,
+                decl, omitEnumPrefix), //
+            (Struct decl) => DStructDecl(f, decl), //
+            (Function decl) => DFucntionDecl(f, decl, "", false) //
+            )(decl);
 }
 
-void dlangExport(Source[string] sourceMap, string dir)
+void dlangExport(Source[string] sourceMap, string dir, bool omitEnumPrefix)
 {
     // clear dir
     if (exists(dir))
@@ -380,7 +400,7 @@ void dlangExport(Source[string] sourceMap, string dir)
             // types
             foreach (decl; source.m_types)
             {
-                DDecl(&f, decl);
+                DDecl(&f, decl, omitEnumPrefix);
             }
         }
     }
