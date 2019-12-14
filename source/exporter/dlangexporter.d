@@ -26,13 +26,35 @@ string DEscapeName(string src)
     }
 }
 
-static bool isInterface(Decl decl)
+Decl GetTypedefSource(Decl decl)
 {
-    Typedef typedefDecl = cast(Typedef) decl;
-    if (typedefDecl)
+    while (true)
     {
+        Typedef typedefDecl = cast(Typedef) decl;
+        if (!typedefDecl)
+        {
+            break;
+        }
         decl = typedefDecl.m_typeref.type;
     }
+    return decl;
+}
+
+static bool isInterface(Decl decl)
+{
+    debug
+    {
+        auto userDecl = cast(UserDecl) decl;
+        if (userDecl)
+        {
+            if (userDecl.m_name == "ID3DBlob")
+            {
+                auto a = 0;
+            }
+        }
+    }
+
+    decl = decl.GetTypedefSource();
 
     Struct structDecl = cast(Struct) decl;
     if (!structDecl)
