@@ -137,6 +137,10 @@ void DTypedefDecl(File* f, Typedef t)
 
 void DStructDecl(File* f, Struct decl, string typedefName = null)
 {
+    debug if (decl.m_name.endsWith("Impl"))
+    {
+        auto a = 0;
+    }
     // assert(!decl.m_forwardDecl);
     auto name = typedefName ? typedefName : decl.m_name;
     if (!name)
@@ -147,7 +151,7 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
 
     if (decl.m_forwardDecl)
     {
-        return;
+        // return;
     }
 
     if (decl.isInterface)
@@ -174,10 +178,10 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
     else
     {
         // struct
-        if (decl.m_fields.empty())
-        {
-            return;
-        }
+        // if (decl.m_fields.empty())
+        // {
+        //     return;
+        // }
 
         f.writefln("struct %s", name);
         f.writeln("{");

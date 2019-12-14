@@ -1,5 +1,6 @@
 module libclang;
-public import libclang.CXString;
+public import libclang.cxstring;
 public import libclang.corecrt;
-public import libclang.Index;
-public import libclang.CXErrorCode;
+public import libclang.index;
+public import libclang.cxerrorcode;
+public import libclang.vcruntime;
