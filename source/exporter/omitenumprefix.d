@@ -16,28 +16,18 @@ shared static this()
         "_D3D_SHADER_VARIABLE_FLAGS": "D3D_SVF_", //
         "_D3D_SHADER_INPUT_FLAGS": "D3D_SIF_", //
         "_D3D_SHADER_CBUFFER_FLAGS": "D3D_CBF_", //
+        "_D3D_INCLUDE_TYPE": "D3D_INCLUDE_", //
+        "D3D_RESOURCE_RETURN_TYPE": "D3D_RETURN_TYPE_", //
         "D3D_REGISTER_COMPONENT_TYPE": "D3D_REGISTER_COMPONENT_", //
+        "D3D_TESSELLATOR_OUTPUT_PRIMITIVE": "D3D_TESSELLATOR_OUTPUT_", //
     ];
 }
-
-immutable string[] suffixes = [
-    "_PRIMITIVE", "_FLAGS", "_FLAG", "_MODE", "_CLASSIFICATION", // d3d
-    "_Flags", // clang
-];
 
 string getOmitEnumNameForWindows(string name)
 {
     if (name in replace_map)
     {
         return replace_map[name];
-    }
-
-    foreach (suffix; suffixes)
-    {
-        if (name.endsWith(suffix))
-        {
-            return name[0 .. $ - (suffix.length - 1)];
-        }
     }
 
     return name ~ '_';
