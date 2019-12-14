@@ -21,7 +21,7 @@
             </ArrayItems>
         </Expand>
     </Type>
-    <Type Name="app.SliceView">
+    <Type Name="sliceview.SliceView">
         <DisplayString>{{size = {size}}}</DisplayString>
         <Expand>
             <Item Name="[size]">size</Item>

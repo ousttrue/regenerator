@@ -27,13 +27,11 @@ class Processor
 
     Source getSource(string path)
     {
-        return m_sourceMap[escapePath(path)];
+        return m_sourceMap[path];
     }
 
     Source getOrCreateSource(string path)
     {
-        path = escapePath(path);
-
         auto source = m_sourceMap.get(path, null);
         if (!source)
         {
@@ -100,6 +98,10 @@ class Processor
             if (d == _decl[$ - 1])
             {
                 // stop resursion
+                debug
+                {
+                    auto a = 0;
+                }
                 return;
             }
         }
@@ -117,7 +119,6 @@ class Processor
         }
 
         auto dsource = getOrCreateSource(decl.m_path);
-        dsource.addDecl(decl);
 
         bool found = false;
         foreach (f; from)
@@ -133,6 +134,12 @@ class Processor
             from ~= dsource;
         }
 
+        if(!dsource.addDecl(decl))
+        {
+            return;
+        }
+
+        // next
         Function functionDecl = cast(Function) decl;
         Typedef typedefDecl = cast(Typedef) decl;
         Struct structDecl = cast(Struct) decl;
@@ -178,9 +185,10 @@ class Processor
         parser.resolveTypedef();
 
         // gather export items
-        debug auto parsedHeaders = makeView(parser.m_headers);
+        // debug auto parsedHeaders = makeView(parser.m_headers);
         foreach (header; headers)
         {
+            header = escapePath(header);
             Header exportHeader = parser.getHeader(header);
             if (exportHeader)
             {
@@ -189,7 +197,7 @@ class Processor
                     addDecl([decl]);
                 }
 
-                debug auto sourceView = makeView(m_sourceMap);
+                // debug auto sourceView = makeView(m_sourceMap);
                 auto target = getSource(header);
                 target.m_macros = exportHeader.m_macros;
             }

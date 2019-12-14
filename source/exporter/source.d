@@ -58,32 +58,32 @@ class Source
         return false;
     }
 
-    void addDecl(UserDecl type)
+    bool addDecl(UserDecl type)
     {
         if (m_types.find(type).any())
         {
-            return;
+            return false;
         }
 
         if (includeModule!(core.sys.windows.windef)(type.m_name))
         {
-            return;
+            return false;
         }
         if (includeModule!(core.sys.windows.basetyps)(type.m_name))
         {
-            return;
+            return false;
         }
         if (includeModule!(core.sys.windows.winnt)(type.m_name))
         {
-            return;
+            return false;
         }
         if (includeModule!(core.sys.windows.unknwn)(type.m_name))
         {
-            return;
+            return false;
         }
 
         m_types ~= type;
-        return;
+        return true;
     }
 
     void addImport(Source source)

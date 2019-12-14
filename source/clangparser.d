@@ -382,8 +382,7 @@ class Parser
 
     Header getHeader(string path)
     {
-        auto escaped = escapePath(path);
-        auto header = m_headers.get(escaped, null);
+        auto header = m_headers.get(path, null);
         if (header)
         {
             return header;
@@ -402,7 +401,7 @@ class Parser
         }
 
         found = new Header();
-        m_headers[escapePath(location.path)] = found;
+        m_headers[location.path] = found;
         return found;
     }
 
