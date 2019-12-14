@@ -17,7 +17,7 @@
             "presentation": {
                 "reveal": "always",
                 // "panel": "new",
-                "clear": true
+                "clear": true,
             },
             "problemMatcher": [
                 "$dmd"
