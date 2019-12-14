@@ -8,5 +8,5 @@
 	"name": "dclangen",
 	"libs": [
 		"C:/Program Files/LLVM/lib/libclang"
-	],
+	]
 }

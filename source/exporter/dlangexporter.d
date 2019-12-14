@@ -255,10 +255,10 @@ shared static this()
 }
 
 immutable string[] suffixes = [
-    "_PRIMITIVE", "_FLAGS", "_FLAG", "_MODE", "_CLASSIFICATION"
+    "_PRIMITIVE", "_FLAGS", "_FLAG", "_MODE", "_CLASSIFICATION", // d3d
 ];
 
-string getOmitEnumName(string name)
+string getOmitEnumNameForWindows(string name)
 {
     if (name in replace_map)
     {
@@ -280,6 +280,29 @@ string getOmitEnumName(string name)
     }
 
     return name;
+}
+
+immutable clangEnumSuffix = ["Kind", "Flags", "Severity"];
+
+string getOmitEnumName(string name)
+{
+    if (name.indexOf('_') != -1)
+    {
+        return getOmitEnumNameForWindows(name);
+    }
+    else
+    {
+        // for clang
+        foreach (suffix; clangEnumSuffix)
+        {
+            if (name.endsWith(suffix))
+            {
+                return name[0 .. $ - suffix.length] ~ "_";
+            }
+        }
+
+        return name;
+    }
 }
 
 void DEnumDecl(File* f, Enum decl, bool omitEnumPrefix)

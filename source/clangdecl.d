@@ -251,39 +251,39 @@ Primitive KindToPrimitive(CXTypeKind kind)
 {
     switch (kind)
     {
-    case CXTypeKind.CXType_Void:
+    case CXTypeKind._Void:
         return new Void();
-    case CXTypeKind.CXType_Bool:
+    case CXTypeKind._Bool:
         return new Bool();
         // Int
-    case CXTypeKind.CXType_Char_S:
-    case CXTypeKind.CXType_SChar:
+    case CXTypeKind._Char_S:
+    case CXTypeKind._SChar:
         return new Int8();
-    case CXTypeKind.CXType_Short:
+    case CXTypeKind._Short:
         return new Int16();
-    case CXTypeKind.CXType_Int:
-    case CXTypeKind.CXType_Long:
+    case CXTypeKind._Int:
+    case CXTypeKind._Long:
         return new Int32();
-    case CXTypeKind.CXType_LongLong:
+    case CXTypeKind._LongLong:
         return new Int64();
         // UInt
-    case CXTypeKind.CXType_Char_U:
-    case CXTypeKind.CXType_UChar:
+    case CXTypeKind._Char_U:
+    case CXTypeKind._UChar:
         return new UInt8();
-    case CXTypeKind.CXType_UShort:
-    case CXTypeKind.CXType_WChar:
+    case CXTypeKind._UShort:
+    case CXTypeKind._WChar:
         return new UInt16();
-    case CXTypeKind.CXType_UInt:
-    case CXTypeKind.CXType_ULong:
+    case CXTypeKind._UInt:
+    case CXTypeKind._ULong:
         return new UInt32();
-    case CXTypeKind.CXType_ULongLong:
+    case CXTypeKind._ULongLong:
         return new UInt64();
         // Float
-    case CXTypeKind.CXType_Float:
+    case CXTypeKind._Float:
         return new Float();
-    case CXTypeKind.CXType_Double:
+    case CXTypeKind._Double:
         return new Double();
-    case CXTypeKind.CXType_LongDouble:
+    case CXTypeKind._LongDouble:
         return new LongDouble();
 
     default:

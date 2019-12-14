@@ -106,8 +106,8 @@ class Parser
             auto location = getCursorLocation(cursor);
             if (location.path.endsWith("d3dcompiler.h"))
             {
-                if (cursorKind == CXCursorKind.CXCursor_MacroDefinition
-                        || cursorKind == CXCursorKind.CXCursor_MacroExpansion)
+                if (cursorKind == CXCursorKind._MacroDefinition
+                        || cursorKind == CXCursorKind._MacroExpansion)
                 {
                 }
                 else
@@ -122,20 +122,20 @@ class Parser
         // writefln("%s%s", context.getIndent(), kind);
         switch (cursorKind)
         {
-        case CXCursorKind.CXCursor_InclusionDirective:
-        case CXCursorKind.CXCursor_ClassTemplate:
-        case CXCursorKind.CXCursor_ClassTemplatePartialSpecialization:
-        case CXCursorKind.CXCursor_FunctionTemplate:
-        case CXCursorKind.CXCursor_UsingDeclaration:
-        case CXCursorKind.CXCursor_StaticAssert:
+        case CXCursorKind._InclusionDirective:
+        case CXCursorKind._ClassTemplate:
+        case CXCursorKind._ClassTemplatePartialSpecialization:
+        case CXCursorKind._FunctionTemplate:
+        case CXCursorKind._UsingDeclaration:
+        case CXCursorKind._StaticAssert:
             // skip
             break;
 
-        case CXCursorKind.CXCursor_MacroDefinition:
+        case CXCursorKind._MacroDefinition:
             parseMacroDefinition(cursor);
             break;
 
-        case CXCursorKind.CXCursor_MacroExpansion:
+        case CXCursorKind._MacroExpansion:
             if (spelling == "DEFINE_GUID")
             {
                 auto tokens = getTokens(cursor);
@@ -158,7 +158,7 @@ class Parser
             }
             break;
 
-        case CXCursorKind.CXCursor_Namespace:
+        case CXCursorKind._Namespace:
             {
                 foreach (child; cursor.getChildren())
                 {
@@ -167,7 +167,7 @@ class Parser
                 break;
             }
 
-        case CXCursorKind.CXCursor_UnexposedDecl:
+        case CXCursorKind._UnexposedDecl:
             {
                 auto tokens = getTokens(cursor);
                 scope (exit)
@@ -189,11 +189,11 @@ class Parser
             }
             break;
 
-        case CXCursorKind.CXCursor_TypedefDecl:
+        case CXCursorKind._TypedefDecl:
             parseTypedef(cursor);
             break;
 
-        case CXCursorKind.CXCursor_FunctionDecl:
+        case CXCursorKind._FunctionDecl:
             debug if (spelling == "D3DCompile")
             {
                 auto a = 0;
@@ -208,20 +208,20 @@ class Parser
             }
             break;
 
-        case CXCursorKind.CXCursor_StructDecl:
-        case CXCursorKind.CXCursor_ClassDecl:
+        case CXCursorKind._StructDecl:
+        case CXCursorKind._ClassDecl:
             parseStruct(cursor, context.enterStruct(), false);
             break;
 
-        case CXCursorKind.CXCursor_UnionDecl:
+        case CXCursorKind._UnionDecl:
             parseStruct(cursor, context.enterStruct(), true);
             break;
 
-        case CXCursorKind.CXCursor_EnumDecl:
+        case CXCursorKind._EnumDecl:
             parseEnum(cursor);
             break;
 
-        case CXCursorKind.CXCursor_VarDecl:
+        case CXCursorKind._VarDecl:
             break;
 
         default:
@@ -289,8 +289,7 @@ class Parser
             return primitive;
         }
 
-        if (type.kind == CXTypeKind.CXType_Pointer || type.kind == CXTypeKind
-                .CXType_LValueReference)
+        if (type.kind == CXTypeKind._Pointer || type.kind == CXTypeKind._LValueReference)
         {
             // pointer
             auto isConst = clang_isConstQualifiedType(type);
@@ -306,7 +305,7 @@ class Parser
             return new Pointer(pointeeDecl, isConst != 0);
         }
 
-        if (type.kind == CXTypeKind.CXType_IncompleteArray)
+        if (type.kind == CXTypeKind._IncompleteArray)
         {
             // treat as pointer
             auto isConst = clang_isConstQualifiedType(type);
@@ -316,7 +315,7 @@ class Parser
             return new Pointer(arrayDecl, isConst != 0);
         }
 
-        if (type.kind == CXTypeKind.CXType_ConstantArray)
+        if (type.kind == CXTypeKind._ConstantArray)
         {
             auto arrayType = clang_getArrayElementType(type);
             auto arrayDecl = typeToDecl(cursor, arrayType);
@@ -324,13 +323,13 @@ class Parser
             return new Array(arrayDecl, arraySize);
         }
 
-        if (type.kind == CXTypeKind.CXType_Record)
+        if (type.kind == CXTypeKind._Record)
         {
             auto children = cursor.getChildren();
             foreach (child; children)
             {
                 auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
-                if (childKind == CXCursorKind.CXCursor_TypeRef)
+                if (childKind == CXCursorKind._TypeRef)
                 {
                     auto referenced = clang_getCursorReferenced(child);
                     return getDeclFromCursor(referenced);
@@ -345,7 +344,7 @@ class Parser
             throw new Exception("record");
         }
 
-        if (type.kind == CXTypeKind.CXType_Elaborated)
+        if (type.kind == CXTypeKind._Elaborated)
         {
             // struct
             foreach (child; cursor.getChildren())
@@ -355,14 +354,14 @@ class Parser
                 // writeln(kind);
                 switch (childKind)
                 {
-                case CXCursorKind.CXCursor_StructDecl:
-                case CXCursorKind.CXCursor_UnionDecl:
-                case CXCursorKind.CXCursor_EnumDecl:
+                case CXCursorKind._StructDecl:
+                case CXCursorKind._UnionDecl:
+                case CXCursorKind._EnumDecl:
                     {
                         return getDeclFromCursor(child);
                     }
 
-                case CXCursorKind.CXCursor_TypeRef:
+                case CXCursorKind._TypeRef:
                     {
                         auto referenced = clang_getCursorReferenced(child);
                         debug auto referencedName = getCursorSpelling(referenced);
@@ -371,9 +370,9 @@ class Parser
                         return getDeclFromCursor(referenced);
                     }
 
-                case CXCursorKind.CXCursor_DLLImport:
-                case CXCursorKind.CXCursor_DLLExport:
-                case CXCursorKind.CXCursor_UnexposedAttr:
+                case CXCursorKind._DLLImport:
+                case CXCursorKind._DLLExport:
+                case CXCursorKind._UnexposedAttr:
                     // skip
                     break;
 
@@ -387,22 +386,22 @@ class Parser
             throw new Exception("not implemented");
         }
 
-        if (type.kind == CXTypeKind.CXType_Typedef)
+        if (type.kind == CXTypeKind._Typedef)
         {
             foreach (child; cursor.getChildren())
             {
                 auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
                 switch (childKind)
                 {
-                case CXCursorKind.CXCursor_TypeRef:
+                case CXCursorKind._TypeRef:
                     {
                         auto referenced = clang_getCursorReferenced(child);
                         return getDeclFromCursor(referenced);
                     }
 
-                case CXCursorKind.CXCursor_DLLImport:
-                case CXCursorKind.CXCursor_DLLExport:
-                case CXCursorKind.CXCursor_UnexposedAttr:
+                case CXCursorKind._DLLImport:
+                case CXCursorKind._DLLExport:
+                case CXCursorKind._UnexposedAttr:
                     break;
 
                 default:
@@ -412,13 +411,13 @@ class Parser
             throw new Exception("no TypeRef");
         }
 
-        if (type.kind == CXTypeKind.CXType_FunctionProto)
+        if (type.kind == CXTypeKind._FunctionProto)
         {
             // return new Function(null, 0, null, null, null);
             return new Void();
         }
 
-        if (type.kind == CXTypeKind.CXType_Unexposed)
+        if (type.kind == CXTypeKind._Unexposed)
         {
             // nullptr_t
             return new Pointer(new Void());
@@ -533,14 +532,14 @@ class Parser
             auto fieldType = clang_getCursorType(child);
             switch (fieldKind)
             {
-            case CXCursorKind.CXCursor_FieldDecl:
+            case CXCursorKind._FieldDecl:
                 {
                     auto fieldDecl = typeToDecl(child, fieldType);
                     decl.m_fields ~= Field(fieldName, fieldDecl);
                     break;
                 }
 
-            case CXCursorKind.CXCursor_UnexposedAttr:
+            case CXCursorKind._UnexposedAttr:
                 {
                     auto src = getSource(child);
                     auto uuid = getUUID(src);
@@ -551,30 +550,30 @@ class Parser
                 }
                 break;
 
-            case CXCursorKind.CXCursor_CXXMethod:
+            case CXCursorKind._CXXMethod:
                 {
                     Function method = parseFunction(child, false);
                     decl.m_methods ~= method;
                 }
                 break;
 
-            case CXCursorKind.CXCursor_Constructor:
-            case CXCursorKind.CXCursor_Destructor:
-            case CXCursorKind.CXCursor_ConversionFunction:
+            case CXCursorKind._Constructor:
+            case CXCursorKind._Destructor:
+            case CXCursorKind._ConversionFunction:
                 break;
 
-            case CXCursorKind.CXCursor_ObjCClassMethodDecl:
-            case CXCursorKind.CXCursor_UnexposedExpr:
-            case CXCursorKind.CXCursor_AlignedAttr:
-            case CXCursorKind.CXCursor_CXXAccessSpecifier:
+            case CXCursorKind._ObjCClassMethodDecl:
+            case CXCursorKind._UnexposedExpr:
+            case CXCursorKind._AlignedAttr:
+            case CXCursorKind._CXXAccessSpecifier:
                 break;
 
-            case CXCursorKind.CXCursor_CXXBaseSpecifier:
+            case CXCursorKind._CXXBaseSpecifier:
                 {
                     foreach (base; child.getChildren())
                     {
                         auto baseKind = cast(CXCursorKind) clang_getCursorKind(base);
-                        if (baseKind == CXCursorKind.CXCursor_TypeRef)
+                        if (baseKind == CXCursorKind._TypeRef)
                         {
                             auto referenced = clang_getCursorReferenced(base);
                             auto referencedKind = cast(CXCursorKind) clang_getCursorKind(referenced);
@@ -589,8 +588,7 @@ class Parser
 
             default:
                 traverse(child, context);
-                if (CXCursorKind.CXCursor_StructDecl
-                        || CXCursorKind.CXCursor_ClassDecl || CXCursorKind.CXCursor_UnionDecl)
+                if (CXCursorKind._StructDecl || CXCursorKind._ClassDecl || CXCursorKind._UnionDecl)
                 {
                     if (fieldName == "")
                     {
@@ -615,7 +613,7 @@ class Parser
             auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
             switch (childKind)
             {
-            case CXCursorKind.CXCursor_EnumConstantDecl:
+            case CXCursorKind._EnumConstantDecl:
                 {
                     auto childName = getCursorSpelling(child);
                     auto childValue = clang_getEnumConstantDeclUnsignedValue(child);
@@ -658,11 +656,11 @@ class Parser
             auto childName = getCursorSpelling(child);
             switch (childKind)
             {
-            case CXCursorKind.CXCursor_TypeRef:
-            case CXCursorKind.CXCursor_WarnUnusedResultAttr:
+            case CXCursorKind._TypeRef:
+            case CXCursorKind._WarnUnusedResultAttr:
                 break;
 
-            case CXCursorKind.CXCursor_ParmDecl:
+            case CXCursorKind._ParmDecl:
                 {
                     auto paramCursorType = clang_getCursorType(child);
                     auto paramType = typeToDecl(child, paramCursorType);
@@ -672,12 +670,12 @@ class Parser
                 }
                 break;
 
-            case CXCursorKind.CXCursor_DLLImport:
-            case CXCursorKind.CXCursor_DLLExport:
+            case CXCursorKind._DLLImport:
+            case CXCursorKind._DLLExport:
                 dllExport = true;
                 break;
 
-            case CXCursorKind.CXCursor_UnexposedAttr:
+            case CXCursorKind._UnexposedAttr:
                 {
 
                 }

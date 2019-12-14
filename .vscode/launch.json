@@ -8,6 +8,7 @@
             "program": "${workspaceFolder}/dclangen.exe",
             "args": [
                 // "${workspaceFolder}/sample.h",
+                "-E",
                 "-I",
                 "C:/Program Files/LLVM/include",
                 "--outdir",
