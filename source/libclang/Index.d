@@ -182,7 +182,7 @@ extern(C) CXErrorCode clang_parseTranslationUnit2(CXIndex CIdx, byte* source_fil
 extern(C) CXErrorCode clang_parseTranslationUnit2FullArgv(CXIndex CIdx, byte* source_filename, byte** command_line_args, int num_command_line_args, CXUnsavedFile* unsaved_files, uint num_unsaved_files, uint options, CXTranslationUnit* out_TU);
 enum CXSaveTranslationUnit_Flags
 {
-    _None = 0x0,
+    CXSaveTranslationUnit_None = 0x0,
 }
 extern(C) uint clang_defaultSaveOptions(CXTranslationUnit TU);
 enum CXSaveError
@@ -197,7 +197,7 @@ extern(C) uint clang_suspendTranslationUnit(CXTranslationUnit );
 extern(C) void clang_disposeTranslationUnit(CXTranslationUnit );
 enum CXReparse_Flags
 {
-    _None = 0x0,
+    CXReparse_None = 0x0,
 }
 extern(C) uint clang_defaultReparseOptions(CXTranslationUnit TU);
 extern(C) int clang_reparseTranslationUnit(CXTranslationUnit TU, uint num_unsaved_files, CXUnsavedFile* unsaved_files, uint options);
@@ -830,10 +830,10 @@ extern(C) uint clang_Cursor_isBitField(CXCursor C);
 extern(C) uint clang_isVirtualBase(CXCursor );
 enum CX_CXXAccessSpecifier
 {
-    CX_CXXInvalidAccessSpecifier = 0x0,
-    CX_CXXPublic = 0x1,
-    CX_CXXProtected = 0x2,
-    CX_CXXPrivate = 0x3,
+    _CXXInvalidAccessSpecifier = 0x0,
+    _CXXPublic = 0x1,
+    _CXXProtected = 0x2,
+    _CXXPrivate = 0x3,
 }
 extern(C) CX_CXXAccessSpecifier clang_getCXXAccessSpecifier(CXCursor );
 enum CX_StorageClass
@@ -979,9 +979,9 @@ extern(C) CXCursor clang_getSpecializedCursorTemplate(CXCursor C);
 extern(C) CXSourceRange clang_getCursorReferenceNameRange(CXCursor C, uint NameFlags, uint PieceIndex);
 enum CXNameRefFlags
 {
-    CXNameRange_WantQualifier = 0x1,
-    CXNameRange_WantTemplateArgs = 0x2,
-    CXNameRange_WantSinglePiece = 0x4,
+    _WantQualifier = 0x1,
+    _WantTemplateArgs = 0x2,
+    _WantSinglePiece = 0x4,
 }
 enum CXTokenKind
 {

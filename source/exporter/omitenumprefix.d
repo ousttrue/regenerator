@@ -23,51 +23,27 @@ shared static this()
     ];
 }
 
-string getOmitEnumNameForWindows(string name)
-{
-    if (name in replace_map)
-    {
-        return replace_map[name];
-    }
-
-    return name ~ '_';
-}
-
-immutable clangEnumSuffix = [
-    "Kind", "Flags", "Severity", "DisplayOptions", "Property"
-];
-
-string getOmitEnumName(string name)
-{
-    debug if (name == "CXSaveError")
-    {
-        auto a = 0;
-    }
-
-    if (name.indexOf('_') != -1)
-    {
-        return getOmitEnumNameForWindows(name);
-    }
-    else
-    {
-        // for clang
-        foreach (suffix; clangEnumSuffix)
-        {
-            if (name.endsWith(suffix))
-            {
-                return name[0 .. $ - suffix.length] ~ '_';
-            }
-        }
-
-        return name ~ '_';
-    }
-}
-
+// "D3D_SRV_DIMENSION_UNKNOWN" => "_UNKNOWN"
 void omit(Enum decl)
 {
+    // すべての値の共通のprefixを得る
     auto prefix = decl.getValuePrefix();
-    if (prefix.length > 1 && prefix[$ - 1] == '_')
+    if (!prefix.empty)
     {
+        if (prefix[$ - 1] != '_')
+        {
+            // '_' で終わるように調整
+            auto us = prefix.lastIndexOf('_');
+            if (us != -1)
+            {
+                prefix = prefix[0 .. us + 1];
+            }
+        }
+    }
+
+    if (decl.m_values.length > 1 && prefix.length > 1 && prefix[$ - 1] == '_')
+    {
+        // perfixを省略
         for (int i = 0; i < decl.m_values.length; ++i)
         {
             auto name = decl.m_values[i].name;
@@ -76,13 +52,18 @@ void omit(Enum decl)
     }
     else
     {
-        auto omitName = getOmitEnumName(decl.m_name);
+        auto omitName = (decl.m_name in replace_map) //
+         ? replace_map[decl.m_name] // 不定形
+         : decl.m_name ~ '_' // 型名
+        ;
+
         for (int i = 0; i < decl.m_values.length; ++i)
         {
             auto name = decl.m_values[i].name;
             if (name.startsWith(omitName))
             {
-                // "D3D_SRV_DIMENSION_UNKNOWN" => "_UNKNOWN"
+                // 省略名で始まるものだけ
+                // '_' で始まるようにする(0-9で始まる場合在り)
                 decl.m_values[i].name = name[omitName.length - 1 .. $];
             }
         }
