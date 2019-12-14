@@ -37,7 +37,7 @@ struct CursorList
 extern (C) CXChildVisitResult visitor(CXCursor cursor, CXCursor /* parent */ , CursorList* list)
 {
     list.cursors ~= cursor;
-    return CXChildVisitResult.CXChildVisit_Continue;
+    return CXChildVisitResult._Continue;
 }
 
 CXCursor[] getChildren(CXCursor cursor)
