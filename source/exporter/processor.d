@@ -69,21 +69,15 @@ class Processor
         {
             return decl;
         }
-        if (!structdecl.m_forwardDecl)
-        {
-            return decl;
-        }
 
-        auto definition = structdecl.m_definition;
-        debug
+        auto definition = structdecl;
+        while (structdecl.m_forwardDecl)
         {
-            if (!definition)
+            definition = structdecl.m_definition;
+            structdecl = cast(Struct) definition;
+            if (!structdecl)
             {
-                auto a = 0;
-            }
-            if (decl.m_name == "IDXGIAdapter")
-            {
-                auto a = 0;
+                break;
             }
         }
         return definition;

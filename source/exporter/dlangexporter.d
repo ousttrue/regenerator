@@ -142,6 +142,11 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
         return;
     }
 
+    if (decl.m_forwardDecl)
+    {
+        return;
+    }
+
     if (decl.isInterface)
     {
         // interface
