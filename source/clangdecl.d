@@ -191,6 +191,33 @@ class Enum : UserDecl
         auto indexValue = m_values.enumerate.maxElement!"a.value.value"();
         return indexValue[1].value;
     }
+
+    string getValuePrefix()
+    {
+        if (m_values.empty)
+        {
+            return "";
+        }
+
+        string prefix = m_values[0].name;
+        foreach (value; m_values[1 .. $])
+        {
+            int i = 0;
+            for (; i < prefix.length; ++i)
+            {
+                if (prefix[i] != value.name[i])
+                {
+                    break;
+                }
+            }
+            prefix = prefix[0 .. i];
+            if (prefix.empty)
+            {
+                break;
+            }
+        }
+        return prefix;
+    }
 }
 
 class Typedef : UserDecl

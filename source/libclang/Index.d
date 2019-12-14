@@ -119,10 +119,10 @@ extern(C) uint clang_getNumDiagnosticsInSet(CXDiagnosticSet Diags);
 extern(C) CXDiagnostic clang_getDiagnosticInSet(CXDiagnosticSet Diags, uint Index);
 enum CXLoadDiag_Error
 {
-    CXLoadDiag_None = 0x0,
-    CXLoadDiag_Unknown = 0x1,
-    CXLoadDiag_CannotLoad = 0x2,
-    CXLoadDiag_InvalidFile = 0x3,
+    _None = 0x0,
+    _Unknown = 0x1,
+    _CannotLoad = 0x2,
+    _InvalidFile = 0x3,
 }
 extern(C) CXDiagnosticSet clang_loadDiagnostics(byte* file, CXLoadDiag_Error* error, CXString* errorString);
 extern(C) void clang_disposeDiagnosticSet(CXDiagnosticSet Diags);
@@ -740,16 +740,16 @@ extern(C) int clang_Cursor_getNumArguments(CXCursor C);
 extern(C) CXCursor clang_Cursor_getArgument(CXCursor C, uint i);
 enum CXTemplateArgumentKind
 {
-    CXTemplateArgumentKind_Null = 0x0,
-    CXTemplateArgumentKind_Type = 0x1,
-    CXTemplateArgumentKind_Declaration = 0x2,
-    CXTemplateArgumentKind_NullPtr = 0x3,
-    CXTemplateArgumentKind_Integral = 0x4,
-    CXTemplateArgumentKind_Template = 0x5,
-    CXTemplateArgumentKind_TemplateExpansion = 0x6,
-    CXTemplateArgumentKind_Expression = 0x7,
-    CXTemplateArgumentKind_Pack = 0x8,
-    CXTemplateArgumentKind_Invalid = 0x9,
+    _Null = 0x0,
+    _Type = 0x1,
+    _Declaration = 0x2,
+    _NullPtr = 0x3,
+    _Integral = 0x4,
+    _Template = 0x5,
+    _TemplateExpansion = 0x6,
+    _Expression = 0x7,
+    _Pack = 0x8,
+    _Invalid = 0x9,
 }
 extern(C) int clang_Cursor_getNumTemplateArguments(CXCursor C);
 extern(C) CXTemplateArgumentKind clang_Cursor_getTemplateArgumentKind(CXCursor C, uint I);
@@ -838,14 +838,14 @@ enum CX_CXXAccessSpecifier
 extern(C) CX_CXXAccessSpecifier clang_getCXXAccessSpecifier(CXCursor );
 enum CX_StorageClass
 {
-    CX_SC_Invalid = 0x0,
-    CX_SC_None = 0x1,
-    CX_SC_Extern = 0x2,
-    CX_SC_Static = 0x3,
-    CX_SC_PrivateExtern = 0x4,
-    CX_SC_OpenCLWorkGroupLocal = 0x5,
-    CX_SC_Auto = 0x6,
-    CX_SC_Register = 0x7,
+    _Invalid = 0x0,
+    _None = 0x1,
+    _Extern = 0x2,
+    _Static = 0x3,
+    _PrivateExtern = 0x4,
+    _OpenCLWorkGroupLocal = 0x5,
+    _Auto = 0x6,
+    _Register = 0x7,
 }
 extern(C) CX_StorageClass clang_Cursor_getStorageClass(CXCursor );
 extern(C) uint clang_getNumOverloadedDecls(CXCursor cursor);
@@ -853,9 +853,9 @@ extern(C) CXCursor clang_getOverloadedDecl(CXCursor cursor, uint index);
 extern(C) CXType clang_getIBOutletCollectionType(CXCursor );
 enum CXChildVisitResult
 {
-    CXChildVisit_Break = 0x0,
-    CXChildVisit_Continue = 0x1,
-    CXChildVisit_Recurse = 0x2,
+    _Break = 0x0,
+    _Continue = 0x1,
+    _Recurse = 0x2,
 }
 alias CXCursorVisitor = void*;
 extern(C) uint clang_visitChildren(CXCursor parent, CXCursorVisitor visitor, CXClientData client_data);
@@ -871,33 +871,33 @@ extern(C) CXSourceRange clang_Cursor_getSpellingNameRange(CXCursor , uint pieceI
 alias CXPrintingPolicy = void*;
 enum CXPrintingPolicyProperty
 {
-    CXPrintingPolicy_Indentation = 0x0,
-    CXPrintingPolicy_SuppressSpecifiers = 0x1,
-    CXPrintingPolicy_SuppressTagKeyword = 0x2,
-    CXPrintingPolicy_IncludeTagDefinition = 0x3,
-    CXPrintingPolicy_SuppressScope = 0x4,
-    CXPrintingPolicy_SuppressUnwrittenScope = 0x5,
-    CXPrintingPolicy_SuppressInitializers = 0x6,
-    CXPrintingPolicy_ConstantArraySizeAsWritten = 0x7,
-    CXPrintingPolicy_AnonymousTagLocations = 0x8,
-    CXPrintingPolicy_SuppressStrongLifetime = 0x9,
-    CXPrintingPolicy_SuppressLifetimeQualifiers = 0xa,
-    CXPrintingPolicy_SuppressTemplateArgsInCXXConstructors = 0xb,
-    CXPrintingPolicy_Bool = 0xc,
-    CXPrintingPolicy_Restrict = 0xd,
-    CXPrintingPolicy_Alignof = 0xe,
-    CXPrintingPolicy_UnderscoreAlignof = 0xf,
-    CXPrintingPolicy_UseVoidForZeroParams = 0x10,
-    CXPrintingPolicy_TerseOutput = 0x11,
-    CXPrintingPolicy_PolishForDeclaration = 0x12,
-    CXPrintingPolicy_Half = 0x13,
-    CXPrintingPolicy_MSWChar = 0x14,
-    CXPrintingPolicy_IncludeNewlines = 0x15,
-    CXPrintingPolicy_MSVCFormatting = 0x16,
-    CXPrintingPolicy_ConstantsAsWritten = 0x17,
-    CXPrintingPolicy_SuppressImplicitBase = 0x18,
-    CXPrintingPolicy_FullyQualifiedName = 0x19,
-    CXPrintingPolicy_LastProperty = 0x19,
+    _Indentation = 0x0,
+    _SuppressSpecifiers = 0x1,
+    _SuppressTagKeyword = 0x2,
+    _IncludeTagDefinition = 0x3,
+    _SuppressScope = 0x4,
+    _SuppressUnwrittenScope = 0x5,
+    _SuppressInitializers = 0x6,
+    _ConstantArraySizeAsWritten = 0x7,
+    _AnonymousTagLocations = 0x8,
+    _SuppressStrongLifetime = 0x9,
+    _SuppressLifetimeQualifiers = 0xa,
+    _SuppressTemplateArgsInCXXConstructors = 0xb,
+    _Bool = 0xc,
+    _Restrict = 0xd,
+    _Alignof = 0xe,
+    _UnderscoreAlignof = 0xf,
+    _UseVoidForZeroParams = 0x10,
+    _TerseOutput = 0x11,
+    _PolishForDeclaration = 0x12,
+    _Half = 0x13,
+    _MSWChar = 0x14,
+    _IncludeNewlines = 0x15,
+    _MSVCFormatting = 0x16,
+    _ConstantsAsWritten = 0x17,
+    _SuppressImplicitBase = 0x18,
+    _FullyQualifiedName = 0x19,
+    _LastProperty = 0x19,
 }
 extern(C) uint clang_PrintingPolicy_getProperty(CXPrintingPolicy Policy, CXPrintingPolicyProperty Property);
 extern(C) void clang_PrintingPolicy_setProperty(CXPrintingPolicy Policy, CXPrintingPolicyProperty Property, uint Value);
@@ -1108,13 +1108,13 @@ alias CXInclusionVisitor = void*;
 extern(C) void clang_getInclusions(CXTranslationUnit tu, CXInclusionVisitor visitor, CXClientData client_data);
 enum CXEvalResultKind
 {
-    CXEval_Int = 0x1,
-    CXEval_Float = 0x2,
-    CXEval_ObjCStrLiteral = 0x3,
-    CXEval_StrLiteral = 0x4,
-    CXEval_CFStr = 0x5,
-    CXEval_Other = 0x6,
-    CXEval_UnExposed = 0x0,
+    _Int = 0x1,
+    _Float = 0x2,
+    _ObjCStrLiteral = 0x3,
+    _StrLiteral = 0x4,
+    _CFStr = 0x5,
+    _Other = 0x6,
+    _UnExposed = 0x0,
 }
 alias CXEvalResult = void*;
 extern(C) CXEvalResult clang_Cursor_Evaluate(CXCursor C);
@@ -1134,8 +1134,8 @@ extern(C) void clang_remap_getFilenames(CXRemapping , uint index, CXString* orig
 extern(C) void clang_remap_dispose(CXRemapping );
 enum CXVisitorResult
 {
-    CXVisit_Break = 0x0,
-    CXVisit_Continue = 0x1,
+    _Break = 0x0,
+    _Continue = 0x1,
 }
 struct CXCursorAndRangeVisitor
 {
@@ -1207,18 +1207,18 @@ enum CXIdxEntityKind
 }
 enum CXIdxEntityLanguage
 {
-    CXIdxEntityLang_None = 0x0,
-    CXIdxEntityLang_C = 0x1,
-    CXIdxEntityLang_ObjC = 0x2,
-    CXIdxEntityLang_CXX = 0x3,
-    CXIdxEntityLang_Swift = 0x4,
+    _None = 0x0,
+    _C = 0x1,
+    _ObjC = 0x2,
+    _CXX = 0x3,
+    _Swift = 0x4,
 }
 enum CXIdxEntityCXXTemplateKind
 {
-    CXIdxEntity_NonTemplate = 0x0,
-    CXIdxEntity_Template = 0x1,
-    CXIdxEntity_TemplatePartialSpecialization = 0x2,
-    CXIdxEntity_TemplateSpecialization = 0x3,
+    _NonTemplate = 0x0,
+    _Template = 0x1,
+    _TemplatePartialSpecialization = 0x2,
+    _TemplateSpecialization = 0x3,
 }
 enum CXIdxAttrKind
 {

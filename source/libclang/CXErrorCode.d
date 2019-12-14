@@ -2,9 +2,9 @@
 module libclang.cxerrorcode;
 enum CXErrorCode
 {
-    CXError_Success = 0x0,
-    CXError_Failure = 0x1,
-    CXError_Crashed = 0x2,
-    CXError_InvalidArguments = 0x3,
-    CXError_ASTReadError = 0x4,
+    _Success = 0x0,
+    _Failure = 0x1,
+    _Crashed = 0x2,
+    _InvalidArguments = 0x3,
+    _ASTReadError = 0x4,
 }
