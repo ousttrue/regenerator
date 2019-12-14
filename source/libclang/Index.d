@@ -7,13 +7,9 @@ import libclang.cxerrorcode;
 enum CINDEX_VERSION_MAJOR = 0;
 enum CINDEX_VERSION_MINOR = 59;
 alias CXIndex = void*;
-struct CXTargetInfoImpl
-{
-}
+struct CXTargetInfoImpl;
 alias CXTargetInfo = CXTargetInfoImpl*;
-struct CXTranslationUnitImpl
-{
-}
+struct CXTranslationUnitImpl;
 alias CXTranslationUnit = CXTranslationUnitImpl*;
 alias CXClientData = void*;
 struct CXUnsavedFile
@@ -570,9 +566,7 @@ enum CXTLSKind
 }
 extern(C) CXTLSKind clang_getCursorTLSKind(CXCursor cursor);
 extern(C) CXTranslationUnit clang_Cursor_getTranslationUnit(CXCursor );
-struct CXCursorSetImpl
-{
-}
+struct CXCursorSetImpl;
 alias CXCursorSet = CXCursorSetImpl*;
 extern(C) CXCursorSet clang_createCXCursorSet();
 extern(C) void clang_disposeCXCursorSet(CXCursorSet cset);

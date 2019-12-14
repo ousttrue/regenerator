@@ -149,13 +149,14 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
         return;
     }
 
-    if (decl.m_forwardDecl)
-    {
-        // return;
-    }
-
     if (decl.isInterface)
     {
+        // com interface
+        if (decl.m_forwardDecl)
+        {
+            return;
+        }
+
         // interface
         f.writef("interface %s", name);
         if (decl.m_base)
@@ -177,57 +178,61 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
     }
     else
     {
-        // struct
-        // if (decl.m_fields.empty())
-        // {
-        //     return;
-        // }
-
-        f.writefln("struct %s", name);
-        f.writeln("{");
-        foreach (field; decl.m_fields)
+        if (decl.m_forwardDecl)
         {
-            auto typeName = DType(field.type);
-            if (!typeName)
+            // forward decl
+            assert(decl.m_fields.empty);
+            f.writefln("struct %s;", name);
+        }
+        else
+        {
+
+            f.writefln("struct %s", name);
+            f.writeln("{");
+            foreach (field; decl.m_fields)
             {
-                auto structDecl = cast(Struct) field.type;
-                if (structDecl)
+                auto typeName = DType(field.type);
+                if (!typeName)
                 {
-                    if (structDecl.m_isUnion)
+                    auto structDecl = cast(Struct) field.type;
+                    if (structDecl)
                     {
-                        // typedef struct D3D11_VIDEO_COLOR
-                        // {
-                        // union 
-                        //     {
-                        //     int YCbCr;
-                        //     float RGBA;
-                        //     } 	;
-                        // }                        
-                        f.writefln("    union {");
-                        foreach (unionField; structDecl.m_fields)
+                        if (structDecl.m_isUnion)
                         {
-                            auto unionFieldTypeName = DType(unionField.type);
-                            f.writefln("        %s %s;", unionFieldTypeName,
-                                    DEscapeName(unionField.name));
+                            // typedef struct D3D11_VIDEO_COLOR
+                            // {
+                            // union 
+                            //     {
+                            //     int YCbCr;
+                            //     float RGBA;
+                            //     } 	;
+                            // }                        
+                            f.writefln("    union {");
+                            foreach (unionField; structDecl.m_fields)
+                            {
+                                auto unionFieldTypeName = DType(unionField.type);
+                                f.writefln("        %s %s;", unionFieldTypeName,
+                                        DEscapeName(unionField.name));
+                            }
+                            f.writefln("    }");
                         }
-                        f.writefln("    }");
+                        else
+                        {
+                            f.writefln("   // anonymous struct %s;", DEscapeName(field.name));
+                        }
                     }
                     else
                     {
-                        f.writefln("   // anonymous struct %s;", DEscapeName(field.name));
+                        throw new Exception("unknown");
                     }
                 }
                 else
                 {
-                    throw new Exception("unknown");
+                    f.writefln("    %s %s;", typeName, DEscapeName(field.name));
                 }
             }
-            else
-            {
-                f.writefln("    %s %s;", typeName, DEscapeName(field.name));
-            }
+            f.writeln("}");
         }
-        f.writeln("}");
     }
 }
 
