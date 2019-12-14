@@ -8,6 +8,7 @@ import std.stdio;
 import std.string;
 import std.path;
 import std.uuid;
+import std.experimental.logger;
 
 ///
 /// パースした型情報を変換するためにSourceに集める
@@ -207,7 +208,7 @@ class Processor
             }
             else
             {
-                writefln("%s: not found", header);
+                logf("%s: not found", header);
             }
         }
     }

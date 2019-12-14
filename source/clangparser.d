@@ -379,7 +379,6 @@ class Parser
 
                 default:
                     {
-                        writeln("hoge");
                         throw new Exception("not implemented");
                     }
                 }

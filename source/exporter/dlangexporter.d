@@ -7,6 +7,7 @@ import std.string;
 import std.path;
 import std.traits;
 import std.file;
+import std.experimental.logger;
 import std.algorithm;
 import sliceview;
 
@@ -324,7 +325,7 @@ void dlangExport(Source[string] sourceMap, string dir, bool omitEnumPrefix)
     // clear dir
     if (exists(dir))
     {
-        writefln("rmdir %s ...", dir);
+        logf("rmdir %s", dir);
         rmdirRecurse(dir);
     }
 
@@ -344,7 +345,7 @@ void dlangExport(Source[string] sourceMap, string dir, bool omitEnumPrefix)
         // open
         auto path = format("%s/%s.d", dir, source.getName());
         // writeln(stem);
-        writefln("writeTo: %s(%d)", path, source.m_types.length);
+        logf("writeTo: %s(%d)", path, source.m_types.length);
         mkdirRecurse(dir);
 
         {

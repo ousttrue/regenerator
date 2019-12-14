@@ -1,5 +1,6 @@
 import std.getopt;
 import std.string;
+import std.experimental.logger;
 import clangparser;
 import exporter.processor;
 import exporter.dlangexporter;
@@ -22,9 +23,11 @@ int main(string[] args)
 	auto parser = new Parser();
 
 	// 型情報を集める
+	log("parse...");
 	parser.parse(headers, includes);
 
 	// 出力する情報を整理する
+	log("process...");
 	auto sourceMap = process(parser, headers);
 
 	if (dir)
@@ -35,6 +38,7 @@ int main(string[] args)
 		}
 
 		// D言語に変換する
+		log("generate dlang...");
 		dlangExport(sourceMap, dir, omitEnumPrefix);
 	}
 
