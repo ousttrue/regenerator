@@ -8,5 +8,24 @@
 	"name": "dclangen",
 	"libs": [
 		"C:/Program Files/LLVM/lib/libclang"
-	]
+	],
+	"buildTypes": {
+		"debug": {
+			"dflags": [
+				"-mscrtlib=MSVCRTD",
+				"-g"
+			],
+			"libs": [
+				"build/Debug/lib/liblua"
+			]
+		},
+		"release": {
+			"libs": [
+				"build/Release/lib/liblua"
+			],
+			"dflags": [
+				"-mscrtlib=msvcrt"
+			]
+		}
+	}
 }

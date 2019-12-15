@@ -4,8 +4,9 @@ import std.experimental.logger;
 import clangparser;
 import exporter.processor;
 import exporter.dlangexporter;
+import lua;
 
-int main(string[] args)
+int regenerate(string[] args)
 {
 	string[] headers;
 	string dir;
@@ -46,4 +47,27 @@ int main(string[] args)
 	}
 
 	return 0;
+}
+
+class Lua
+{
+	lua_State* m_state;
+
+	this()
+	{
+		m_state = luaL_newstate();
+	}
+
+	~this()
+	{
+		lua_close(m_state);
+	}
+}
+
+int main(string[] args)
+{
+	auto lua = new Lua();
+
+	return regenerate(args);
+	// return 0;
 }

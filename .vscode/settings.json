@@ -7,9 +7,11 @@
         "cindex",
         "cpptypeinfo",
         "dclangen",
+        "dflags",
         "dlang",
         "imgui",
         "libclang",
+        "liblua",
         "nargs",
         "outdir",
         "struct"
