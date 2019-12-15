@@ -136,6 +136,8 @@ void DTypedefDecl(File* f, Typedef t)
     f.writeln("// typedef target nameless");
 }
 
+immutable string[] skipMethods = ["QueryInterface", "AddRef", "Release"];
+
 void DStructDecl(File* f, Struct decl, string typedefName = null)
 {
     debug if (decl.m_name.endsWith("Impl"))
@@ -173,7 +175,14 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
         // methods
         foreach (method; decl.m_methods)
         {
-            DFucntionDecl(f, method, "    ", true);
+            if (skipMethods.any!(a => a == method.m_name))
+            {
+                f.writefln("    // skip %s", method.m_name);
+            }
+            else
+            {
+                DFucntionDecl(f, method, "    ", true);
+            }
         }
         f.writeln("}");
     }
