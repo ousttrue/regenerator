@@ -8,6 +8,7 @@
         "cpptypeinfo",
         "dclangen",
         "dlang",
+        "imgui",
         "libclang",
         "nargs",
         "outdir",

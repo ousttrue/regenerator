@@ -1,6 +1,11 @@
-# Dlang CLANg GENerator
+# reGenerator
 
-Parse c++ source by libclang.cindex, and generate Dlang Source.
+* Parse c++ source by libclang.cindex
+* Generate source
+
+## dependencies
+
+* libclang
 
 ## ToDo
 
@@ -17,27 +22,33 @@ Parse c++ source by libclang.cindex, and generate Dlang Source.
 * [x] com interface inheritance
 * [x] macro definition value
 * [ ] function default parameter
+* [ ] lua interface
 
 ## Usage
+
+
+* `--outdir` Output Directory: remove if exists, then write exported files
+* `-I` Include Directory: clang argument
+* `-D` Define
+* `-H` Process Header: file that contains functions and macro definitions
+* `-E` omit enum prefix
+
+### libclang
 
 ``` 
 $ dclangen.exe -I "C:/Program Files/LLVM/include" --outdir source/libclang -H "C:/Program Files/LLVM/include/clang-c/Index.h" -H "C:/Program Files/LLVM/include/clang-c/CXString.h"
 ```
 
-* `--outdir` Output Directory: remove if exists, then write exported files
-* `-I` Include Directory: clang argument
-* `-H` Process Header: file that contains functions and macro definitions
-
-generate d sources to [source/libclang](./source/libclang)
-
-### generate d3d
+### d3d11.h
 
 ``` 
 $ dclangen.exe --outdir source/d3d11 -H "C:/Program Files (x86)/Windows Kits/10/Include/10.0.17763.0/um/d3d11.h -H "C:/Program Files (x86)/Windows Kits/10/Include/10.0.17763.0/shared/dxgi.h"
 ```
+### imgui.h
+
+### lua.h
 
 ## clang command line
 
 * https://bastian.rieck.ru/blog/posts/2015/baby_steps_libclang_ast/
 * `-x c++` 
-
