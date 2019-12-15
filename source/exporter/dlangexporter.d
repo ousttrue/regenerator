@@ -332,6 +332,17 @@ void DDecl(File* f, Decl decl, bool omitEnumPrefix)
             )(decl);
 }
 
+static string[string] macroMap;
+
+shared static this()
+{
+    // avoid c style cast
+    macroMap = [
+        "D3D_COMPILE_STANDARD_FILE_INCLUDE": "enum D3D_COMPILE_STANDARD_FILE_INCLUDE = cast(void*)1;",
+        "ImDrawCallback_ResetRenderState": "enum ImDrawCallback_ResetRenderState = cast( ImDrawCallback ) ( - 1 );",
+    ];
+}
+
 void dlangExport(Source[string] sourceMap, string dir, bool omitEnumPrefix)
 {
     // clear dir
@@ -400,9 +411,11 @@ void dlangExport(Source[string] sourceMap, string dir, bool omitEnumPrefix)
                     // INTERFACE = ID3DInclude;
                     continue;
                 }
-                if (macroDefinition.name == "D3D_COMPILE_STANDARD_FILE_INCLUDE")
+
+                auto p = macroDefinition.name in macroMap;
+                if (p)
                 {
-                    f.writeln("enum D3D_COMPILE_STANDARD_FILE_INCLUDE = cast(void*)1;");
+                    f.writeln(*p);
                 }
                 else
                 {

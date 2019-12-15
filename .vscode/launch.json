@@ -59,15 +59,16 @@
             "visualizerFile": "${workspaceFolder}/d.natvis"
         },
         {
-            "name": "dclangen d3dcompiler",
+            "name": "dclangen imgui",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/dclangen.exe",
             "args": [
                 "--outdir",
-                "${workspaceFolder}/source/d3d11",
+                "${workspaceFolder}/source/imgui",
+                "-E",
                 "-H",
-                "C:/Program Files (x86)/Windows Kits/10/Include/10.0.17763.0/um/d3dcompiler.h",
+                "${workspaceFolder}/submodules/imgui/imgui.h",
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
