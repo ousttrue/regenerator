@@ -14,6 +14,7 @@ import clanghelper;
 import sliceview;
 import std.conv;
 import std.bigint;
+import std.experimental.logger;
 
 struct MacroDefinition
 {
@@ -731,7 +732,7 @@ class Parser
         header.m_macros ~= MacroDefinition(tokenSpellings[0], tokenSpellings[1 .. $]);
     }
 
-    bool parse(string[] headers, string[] includes)
+    bool parse(string[] headers, string[] includes, string[] defines)
     {
         auto index = clang_createIndex(0, 1);
         scope (exit)
@@ -745,7 +746,12 @@ class Parser
         {
             params ~= format("-I%s", include);
         }
+        foreach (define; defines)
+        {
+            params ~= format("-D%s", define);
+        }
 
+        log(params);
         auto tu = getTU(index, headers, params);
         if (!tu)
         {

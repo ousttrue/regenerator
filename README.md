@@ -16,6 +16,7 @@ Parse c++ source by libclang.cindex, and generate Dlang Source.
 * [x] com interface uuid
 * [x] com interface inheritance
 * [x] macro definition value
+* [ ] function default parameter
 
 ## Usage
 

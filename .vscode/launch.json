@@ -69,6 +69,8 @@
                 "-E",
                 "-H",
                 "${workspaceFolder}/submodules/imgui/imgui.h",
+                "-D",
+                "IMGUI_API=__declspec(dllexport)",
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

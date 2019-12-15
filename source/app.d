@@ -10,9 +10,11 @@ int main(string[] args)
 	string[] headers;
 	string dir;
 	string[] includes;
+	string[] defines;
 	bool omitEnumPrefix = false;
 	getopt(args, //
 			"include|I", &includes, //
+			"define|D", &defines, //
 			"outdir", &dir, //
 			"omitEnumPrefix|E",
 			&omitEnumPrefix, //
@@ -24,7 +26,7 @@ int main(string[] args)
 
 	// 型情報を集める
 	log("parse...");
-	parser.parse(headers, includes);
+	parser.parse(headers, includes, defines);
 
 	// 出力する情報を整理する
 	log("process...");
