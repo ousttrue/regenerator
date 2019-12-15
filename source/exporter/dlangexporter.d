@@ -339,6 +339,8 @@ shared static this()
     macroMap = [
         "D3D_COMPILE_STANDARD_FILE_INCLUDE": "enum D3D_COMPILE_STANDARD_FILE_INCLUDE = cast(void*)1;",
         "ImDrawCallback_ResetRenderState": "enum ImDrawCallback_ResetRenderState = cast( ImDrawCallback ) ( - 1 );",
+        "LUA_VERSION": "enum LUA_VERSION = \"Lua \" ~ LUA_VERSION_MAJOR ~ \".\" ~ LUA_VERSION_MINOR;",
+        "LUA_REGISTRYINDEX": "enum LUA_REGISTRYINDEX = ( - 1000000 - 1000 );",
     ];
 }
 

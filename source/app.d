@@ -12,12 +12,13 @@ int main(string[] args)
 	string[] includes;
 	string[] defines;
 	bool omitEnumPrefix = false;
+	bool externC = false;
 	getopt(args, //
 			"include|I", &includes, //
 			"define|D", &defines, //
 			"outdir", &dir, //
-			"omitEnumPrefix|E",
-			&omitEnumPrefix, //
+			"omitEnumPrefix|E", &omitEnumPrefix, //
+			"externC|C", &externC, //
 			std.getopt.config.required, // 
 			"header|H", &headers //
 			);
@@ -26,7 +27,7 @@ int main(string[] args)
 
 	// 型情報を集める
 	log("parse...");
-	parser.parse(headers, includes, defines);
+	parser.parse(headers, includes, defines, externC);
 
 	// 出力する情報を整理する
 	log("process...");

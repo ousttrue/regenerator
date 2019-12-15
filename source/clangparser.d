@@ -732,7 +732,7 @@ class Parser
         header.m_macros ~= MacroDefinition(tokenSpellings[0], tokenSpellings[1 .. $]);
     }
 
-    bool parse(string[] headers, string[] includes, string[] defines)
+    bool parse(string[] headers, string[] includes, string[] defines, bool externC)
     {
         auto index = clang_createIndex(0, 1);
         scope (exit)
@@ -762,26 +762,10 @@ class Parser
 
         auto rootCursor = clang_getTranslationUnitCursor(tu);
         auto children = rootCursor.getChildren();
-        // int[string] pathMap;
         foreach (cursor; children)
         {
-            // auto location = getCursorLocation(cursor);
-            // if (location.path.length && location.path !in pathMap)
-            // {
-            //     pathMap[location.path] = 1;
-            // }
-            // else
-            // {
-            //     pathMap[location.path]++;
-            // }
-            traverse(cursor);
+            traverse(cursor, Context(0, externC, false));
         }
-
-        // foreach (k, v; pathMap)
-        // {
-        //     writeln(k, v);
-        // }
-
         return true;
     }
 }

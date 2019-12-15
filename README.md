@@ -3,9 +3,19 @@
 * Parse c++ source by libclang.cindex
 * Generate source
 
+## WIP: lua interface
+
+* complex argument(include, define, extern C etc...)
+* output function filtering
+* type mapping
+* symbol escape
+* source template
+* library specific hard coding(macro)
+
 ## dependencies
 
 * libclang
+* lua
 
 ## ToDo
 
@@ -25,7 +35,6 @@
 * [ ] lua interface
 
 ## Usage
-
 
 * `--outdir` Output Directory: remove if exists, then write exported files
 * `-I` Include Directory: clang argument

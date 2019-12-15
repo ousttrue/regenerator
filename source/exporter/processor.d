@@ -195,7 +195,7 @@ class Processor
         {
             header = escapePath(header);
             Header exportHeader = m_parser.getHeader(header);
-            if (exportHeader)
+            if (exportHeader && !exportHeader.types.empty)
             {
                 foreach (decl; exportHeader.types)
                 {
