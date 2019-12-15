@@ -1,3 +1,6 @@
 [submodule "submodules/cpptypeinfo"]
 	path = submodules/cpptypeinfo
 	url = https://github.com/ousttrue/cpptypeinfo.git
+[submodule "submodules/imgui"]
+	path = submodules/imgui
+	url = https://github.com/ocornut/imgui.git
