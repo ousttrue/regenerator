@@ -27,7 +27,7 @@
                 }
             ],
             "externalConsole": false,
-            "visualizerFile": "${workspaceFolder}/d.natvis"
+            "visualizerFile": "${workspaceFolder}/.vscode/d.natvis"
         },
         {
             "name": "dclangen lua",
@@ -53,7 +53,7 @@
                 }
             ],
             "externalConsole": false,
-            "visualizerFile": "${workspaceFolder}/d.natvis"
+            "visualizerFile": "${workspaceFolder}/.vscode/d.natvis"
         },
         {
             "name": "dclangen d3d11",
@@ -82,7 +82,7 @@
                 }
             ],
             "externalConsole": false,
-            "visualizerFile": "${workspaceFolder}/d.natvis"
+            "visualizerFile": "${workspaceFolder}/.vscode/d.natvis"
         },
         {
             "name": "dclangen imgui",
@@ -107,7 +107,7 @@
                 }
             ],
             "externalConsole": false,
-            "visualizerFile": "${workspaceFolder}/d.natvis"
+            "visualizerFile": "${workspaceFolder}/.vscode/d.natvis"
         },
         {
             "name": "clang_sample",
