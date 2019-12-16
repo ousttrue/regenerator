@@ -40,7 +40,7 @@ extern(C) int luaL_fileresult(lua_State* L, int stat, byte* fname);
 extern(C) int luaL_execresult(lua_State* L, int stat);
 extern(C) int luaL_ref(lua_State* L, int t);
 extern(C) void luaL_unref(lua_State* L, int t, int _ref);
-extern(C) int luaL_loadfilex(lua_State* L, byte* filename, byte* mode);
+extern(C) int luaL_loadfilex(lua_State* L, const char* filename, byte* mode);
 extern(C) int luaL_loadbufferx(lua_State* L, byte* buff, size_t sz, byte* name, byte* mode);
 extern(C) int luaL_loadstring(lua_State* L, byte* s);
 extern(C) lua_State* luaL_newstate();

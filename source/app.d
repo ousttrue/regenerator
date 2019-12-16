@@ -7,12 +7,38 @@ import exporter.dlangexporter;
 import lua;
 import luamacros;
 
-int regenerate(string[] args)
+class LuaState
+{
+	lua_State* L;
+
+	this()
+	{
+		L = luaL_newstate();
+		luaL_requiref(L, "_G", &luaopen_base, 1);
+		lua_pop(L, 1);
+	}
+
+	~this()
+	{
+		lua_close(L);
+	}
+
+	void doScript(string file)
+	{
+		if (luaL_dofile(L, file.toStringz) != 0)
+		{
+			// PrintLuaError();
+		}
+	}
+}
+
+int main(string[] args)
 {
 	string[] headers;
 	string dir;
 	string[] includes;
 	string[] defines;
+	string lua;
 	bool omitEnumPrefix = false;
 	bool externC = false;
 	getopt(args, //
@@ -21,6 +47,8 @@ int regenerate(string[] args)
 			"outdir", &dir, //
 			"omitEnumPrefix|E", &omitEnumPrefix, //
 			"externC|C", &externC, //
+			"lua",
+			&lua, //
 			std.getopt.config.required, // 
 			"header|H", &headers //
 			);
@@ -47,30 +75,11 @@ int regenerate(string[] args)
 		dlangExport(sourceMap, dir, omitEnumPrefix);
 	}
 
+	if (!lua.empty)
+	{
+		auto l = new LuaState();
+		l.doScript(lua);
+	}
+
 	return 0;
-}
-
-class Lua
-{
-	lua_State* L;
-
-	this()
-	{
-		L = luaL_newstate();
-		luaL_requiref(L, "_G", &luaopen_base, 1);
-		lua_pop(L, 1);
-	}
-
-	~this()
-	{
-		lua_close(L);
-	}
-}
-
-int main(string[] args)
-{
-	auto lua = new Lua();
-
-	return regenerate(args);
-	// return 0;
 }
