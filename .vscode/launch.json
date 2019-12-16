@@ -45,6 +45,8 @@
                 "${workspaceFolder}/submodules/lua/lua.h",
                 "-H",
                 "${workspaceFolder}/submodules/lua/lauxlib.h",
+                "-H",
+                "${workspaceFolder}/submodules/lua/lualib.h",
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

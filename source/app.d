@@ -5,6 +5,7 @@ import clangparser;
 import exporter.processor;
 import exporter.dlangexporter;
 import lua;
+import luamacros;
 
 int regenerate(string[] args)
 {
@@ -51,16 +52,18 @@ int regenerate(string[] args)
 
 class Lua
 {
-	lua_State* m_state;
+	lua_State* L;
 
 	this()
 	{
-		m_state = luaL_newstate();
+		L = luaL_newstate();
+		luaL_requiref(L, "_G", &luaopen_base, 1);
+		lua_pop(L, 1);
 	}
 
 	~this()
 	{
-		lua_close(m_state);
+		lua_close(L);
 	}
 }
 

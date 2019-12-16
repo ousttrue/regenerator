@@ -342,6 +342,7 @@ shared static this()
         "LUA_VERSION": "enum LUA_VERSION = \"Lua \" ~ LUA_VERSION_MAJOR ~ \".\" ~ LUA_VERSION_MINOR;",
         "LUA_REGISTRYINDEX": "enum LUA_REGISTRYINDEX = ( - 1000000 - 1000 );",
         "LUAL_NUMSIZES": "enum LUAL_NUMSIZES = ( ( lua_Integer ).sizeof  * 16 + ( lua_Number ).sizeof  );",
+        "LUA_VERSUFFIX": "enum LUA_VERSUFFIX = \"_\" ~ LUA_VERSION_MAJOR ~ \"_\" ~ LUA_VERSION_MINOR;",
     ];
 }
 

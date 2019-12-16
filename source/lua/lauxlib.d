@@ -49,7 +49,7 @@ extern(C) byte* luaL_gsub(lua_State* L, byte* s, byte* p, byte* r);
 extern(C) void luaL_setfuncs(lua_State* L, luaL_Reg* l, int nup);
 extern(C) int luaL_getsubtable(lua_State* L, int idx, byte* fname);
 extern(C) void luaL_traceback(lua_State* L, lua_State* L1, byte* msg, int level);
-extern(C) void luaL_requiref(lua_State* L, byte* modname, lua_CFunction openf, int glb);
+extern(C) void luaL_requiref(lua_State* L, const char* modname, lua_CFunction openf, int glb);
 struct luaL_Buffer
 {
     byte* b;
