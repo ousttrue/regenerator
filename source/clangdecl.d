@@ -14,6 +14,25 @@ struct TypeRef
 {
     Decl type;
     bool isConst;
+
+    bool hasConstRecursive()
+    {
+        if(isConst)
+        {
+            return true;
+        }
+
+        auto pointer = cast(Pointer)type;
+        if(pointer)
+        {
+            if(pointer.m_typeref.hasConstRecursive)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }    
 }
 
 class Pointer : Decl

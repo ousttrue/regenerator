@@ -311,7 +311,7 @@ void DFucntionDecl(File* f, Function decl, string indent, bool isMethod)
         {
             f.write(", ");
         }
-        if (param.typeRef.isConst)
+        if (param.typeRef.hasConstRecursive)
         {
             f.write("const ");
         }
