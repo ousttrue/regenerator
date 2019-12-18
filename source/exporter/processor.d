@@ -48,7 +48,7 @@ class Processor
             Array array = cast(Array) decl;
             if (pointer)
             {
-                decl = pointer.m_typeref.type;
+                decl = pointer.typeref.type;
             }
             else if (array)
             {

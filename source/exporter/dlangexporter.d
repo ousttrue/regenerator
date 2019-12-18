@@ -84,19 +84,19 @@ string GetName(Decl decl)
     return userDecl.m_name;
 }
 
-string DPointer(Pointer t)
+string DPointer(Pointer p)
 {
-    if (t.m_typeref.type.GetName() == "ID3DInclude")
+    if (p.typeref.type.GetName() == "ID3DInclude")
     {
         return "void*";
     }
-    else if (isInterface(t.m_typeref.type))
+    else if (isInterface(p.typeref.type))
     {
-        return format("%s", DType(t.m_typeref.type));
+        return format("%s", DType(p.typeref.type));
     }
     else
     {
-        return format("%s*", DType(t.m_typeref.type));
+        return format("%s*", DType(p.typeref.type));
     }
 }
 

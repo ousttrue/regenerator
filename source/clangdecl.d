@@ -25,7 +25,7 @@ struct TypeRef
         auto pointer = cast(Pointer)type;
         if(pointer)
         {
-            if(pointer.m_typeref.hasConstRecursive)
+            if(pointer.typeref.hasConstRecursive)
             {
                 return true;
             }
@@ -37,11 +37,11 @@ struct TypeRef
 
 class Pointer : Decl
 {
-    TypeRef m_typeref;
+    TypeRef typeref;
 
     this(Decl type, bool isConst = false)
     {
-        m_typeref = TypeRef(type, isConst);
+        typeref = TypeRef(type, isConst);
     }
 }
 
