@@ -41,13 +41,13 @@ void omit(Enum decl)
         }
     }
 
-    if (decl.m_values.length > 1 && prefix.length > 1 && prefix[$ - 1] == '_')
+    if (decl.values.length > 1 && prefix.length > 1 && prefix[$ - 1] == '_')
     {
         // perfixを省略
-        for (int i = 0; i < decl.m_values.length; ++i)
+        for (int i = 0; i < decl.values.length; ++i)
         {
-            auto name = decl.m_values[i].name;
-            decl.m_values[i].name = name[prefix.length - 1 .. $];
+            auto name = decl.values[i].name;
+            decl.values[i].name = name[prefix.length - 1 .. $];
         }
     }
     else
@@ -57,14 +57,14 @@ void omit(Enum decl)
          : decl.name ~ '_' // 型名
         ;
 
-        for (int i = 0; i < decl.m_values.length; ++i)
+        for (int i = 0; i < decl.values.length; ++i)
         {
-            auto name = decl.m_values[i].name;
+            auto name = decl.values[i].name;
             if (name.startsWith(omitName))
             {
                 // 省略名で始まるものだけ
                 // '_' で始まるようにする(0-9で始まる場合在り)
-                decl.m_values[i].name = name[omitName.length - 1 .. $];
+                decl.values[i].name = name[omitName.length - 1 .. $];
             }
         }
     }

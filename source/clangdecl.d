@@ -17,22 +17,22 @@ struct TypeRef
 
     bool hasConstRecursive()
     {
-        if(isConst)
+        if (this.isConst)
         {
             return true;
         }
 
-        auto pointer = cast(Pointer)type;
-        if(pointer)
+        auto pointer = cast(Pointer) this.type;
+        if (pointer)
         {
-            if(pointer.typeref.hasConstRecursive)
+            if (pointer.typeref.hasConstRecursive)
             {
                 return true;
             }
         }
 
         return false;
-    }    
+    }
 }
 
 class Pointer : Decl
@@ -41,7 +41,7 @@ class Pointer : Decl
 
     this(Decl type, bool isConst = false)
     {
-        typeref = TypeRef(type, isConst);
+        this.typeref = TypeRef(type, isConst);
     }
 }
 
@@ -52,8 +52,8 @@ class Array : Decl
 
     this(Decl type, long arraySize, bool isConst = false)
     {
-        typeref = TypeRef(type, isConst);
-        size = arraySize;
+        this.typeref = TypeRef(type, isConst);
+        this.size = arraySize;
     }
 }
 
@@ -157,7 +157,7 @@ class Struct : UserDecl
 
         // 例外
         // ID3DInclude
-        if (name[0] == 'I' && fields.length == 0 && methods.length > 0)
+        if (name[0] == 'I' && this.fields.length == 0 && this.methods.length > 0)
         {
             return true;
         }
@@ -172,20 +172,20 @@ class Struct : UserDecl
 
     void resovleForeardDeclaration()
     {
-        if (!forwardDecl)
+        if (!this.forwardDecl)
         {
             return;
         }
-        if (!definition)
+        if (!this.definition)
         {
             return;
         }
 
-        forwardDecl = false;
-        fields = definition.fields;
-        methods = definition.methods;
-        iid = definition.iid;
-        definition = null;
+        this.forwardDecl = false;
+        this.fields = this.definition.fields;
+        this.methods = this.definition.methods;
+        this.iid = this.definition.iid;
+        this.definition = null;
     }
 }
 
@@ -197,29 +197,29 @@ struct EnumValue
 
 class Enum : UserDecl
 {
-    EnumValue[] m_values;
+    EnumValue[] values;
 
     this(string path, int line, string name, EnumValue[] values)
     {
         super(path, line, name);
-        m_values = values;
+        this.values = values;
     }
 
     ulong maxValue()
     {
-        auto indexValue = m_values.enumerate.maxElement!"a.value.value"();
+        auto indexValue = this.values.enumerate.maxElement!"a.value.value"();
         return indexValue[1].value;
     }
 
     string getValuePrefix()
     {
-        if (m_values.empty)
+        if (this.values.empty)
         {
             return "";
         }
 
-        string prefix = m_values[0].name;
-        foreach (value; m_values[1 .. $])
+        string prefix = this.values[0].name;
+        foreach (value; this.values[1 .. $])
         {
             int i = 0;
             for (; i < prefix.length; ++i)

@@ -267,7 +267,7 @@ void DEnumDecl(File* f, Enum decl, bool omitEnumPrefix)
     }
 
     f.writeln("{");
-    foreach (value; decl.m_values)
+    foreach (value; decl.values)
     {
         auto name = value.name;
         f.writefln("    %s = 0x%x,", name, value.value);
