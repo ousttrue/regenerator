@@ -277,18 +277,18 @@ struct Param
 
 class Function : UserDecl
 {
-    Decl m_ret;
-    bool m_externC;
-    bool m_dllExport;
-    Param[] m_params;
+    Decl ret;
+    bool externC;
+    bool dllExport;
+    Param[] params;
 
     this(string path, int line, string name, Decl ret, Param[] params, bool dllExport, bool externC)
     {
         super(path, line, name);
-        m_ret = ret;
-        m_params = params;
-        m_dllExport = dllExport;
-        m_externC = externC;
+        this.ret = ret;
+        this.params = params;
+        this.dllExport = dllExport;
+        this.externC = externC;
     }
 }
 

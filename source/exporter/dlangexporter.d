@@ -277,9 +277,9 @@ void DEnumDecl(File* f, Enum decl, bool omitEnumPrefix)
 
 void DFucntionDecl(File* f, Function decl, string indent, bool isMethod)
 {
-    if (!isMethod && !decl.m_dllExport)
+    if (!isMethod && !decl.dllExport)
     {
-        auto retType = cast(UserDecl) decl.m_ret;
+        auto retType = cast(UserDecl) decl.ret;
         if (!retType)
         {
             return;
@@ -291,17 +291,17 @@ void DFucntionDecl(File* f, Function decl, string indent, bool isMethod)
         debug auto isCom = true; // D3D11CreateDevice ... etc
     }
     f.write(indent);
-    if (decl.m_externC)
+    if (decl.externC)
     {
         f.write("extern(C) ");
     }
-    f.write(DType(decl.m_ret));
+    f.write(DType(decl.ret));
     f.write(" ");
     f.write(decl.name);
     f.write("(");
 
     auto isFirst = true;
-    foreach (param; decl.m_params)
+    foreach (param; decl.params)
     {
         if (isFirst)
         {
