@@ -293,8 +293,8 @@ class Parser
         if (type.kind == CXTypeKind._Pointer || type.kind == CXTypeKind._LValueReference)
         {
             // pointer
-            auto isConst = clang_isConstQualifiedType(type);
             auto pointeeType = clang_getPointeeType(type);
+            auto isConst = clang_isConstQualifiedType(pointeeType);
             auto pointeeDecl = typeToDecl(cursor, pointeeType);
             if (!pointeeDecl)
             {

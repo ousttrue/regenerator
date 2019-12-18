@@ -109,7 +109,7 @@ string DType(Decl t)
 {
     return castSwitch!((Pointer decl) => DPointer(decl),
             (Array decl) => DArray(decl), (UserDecl decl) => decl.m_name, //
-            (Void _) => "void", (Bool _) => "bool", (Int8 _) => "byte",
+            (Void _) => "void", (Bool _) => "bool", (Int8 _) => "char",
             (Int16 _) => "short", (Int32 _) => "int", (Int64 _) => "long",
             (UInt8 _) => "ubyte", (UInt16 _) => "ushort", (UInt32 _) => "uint",
             (UInt64 _) => "ulong", (Float _) => "float", (Double _) => "double", //
