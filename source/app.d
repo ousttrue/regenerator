@@ -25,7 +25,8 @@ class LuaState
 
 	void doScript(string file)
 	{
-		if (luaL_dofile(L, file.toStringz) != 0)
+		auto result = luaL_dofile(L, file.toStringz);
+		if (result != 0)
 		{
 			// PrintLuaError();
 		}

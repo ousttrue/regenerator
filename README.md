@@ -33,6 +33,7 @@
 * [x] macro definition value
 * [ ] function default parameter
 * [ ] lua interface
+* [ ] `const char *` to `const char *`. not `byte *`
 
 ## Usage
 

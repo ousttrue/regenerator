@@ -35,6 +35,8 @@
             "request": "launch",
             "program": "${workspaceFolder}/dclangen.exe",
             "args": [
+                "--lua",
+                "${workspaceFolder}/scripts/liblua.lua",
                 "--outdir",
                 "${workspaceFolder}/source/lua",
                 "-E",
