@@ -510,15 +510,15 @@ class Parser
 
         // first regist
         auto decl = new Struct(location.path, location.line, name);
-        decl.m_isUnion = isUnion;
-        decl.m_forwardDecl = is_forward_declaration(cursor);
-        if (!decl.m_forwardDecl)
+        decl.isUnion = isUnion;
+        decl.forwardDecl = is_forward_declaration(cursor);
+        if (!decl.forwardDecl)
         {
             auto canonical = clang_getCanonicalCursor(cursor);
             if (canonical != cursor)
             {
                 Struct forwardDecl = cast(Struct) m_declMap[clang_hashCursor(canonical)];
-                forwardDecl.m_definition = decl;
+                forwardDecl.definition = decl;
             }
         }
         pushDecl(cursor, decl);
@@ -536,7 +536,7 @@ class Parser
             case CXCursorKind._FieldDecl:
                 {
                     auto fieldDecl = typeToDecl(child, fieldType);
-                    decl.m_fields ~= Field(fieldName, fieldDecl);
+                    decl.fields ~= Field(fieldName, fieldDecl);
                     break;
                 }
 
@@ -546,7 +546,7 @@ class Parser
                     auto uuid = getUUID(src);
                     if (!uuid.empty())
                     {
-                        decl.m_iid = uuid;
+                        decl.iid = uuid;
                     }
                 }
                 break;
@@ -554,7 +554,7 @@ class Parser
             case CXCursorKind._CXXMethod:
                 {
                     Function method = parseFunction(child, false);
-                    decl.m_methods ~= method;
+                    decl.methods ~= method;
                 }
                 break;
 
@@ -581,7 +581,7 @@ class Parser
                             debug auto referencedKindName = getCursorKindName(referencedKind);
                             auto baseDecl = cast(UserDecl) getDeclFromCursor(referenced);
                             assert(baseDecl);
-                            decl.m_base = baseDecl;
+                            decl.base = baseDecl;
                         }
                     }
                 }
@@ -595,7 +595,7 @@ class Parser
                     {
                         // anonymous
                         auto fieldDecl = getDeclFromCursor(child);
-                        decl.m_fields ~= Field(fieldName, fieldDecl);
+                        decl.fields ~= Field(fieldName, fieldDecl);
                     }
                 }
                 break;

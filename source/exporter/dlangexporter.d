@@ -65,10 +65,10 @@ static bool isInterface(Decl decl)
         return false;
     }
 
-    if (structDecl.m_definition)
+    if (structDecl.definition)
     {
         // resolve forward decl
-        structDecl = structDecl.m_definition;
+        structDecl = structDecl.definition;
     }
 
     return structDecl.isInterface;
@@ -154,25 +154,25 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
     if (decl.isInterface)
     {
         // com interface
-        if (decl.m_forwardDecl)
+        if (decl.forwardDecl)
         {
             return;
         }
 
         // interface
         f.writef("interface %s", name);
-        if (decl.m_base)
+        if (decl.base)
         {
-            f.writef(": %s", decl.m_base.name);
+            f.writef(": %s", decl.base.name);
         }
         f.writeln();
         f.writeln("{");
-        if (!decl.m_iid.empty)
+        if (!decl.iid.empty)
         {
-            f.writefln("    static const iidof = parseGUID(\"%s\");", decl.m_iid.toString());
+            f.writefln("    static const iidof = parseGUID(\"%s\");", decl.iid.toString());
         }
         // methods
-        foreach (method; decl.m_methods)
+        foreach (method; decl.methods)
         {
             if (skipMethods.any!(a => a == method.name))
             {
@@ -187,10 +187,10 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
     }
     else
     {
-        if (decl.m_forwardDecl)
+        if (decl.forwardDecl)
         {
             // forward decl
-            assert(decl.m_fields.empty);
+            assert(decl.fields.empty);
             f.writefln("struct %s;", name);
         }
         else
@@ -198,7 +198,7 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
 
             f.writefln("struct %s", name);
             f.writeln("{");
-            foreach (field; decl.m_fields)
+            foreach (field; decl.fields)
             {
                 auto typeName = DType(field.type);
                 if (!typeName)
@@ -206,7 +206,7 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
                     auto structDecl = cast(Struct) field.type;
                     if (structDecl)
                     {
-                        if (structDecl.m_isUnion)
+                        if (structDecl.isUnion)
                         {
                             // typedef struct D3D11_VIDEO_COLOR
                             // {
@@ -217,7 +217,7 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
                             //     } 	;
                             // }                        
                             f.writefln("    union {");
-                            foreach (unionField; structDecl.m_fields)
+                            foreach (unionField; structDecl.fields)
                             {
                                 auto unionFieldTypeName = DType(unionField.type);
                                 f.writefln("        %s %s;", unionFieldTypeName,

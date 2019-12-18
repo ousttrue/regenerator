@@ -72,9 +72,9 @@ class Processor
         }
 
         auto definition = structdecl;
-        while (structdecl.m_forwardDecl)
+        while (structdecl.forwardDecl)
         {
-            definition = structdecl.m_definition;
+            definition = structdecl.definition;
             structdecl = cast(Struct) definition;
             if (!structdecl)
             {
@@ -150,7 +150,7 @@ class Processor
         }
         else if (structDecl)
         {
-            if (structDecl.m_iid.empty)
+            if (structDecl.iid.empty)
             {
                 debug if (structDecl.m_name == "ID3D11ShaderReflection")
                 {
@@ -158,19 +158,19 @@ class Processor
                 }
                 if (structDecl.name in m_parser.m_uuidMap)
                 {
-                    structDecl.m_iid = m_parser.m_uuidMap[structDecl.name];
+                    structDecl.iid = m_parser.m_uuidMap[structDecl.name];
                 }
             }
 
-            if (structDecl.m_base)
+            if (structDecl.base)
             {
-                addDecl(_decl ~ structDecl.m_base, from);
+                addDecl(_decl ~ structDecl.base, from);
             }
-            foreach (field; structDecl.m_fields)
+            foreach (field; structDecl.fields)
             {
                 addDecl(_decl ~ field.type, from);
             }
-            foreach (method; structDecl.m_methods)
+            foreach (method; structDecl.methods)
             {
                 addDecl(_decl ~ method.m_ret, from);
                 foreach (param; method.m_params)

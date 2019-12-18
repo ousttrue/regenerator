@@ -135,29 +135,29 @@ struct Field
 
 class Struct : UserDecl
 {
-    bool m_isUnion;
+    bool isUnion;
 
-    UserDecl m_base;
-    Field[] m_fields;
-    Function[] m_methods;
+    UserDecl base;
+    Field[] fields;
+    Function[] methods;
 
-    bool m_forwardDecl;
+    bool forwardDecl;
 
     // forwardDecl definition
-    Struct m_definition;
+    Struct definition;
 
     // Windows COM IID
-    UUID m_iid;
+    UUID iid;
     bool isInterface()
     {
-        if (!m_iid.empty)
+        if (!iid.empty)
         {
             return true;
         }
 
         // 例外
         // ID3DInclude
-        if (name[0] == 'I' && m_fields.length == 0 && m_methods.length > 0)
+        if (name[0] == 'I' && fields.length == 0 && methods.length > 0)
         {
             return true;
         }
@@ -172,20 +172,20 @@ class Struct : UserDecl
 
     void resovleForeardDeclaration()
     {
-        if (!m_forwardDecl)
+        if (!forwardDecl)
         {
             return;
         }
-        if (!m_definition)
+        if (!definition)
         {
             return;
         }
 
-        m_forwardDecl = false;
-        m_fields = m_definition.m_fields;
-        m_methods = m_definition.m_methods;
-        m_iid = m_definition.m_iid;
-        m_definition = null;
+        forwardDecl = false;
+        fields = definition.fields;
+        methods = definition.methods;
+        iid = definition.iid;
+        definition = null;
     }
 }
 
