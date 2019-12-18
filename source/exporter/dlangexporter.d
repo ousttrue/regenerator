@@ -81,7 +81,7 @@ string GetName(Decl decl)
     {
         return "";
     }
-    return userDecl.m_name;
+    return userDecl.name;
 }
 
 string DPointer(Pointer p)
@@ -108,7 +108,7 @@ string DArray(Array a)
 string DType(Decl t)
 {
     return castSwitch!((Pointer decl) => DPointer(decl),
-            (Array decl) => DArray(decl), (UserDecl decl) => decl.m_name, //
+            (Array decl) => DArray(decl), (UserDecl decl) => decl.name, //
             (Void _) => "void", (Bool _) => "bool", (Int8 _) => "char",
             (Int16 _) => "short", (Int32 _) => "int", (Int64 _) => "long",
             (UInt8 _) => "ubyte", (UInt16 _) => "ushort", (UInt32 _) => "uint",
@@ -121,13 +121,13 @@ void DTypedefDecl(File* f, Typedef t)
     auto dst = DType(t.m_typeref.type);
     if (dst)
     {
-        if (t.m_name == dst)
+        if (t.name == dst)
         {
             // f.writefln("// samename: %s", t.m_name);
             return;
         }
 
-        f.writefln("alias %s = %s;", t.m_name, dst);
+        f.writefln("alias %s = %s;", t.name, dst);
         return;
     }
 
@@ -144,7 +144,7 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
         auto a = 0;
     }
     // assert(!decl.m_forwardDecl);
-    auto name = typedefName ? typedefName : decl.m_name;
+    auto name = typedefName ? typedefName : decl.name;
     if (!name)
     {
         f.writeln("// struct nameless");
@@ -163,7 +163,7 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
         f.writef("interface %s", name);
         if (decl.m_base)
         {
-            f.writef(": %s", decl.m_base.m_name);
+            f.writef(": %s", decl.m_base.name);
         }
         f.writeln();
         f.writeln("{");
@@ -174,9 +174,9 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
         // methods
         foreach (method; decl.m_methods)
         {
-            if (skipMethods.any!(a => a == method.m_name))
+            if (skipMethods.any!(a => a == method.name))
             {
-                f.writefln("    // skip %s", method.m_name);
+                f.writefln("    // skip %s", method.name);
             }
             else
             {
@@ -247,13 +247,13 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
 
 void DEnumDecl(File* f, Enum decl, bool omitEnumPrefix)
 {
-    if (!decl.m_name)
+    if (!decl.name)
     {
         f.writeln("// enum nameless");
         return;
     }
 
-    f.writef("enum %s", decl.m_name);
+    f.writef("enum %s", decl.name);
     auto maxValue = decl.maxValue;
     if (maxValue > uint.max)
     {
@@ -284,7 +284,7 @@ void DFucntionDecl(File* f, Function decl, string indent, bool isMethod)
         {
             return;
         }
-        if (retType.m_name != "HRESULT")
+        if (retType.name != "HRESULT")
         {
             return;
         }
@@ -297,7 +297,7 @@ void DFucntionDecl(File* f, Function decl, string indent, bool isMethod)
     }
     f.write(DType(decl.m_ret));
     f.write(" ");
-    f.write(decl.m_name);
+    f.write(decl.name);
     f.write("(");
 
     auto isFirst = true;

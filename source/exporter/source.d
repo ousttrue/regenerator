@@ -65,19 +65,19 @@ class Source
             return false;
         }
 
-        if (includeModule!(core.sys.windows.windef)(type.m_name))
+        if (includeModule!(core.sys.windows.windef)(type.name))
         {
             return false;
         }
-        if (includeModule!(core.sys.windows.basetyps)(type.m_name))
+        if (includeModule!(core.sys.windows.basetyps)(type.name))
         {
             return false;
         }
-        if (includeModule!(core.sys.windows.winnt)(type.m_name))
+        if (includeModule!(core.sys.windows.winnt)(type.name))
         {
             return false;
         }
-        if (includeModule!(core.sys.windows.unknwn)(type.m_name))
+        if (includeModule!(core.sys.windows.unknwn)(type.name))
         {
             return false;
         }

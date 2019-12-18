@@ -111,7 +111,7 @@ class Processor
             decl = forwardDecl;
         }
 
-        auto dsource = getOrCreateSource(decl.m_path);
+        auto dsource = getOrCreateSource(decl.path);
 
         bool found = false;
         foreach (f; from)
@@ -156,9 +156,9 @@ class Processor
                 {
                     auto a = 0;
                 }
-                if (structDecl.m_name in m_parser.m_uuidMap)
+                if (structDecl.name in m_parser.m_uuidMap)
                 {
-                    structDecl.m_iid = m_parser.m_uuidMap[structDecl.m_name];
+                    structDecl.m_iid = m_parser.m_uuidMap[structDecl.name];
                 }
             }
 

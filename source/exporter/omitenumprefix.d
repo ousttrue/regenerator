@@ -52,9 +52,9 @@ void omit(Enum decl)
     }
     else
     {
-        auto omitName = (decl.m_name in replace_map) //
-         ? replace_map[decl.m_name] // 不定形
-         : decl.m_name ~ '_' // 型名
+        auto omitName = (decl.name in replace_map) //
+         ? replace_map[decl.name] // 不定形
+         : decl.name ~ '_' // 型名
         ;
 
         for (int i = 0; i < decl.m_values.length; ++i)

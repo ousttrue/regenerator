@@ -115,15 +115,15 @@ class LongDouble : Primitive
 
 class UserDecl : Decl
 {
-    string m_path;
-    int m_line;
-    string m_name;
+    string path;
+    int line;
+    string name;
 
     protected this(string path, int line, string name)
     {
-        m_path = path;
-        m_line = line;
-        m_name = name;
+        this.path = path;
+        this.line = line;
+        this.name = name;
     }
 }
 
@@ -157,7 +157,7 @@ class Struct : UserDecl
 
         // 例外
         // ID3DInclude
-        if (m_name[0] == 'I' && m_fields.length == 0 && m_methods.length > 0)
+        if (name[0] == 'I' && m_fields.length == 0 && m_methods.length > 0)
         {
             return true;
         }

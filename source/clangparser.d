@@ -461,10 +461,10 @@ class Parser
             if (typedefDecl)
             {
                 UserDecl userType = cast(UserDecl) typedefDecl.m_typeref.type;
-                if (userType && !userType.m_name)
+                if (userType && !userType.name)
                 {
                     // set typedef name
-                    userType.m_name = typedefDecl.m_name;
+                    userType.name = typedefDecl.name;
                 }
             }
         }
