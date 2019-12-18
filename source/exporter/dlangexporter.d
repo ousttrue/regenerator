@@ -100,9 +100,9 @@ string DPointer(Pointer p)
     }
 }
 
-string DArray(Array t)
+string DArray(Array a)
 {
-    return format("%s[%d]", DType(t.m_typeref.type), t.m_size);
+    return format("%s[%d]", DType(a.typeref.type), a.size);
 }
 
 string DType(Decl t)

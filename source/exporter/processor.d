@@ -52,7 +52,7 @@ class Processor
             }
             else if (array)
             {
-                decl = array.m_typeref.type;
+                decl = array.typeref.type;
             }
             else
             {

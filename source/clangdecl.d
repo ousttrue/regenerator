@@ -47,13 +47,13 @@ class Pointer : Decl
 
 class Array : Decl
 {
-    TypeRef m_typeref;
-    long m_size;
+    TypeRef typeref;
+    long size;
 
-    this(Decl type, long size, bool isConst = false)
+    this(Decl type, long arraySize, bool isConst = false)
     {
-        m_typeref = TypeRef(type, isConst);
-        m_size = size;
+        typeref = TypeRef(type, isConst);
+        size = arraySize;
     }
 }
 
