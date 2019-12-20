@@ -42,7 +42,10 @@ void lua_pop(lua_State* L, int n)
 // #define lua_pushglobaltable(L)  \
 // 	((void)lua_rawgeti(L, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS))
 
-// #define lua_tostring(L,i)	lua_tolstring(L, (i), NULL)
+char* lua_tostring(lua_State* L, int i)
+{
+    return lua_tolstring(L, (i), null);
+}
 
 // #define lua_insert(L,idx)	lua_rotate(L, (idx), 1)
 
@@ -53,6 +56,11 @@ void lua_pop(lua_State* L, int n)
 int luaL_loadfile(lua_State* L, const char* f)
 {
     return luaL_loadfilex(L, f, null);
+}
+
+int lua_upvalueindex(int i)
+{
+    return LUA_REGISTRYINDEX - i;
 }
 
 /*
