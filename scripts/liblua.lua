@@ -1,4 +1,6 @@
 print('hello lua')
 print(Vector3)
-local v = Vector3.new()
+local v = Vector3.new(4)
 print(v)
+local zero = Vector3.zero()
+print(zero)
