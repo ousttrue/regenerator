@@ -33,13 +33,33 @@ class LuaState
 	}
 }
 
+struct UserTypeDummy
+{
+}
+
+void usertype_push(T)(lua_State* L)
+{
+	// auto name = typeid(T).name;
+	auto p = cast(UserTypeDummy*) lua_newuserdata(L, UserTypeDummy.sizeof);
+	// int metatable = lua_gettop(L);
+	// assert(metatable == 1);
+	assert(lua_gettop(L) == 1);
+}
+
+struct Vector3
+{
+	float x;
+	float y;
+	float z;
+}
+
 int main(string[] args)
 {
 	string[] headers;
 	string dir;
 	string[] includes;
 	string[] defines;
-	string lua;
+	string script;
 	bool omitEnumPrefix = false;
 	bool externC = false;
 	getopt(args, //
@@ -49,7 +69,7 @@ int main(string[] args)
 			"omitEnumPrefix|E", &omitEnumPrefix, //
 			"externC|C", &externC, //
 			"lua",
-			&lua, //
+			&script, //
 			std.getopt.config.required, // 
 			"header|H", &headers //
 			);
@@ -76,10 +96,16 @@ int main(string[] args)
 		dlangExport(sourceMap, dir, omitEnumPrefix);
 	}
 
-	if (!lua.empty)
+	if (!script.empty)
 	{
-		auto l = new LuaState();
-		l.doScript(lua);
+		auto lua = new LuaState();
+
+		usertype_push!Vector3(lua.L);
+		lua_setglobal(lua.L, "Vector3");
+
+		auto a = lua_gettop(lua.L);
+
+		lua.doScript(script);
 	}
 
 	return 0;

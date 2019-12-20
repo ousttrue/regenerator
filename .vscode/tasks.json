@@ -8,7 +8,7 @@
             "type": "shell",
             "command": "dub",
             "args": [
-                "build"
+                "build",
             ],
             "group": {
                 "kind": "build",
