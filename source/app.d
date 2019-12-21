@@ -16,6 +16,14 @@ struct Vector3
 	float y;
 	float z;
 
+	Vector3 opBinary(string op)(const ref Vector3 rhs)
+	{
+		static if (op == "+")
+			return Vector3(x + rhs.x, y + rhs.y, z + rhs.z);
+		else
+			static assert(0, "Operator " ~ op ~ " not implemented");
+	}
+
 	string toString() const
 	{
 		return "Vector3{%f, %f, %f}".format(x, y, z);
@@ -70,8 +78,10 @@ int main(string[] args)
 		auto lua = new LuaState();
 
 		auto vec3 = new UserType!Vector3;
+		vec3.staticMethod("new", (float x, float y, float z) => Vector3(x, y, z));
 		vec3.staticMethod("zero", () => Vector3(0, 0, 0));
-		vec3.metaMethod(LuaMetaKey.tostring, (Vector3* v) { return v.toString(); });
+		vec3.metaMethod(LuaMetaKey.tostring, (Vector3* v) => v.toString());
+		vec3.metaMethod(LuaMetaKey.add, (Vector3* a, Vector3 b) => *a + b);
 
 		vec3.push(lua.L);
 		lua_setglobal(lua.L, "Vector3");

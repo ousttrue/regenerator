@@ -2,6 +2,7 @@ module luahelper;
 import std.string;
 import std.typecons;
 import std.conv;
+import std.traits;
 import std.experimental.logger;
 import lua;
 import luamacros;
@@ -9,21 +10,30 @@ import luamacros;
 enum LuaMetaKey
 {
     tostring = "__tostring",
+    add = "__add",
 }
 
 ulong get_hash(T)()
 {
-    auto hash = typeid(T).toHash();
-    logf("%s => %d", typeid(T).name, hash);
+    static if (isPointer!T)
+    {
+        auto ti = typeid(PointerTarget!T);
+    }
+    else
+    {
+        auto ti = typeid(T);
+    }
+    auto hash = ti.toHash();
+    // logf("%s => %d", ti.name, hash);
     return hash;
 }
 
-ulong get_hash(T : T*)()
-{
-    auto hash = typeid(T).toHash();
-    logf("%s => %d", typeid(T).name, hash);
-    return hash;
-}
+// ulong get_hash(T : T*)()
+// {
+//     auto hash = typeid(T).toHash();
+//     logf("%s => %d", typeid(T).name, hash);
+//     return hash;
+// }
 
 class LuaState
 {
@@ -85,36 +95,50 @@ T lua_to(T : float)(lua_State* L, int idx)
     return cast(float) value;
 }
 
-T* lua_to(T : T*)(lua_State* L, int idx)
+T lua_to(T)(lua_State* L, int idx)
 {
     auto t = lua_type(L, idx);
     if (t == LUA_TUSERDATA)
     {
         if (!lua_getmetatable(L, idx))
         {
-            return null;
+            return T();
         }
         lua_getmetatable_from_type!T(L);
         auto isEqual = lua_rawequal(L, -1, -2);
         lua_pop(L, 2); // remove both metatables
         if (isEqual)
         {
-            return cast(T*) lua_touserdata(L, idx);
+            static if (isPointer!T)
+            {
+                return cast(T) lua_touserdata(L, idx);
+            }
+            else
+            {
+                auto p = cast(T*) lua_touserdata(L, idx);
+                return *p;
+            }
         }
         else
         {
-            return null;
+            return T();
         }
     }
     else
     {
-        return null;
+        return T();
     }
 }
 
 auto lua_totuple()(lua_State* L, int idx)
 {
     return tuple();
+}
+
+Tuple!A lua_totuple(A)(lua_State* L, int idx)
+{
+    A first = lua_to!A(L, idx);
+    return tuple(first);
 }
 
 Tuple!ARGS lua_totuple(ARGS...)(lua_State* L, int idx)
