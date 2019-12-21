@@ -32,65 +32,65 @@ struct Vector3
 
 int main(string[] args)
 {
-	string[] headers;
-	string dir;
-	string[] includes;
-	string[] defines;
-	string script;
-	bool omitEnumPrefix = false;
-	bool externC = false;
-	getopt(args, //
-			"include|I", &includes, //
-			"define|D", &defines, //
-			"outdir", &dir, //
-			"omitEnumPrefix|E", &omitEnumPrefix, //
-			"externC|C", &externC, //
-			"lua",
-			&script, //
-			std.getopt.config.required, // 
-			"header|H", &headers //
-			);
+	// string[] headers;
+	// string dir;
+	// string[] includes;
+	// string[] defines;
+	// string script;
+	// bool omitEnumPrefix = false;
+	// bool externC = false;
+	// getopt(args, //
+	// 		"include|I", &includes, //
+	// 		"define|D", &defines, //
+	// 		"outdir", &dir, //
+	// 		"omitEnumPrefix|E", &omitEnumPrefix, //
+	// 		"externC|C", &externC, //
+	// 		"lua",
+	// 		&script, //
+	// 		std.getopt.config.required, // 
+	// 		"header|H", &headers //
+	// 		);
 
-	auto parser = new Parser();
+	// auto parser = new Parser();
 
-	// 型情報を集める
-	log("parse...");
-	parser.parse(headers, includes, defines, externC);
+	// // 型情報を集める
+	// log("parse...");
+	// parser.parse(headers, includes, defines, externC);
 
-	// 出力する情報を整理する
-	log("process...");
-	auto sourceMap = process(parser, headers);
+	// // 出力する情報を整理する
+	// log("process...");
+	// auto sourceMap = process(parser, headers);
 
-	if (dir)
-	{
-		if (sourceMap.empty)
-		{
-			throw new Exception("empty");
-		}
+	// if (dir)
+	// {
+	// 	if (sourceMap.empty)
+	// 	{
+	// 		throw new Exception("empty");
+	// 	}
 
-		// D言語に変換する
-		log("generate dlang...");
-		dlangExport(sourceMap, dir, omitEnumPrefix);
-	}
+	// 	// D言語に変換する
+	// 	log("generate dlang...");
+	// 	dlangExport(sourceMap, dir, omitEnumPrefix);
+	// }
 
-	if (!script.empty)
-	{
-		auto lua = new LuaState();
+	// if (!script.empty)
+	// {
+	auto lua = new LuaState();
 
-		auto vec3 = new UserType!Vector3;
-		vec3.staticMethod("new", (float x, float y, float z) => Vector3(x, y, z));
-		vec3.staticMethod("zero", () => Vector3(0, 0, 0));
-		vec3.metaMethod(LuaMetaKey.tostring, (Vector3* v) => v.toString());
-		vec3.metaMethod(LuaMetaKey.add, (Vector3 a, Vector3 b) => a + b);
-		vec3.instance.Getter("x", (Vector3* value) { return value.x; });
+	auto vec3 = new UserType!Vector3;
+	vec3.staticMethod("new", (float x, float y, float z) => Vector3(x, y, z));
+	vec3.staticMethod("zero", () => Vector3(0, 0, 0));
+	vec3.metaMethod(LuaMetaKey.tostring, (Vector3* v) => v.toString());
+	vec3.metaMethod(LuaMetaKey.add, (Vector3 a, Vector3 b) => a + b);
+	vec3.instance.Getter("x", (Vector3* value) { return value.x; });
 
-		vec3.push(lua.L);
-		lua_setglobal(lua.L, "Vector3");
+	vec3.push(lua.L);
+	lua_setglobal(lua.L, "Vector3");
 
-		auto a = lua_gettop(lua.L);
+	auto a = lua_gettop(lua.L);
 
-		lua.doScript(script);
-	}
+	lua.doScript(args);
+	// }
 
 	return 0;
 }

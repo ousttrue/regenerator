@@ -7,6 +7,23 @@ import std.experimental.logger;
 import lua;
 import luamacros;
 
+///
+/// UserType has 2 metatables.
+///          
+/// # 1. metatable for type userdata
+/// * A type userdata is created in setup and set type metatable
+/// * metatable.__index dispatch static methods(Vector3.new, Vector3.cross ... etc)
+///
+/// # 2. metatable for instance userdata
+/// * A instance userdata is created in script and set instance metatable
+/// * metatable.__index dispatch instance methods, getters and setters
+///
+/// # get instance userdata from lua stack
+/// * type == UserData
+/// * compare userdata.metatable == getmetatable!T
+/// * cast(T*)lua_touserdata(L, idx)
+///
+
 enum LuaMetaKey
 {
     tostring = "__tostring",
@@ -51,12 +68,39 @@ class LuaState
         lua_close(L);
     }
 
-    void doScript(string file)
+    void doScript(string[] args)
     {
-        auto result = luaL_dofile(L, file.toStringz);
-        if (result != 0)
+        if (args.length < 2)
         {
-            log(to!string(lua_tostring(L, -1)));
+            // error
+            error("usage: regenerator.exe script.lua [args...]");
+            return;
+        }
+
+        auto file = args[1];
+        args = args[2..$];
+
+        // parse script
+        auto chunk = luaL_loadfile(L, file.toStringz);
+        if (chunk)
+        {
+            // error
+            error(to!string(lua_tostring(L, -1)));
+            return;
+        }
+
+        // push arguments
+        foreach (arg; args)
+        {
+            lua_pushstring(L, arg.toStringz);
+        }
+
+        // execute chunk
+        auto result = lua_pcall(L, cast(int) args.length, LUA_MULTRET, 0);
+        if (result)
+        {
+            error(to!string(lua_tostring(L, -1)));
+            return;
         }
     }
 }
@@ -116,6 +160,7 @@ T lua_to(T)(lua_State* L, int idx)
         lua_pop(L, 2); // remove both metatables
         if (isEqual)
         {
+            // userdata metatable and metatable from type is same
             static if (isPointer!T)
             {
                 // throw new NotImplementedError("isPointer");

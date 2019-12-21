@@ -1,3 +1,8 @@
+local args = {...}
+for i, arg in ipairs(args) do
+    print(i, arg)
+end
+
 print('hello lua')
 print(Vector3)
 local vec = Vector3.new(1, 2, 3)

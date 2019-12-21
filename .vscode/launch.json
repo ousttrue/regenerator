@@ -30,6 +30,37 @@
             "visualizerFile": "${workspaceFolder}/.vscode/d.natvis"
         },
         {
+            "name": "script",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/dclangen.exe",
+            "args": [
+                "${workspaceFolder}/scripts/liblua.lua",
+                "--outdir",
+                "${workspaceFolder}/source/lua",
+                "-E",
+                "-C",
+                "-D",
+                "LUA_BUILD_AS_DLL=1",
+                "-H",
+                "${workspaceFolder}/submodules/lua/lua.h",
+                "-H",
+                "${workspaceFolder}/submodules/lua/lauxlib.h",
+                "-H",
+                "${workspaceFolder}/submodules/lua/lualib.h",
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [
+                {
+                    "name": "PATH",
+                    "value": "C:/Program Files/LLVM/bin"
+                }
+            ],
+            "externalConsole": false,
+            "visualizerFile": "${workspaceFolder}/.vscode/d.natvis"
+        },
+        {
             "name": "dclangen lua",
             "type": "cppvsdbg",
             "request": "launch",
