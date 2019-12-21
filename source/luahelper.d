@@ -193,12 +193,12 @@ T lua_to(T)(lua_State* L, int idx)
         if (isEqual)
         {
             // userdata metatable and metatable from type is same
-            static if (isPointer!T)
-            {
-                // throw new NotImplementedError("isPointer");
-                return cast(T) lua_touserdata(L, idx);
-            }
-            else
+            // static if (isPointer!T)
+            // {
+            //     // throw new NotImplementedError("isPointer");
+            //     return cast(T) lua_touserdata(L, idx);
+            // }
+            // else
             {
                 auto p = cast(T*) lua_touserdata(L, idx);
                 return *p;
@@ -242,6 +242,12 @@ int lua_push(T : string)(lua_State* L, T value)
 int lua_push(T : float)(lua_State* L, T value)
 {
     lua_pushnumber(L, value);
+    return 1;
+}
+
+bool lua_push(T : bool)(lua_State* L, T value)
+{
+    lua_pushboolean(L, value);
     return 1;
 }
 
