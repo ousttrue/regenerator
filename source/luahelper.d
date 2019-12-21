@@ -84,6 +84,12 @@ extern (C) int LuaFuncClosure(lua_State* L)
     }
 }
 
+T lua_to(T : string)(lua_State* L, int idx)
+{
+    auto value = lua_tostring(L, idx);
+    return to!string(value);
+}
+
 T lua_to(T : int)(lua_State* L, int idx)
 {
     auto value = luaL_checkinteger(L, idx);
@@ -156,6 +162,12 @@ int lua_push(T : string)(lua_State* L, T value)
     return 1;
 }
 
+int lua_push(T : float)(lua_State* L, T value)
+{
+    lua_pushnumber(L, value);
+    return 1;
+}
+
 int lua_push(T)(lua_State* L, T value)
 {
     auto p = cast(T*) lua_newuserdata(L, T.sizeof);
@@ -173,7 +185,7 @@ int lua_push(T)(lua_State* L, T value)
         lua_pop(L, 1);
 
         // error
-        lua_pushstring(L, "push unknown type [%s]".format(typeid(T).name).toStringz);
+        lua_pushstring(L, "push unknown type [%s]".format(typeid(T)).toStringz);
         lua_error(L);
         return 1;
     }
@@ -194,7 +206,7 @@ int lua_getmetatable_from_type(T)(lua_State* L)
     return lua_gettable(L, LUA_REGISTRYINDEX);
 }
 
-struct MethodMap
+struct StaticMethodMap
 {
     LuaFunc[string] Map;
 
@@ -231,20 +243,88 @@ struct MethodMap
     }
 }
 
-// class IndexDispatcher(T)
-// {
-//     int dispatch(lua_State* L)
-//     {
-//         return 0;
-//     }
-// }
+struct IndexDispatcher(T)
+{
+    void Getter(S)(string name, S delegate(T*) f)
+    {
+        m_map[name] = MetaValue(true, to_luafunc(f));
+    }
+
+    // stack#1: userdata
+    // stack#2: key
+    int dispatch(lua_State* L)
+    {
+        if (lua_isinteger(L, 2))
+        {
+            return dispatchIndex(L);
+        }
+
+        if (lua_isstring(L, 2))
+        {
+            return dispatchStringKey(L);
+        }
+
+        lua_pushstring(L, "unknown key type '%s'".format(lua_typename(L, 2)).toStringz);
+        lua_error(L);
+        return 1;
+    }
+
+private:
+    struct MetaValue
+    {
+        bool isProperty;
+        LuaFunc func;
+    }
+
+    MetaValue[string] m_map;
+
+    int dispatchIndex(lua_State* L)
+    {
+        throw new NotImplementedError("dispatchIndex");
+    }
+
+    int dispatchStringKey(lua_State* L)
+    {
+        auto key = lua_to!string(L, 2);
+        auto found = key in m_map;
+        if (!found)
+        {
+            lua_pushstring(L, "'%s' is not found in __index".format(key).toStringz);
+            lua_error(L);
+            return 1;
+        }
+
+        if (found.isProperty)
+        {
+            try
+            {
+                // execute getter or setter
+                return found.func(L);
+            }
+            catch (Exception ex)
+            {
+                lua_pushfstring(L, ex.msg.toStringz);
+                lua_error(L);
+                return 1;
+            }
+        }
+
+        // upvalue#1: body
+        lua_pushlightuserdata(L, &found.func);
+        // upvalue#2: userdata
+        lua_pushvalue(L, -3);
+        // closure
+        lua_pushcclosure(L, &LuaFuncClosure, 2);
+        return 1;
+    }
+}
 
 class UserType(T)
 {
-    // IndexDispatcher!T IndexDispatcher;
+    IndexDispatcher!T instance;
 
 private:
-    MethodMap m_staticMethods;
+    StaticMethodMap m_staticMethods;
     LuaFunc m_typeIndexClosure;
 
     LuaFunc[LuaMetaKey] m_metamethodMap;
@@ -295,12 +375,12 @@ private:
             lua_setfield(L, 1, k.toStringz);
         }
 
-        // {
-        //     // metatalbe indexer
-        //     lua_pushlightuserdata(L, &m_instanceIndexClosure);
-        //     lua_pushcclosure(L, &LuaFuncClosure, 1);
-        //     lua_setfield(L, 1, "__index");
-        // }
+        {
+            // metatalbe indexer
+            lua_pushlightuserdata(L, &m_instanceIndexClosure);
+            lua_pushcclosure(L, &LuaFuncClosure, 1);
+            lua_setfield(L, 1, "__index");
+        }
 
         return 1;
     }
@@ -309,7 +389,7 @@ public:
     this()
     {
         m_typeIndexClosure = (lua_State* L) => m_staticMethods.dispatch(L);
-        // m_instanceIndexClosure = (lua_State* L) => m_indexDispatcher.dispatch(L);
+        m_instanceIndexClosure = (lua_State* L) => instance.dispatch(L);
     }
 
     void staticMethod(RET, ARGS...)(string name, RET delegate(ARGS) method)

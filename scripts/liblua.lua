@@ -10,3 +10,4 @@ end
 
 -- local v = Vector3.new(1)
 print(vec + vec)
+print(vec.x)
