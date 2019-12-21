@@ -1,9 +1,16 @@
 local args = {...}
 
+--
+-- -X => opt[X] = true
+-- -X 1 => opt[X] = 1
+-- -XY => error. use --XY
+-- --YY => opt[YY] = true
+-- --YY "hello" => opt[YY] = "hello"
+--
 function getopt(arg)
-    local tab = {}
+    local opt = {}
     function push_value(key, value)
-        local lastvalue = tab[key]
+        local lastvalue = opt[key]
         if lastvalue then
             if type(lastvalue) == "table" then
                 if lastvalue[#lastvalue] == true then
@@ -16,14 +23,14 @@ function getopt(arg)
             else
                 if lastvalue == true then
                     -- replace
-                    tab[key] = value
+                    opt[key] = value
                 else
                     -- push
-                    tab[key] = {lastvalue, value}
+                    opt[key] = {lastvalue, value}
                 end
             end
         else
-            tab[key] = value
+            opt[key] = value
         end
     end
 
@@ -33,13 +40,12 @@ function getopt(arg)
             lastkey = string.sub(v, 3)
             push_value(lastkey, true)
         elseif string.sub(v, 1, 1) == "-" then
-            local y = 2
-            local l = string.len(v)
-            while (y <= l) do
-                lastkey = string.sub(v, y, y)
-                push_value(lastkey, true)
-                y = y + 1
+            key = string.sub(v, 2)
+            if string.len(key) > 1 then
+                error(string.format('"%s" option name must 1 length. use "-%s"', v, v))
             end
+            lastkey = key
+            push_value(lastkey, true)
         else
             if lastkey then
                 push_value(lastkey, v)
@@ -47,7 +53,7 @@ function getopt(arg)
             lastkey = nil
         end
     end
-    return tab
+    return opt
 end
 
 local opts = getopt(args)
