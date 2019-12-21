@@ -152,10 +152,6 @@ class Processor
         {
             if (structDecl.iid.empty)
             {
-                debug if (structDecl.m_name == "ID3D11ShaderReflection")
-                {
-                    auto a = 0;
-                }
                 if (structDecl.name in m_parser.m_uuidMap)
                 {
                     structDecl.iid = m_parser.m_uuidMap[structDecl.name];

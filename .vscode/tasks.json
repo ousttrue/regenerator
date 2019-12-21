@@ -9,6 +9,7 @@
             "command": "dub",
             "args": [
                 "build",
+                "-b", "debug",
             ],
             "group": {
                 "kind": "build",

@@ -98,7 +98,7 @@ print("generate dlang...")
 -- clear dir
 if file.exists(dir) then
     printf("rmdir %s", dir)
-    file.rmdirRecurse(dir)
+    -- file.rmdirRecurse(dir)
 end
 
 -- write each source

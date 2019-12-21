@@ -2,40 +2,19 @@ module luautils.luastack;
 import std.traits;
 import std.conv;
 import std.string;
+import std.exception;
 import lua;
 import luamacros;
-
-// luastack
-//
-// # class T(by pointer)
-// ## push: class T
-// &t
-// ## push: class T*
-// t
-// ## to: class T
-// *t
-// ## to: class T*
-// t
-//
-// # struct T(by value)
-// ## push: class T
-// t
-// ## push: class T*
-// *t
-// ## to: class T
-// t
-// ## to: class T*
-// &t
 
 template rawtype(T)
 {
     static if (isPointer!T)
     {
-        rawtype!(PointerTarget!T) rawtype;
+        alias rawtype = rawtype!(PointerTarget!T);
     }
     else
     {
-        T rawtype;
+        alias rawtype = T;
     }
 }
 
@@ -131,10 +110,33 @@ T[] lua_to(T : T[])(lua_State* L, int idx)
 //
 // usertype
 //
+//
+// # class T(by pointer)
+// ## push: class T
+// &t
+// ## push: class T*
+// t
+// ## to: class T
+// *t
+// ## to: class T*
+// t
+//
+// # struct T(by value)
+// ## push: class T
+// t
+// ## push: class T*
+// *t
+// ## to: class T
+// t
+// ## to: class T*
+// &t
 
-int lua_push(T)(lua_State* L, T value)
+///
+/// push Object
+///
+int lua_push(T : Object)(lua_State* L, T* value)
 {
-    auto p = cast(T*) lua_newuserdata(L, T.sizeof);
+    auto p = cast(T**) lua_newuserdata(L, T.sizeof);
     auto pushedType = lua_getmetatable_from_type!T(L);
     if (pushedType)
     {
@@ -157,12 +159,24 @@ int lua_push(T)(lua_State* L, T value)
 
 T lua_to(T)(lua_State* L, int idx)
 {
+    static if (isPointer!T)
+    {
+        return lua_to_object_pointer!(rawtype!T)(L, idx);
+    }
+    else
+    {
+        throw new Exception("lua_to!T");
+    }
+}
+
+T* lua_to_object_pointer(T : Object)(lua_State* L, int idx)
+{
     auto t = lua_type(L, idx);
     if (t == LUA_TUSERDATA)
     {
         if (!lua_getmetatable(L, idx))
         {
-            return T();
+            return null;
         }
         lua_getmetatable_from_type!T(L);
         auto isEqual = lua_rawequal(L, -1, -2);
@@ -177,17 +191,21 @@ T lua_to(T)(lua_State* L, int idx)
             // }
             // else
             {
-                auto p = cast(T*) lua_touserdata(L, idx);
+                auto p = cast(T**) lua_touserdata(L, idx);
+                debug
+                {
+                    auto a = 0;
+                }
                 return *p;
             }
         }
         else
         {
-            return T();
+            return null;
         }
     }
     else
     {
-        return T();
+        return null;
     }
 }

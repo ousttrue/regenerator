@@ -50,7 +50,7 @@ static bool isInterface(Decl decl)
         auto userDecl = cast(UserDecl) decl;
         if (userDecl)
         {
-            if (userDecl.m_name == "ID3DBlob")
+            // if (userDecl.m_name == "ID3DBlob")
             {
                 auto a = 0;
             }
@@ -139,10 +139,6 @@ immutable string[] skipMethods = ["QueryInterface", "AddRef", "Release"];
 
 void DStructDecl(File* f, Struct decl, string typedefName = null)
 {
-    debug if (decl.m_name.endsWith("Impl"))
-    {
-        auto a = 0;
-    }
     // assert(!decl.m_forwardDecl);
     auto name = typedefName ? typedefName : decl.name;
     if (!name)
