@@ -15,11 +15,11 @@ struct Vector3
 	float x;
 	float y;
 	float z;
-}
 
-int lua_push(T : Vector3)(lua_State* L, T value)
-{
-	return 0;
+	string toString() const
+	{
+		return "Vector3{%f, %f, %f}".format(x, y, z);
+	}
 }
 
 int main(string[] args)
@@ -71,8 +71,9 @@ int main(string[] args)
 
 		auto vec3 = new UserType!Vector3;
 		vec3.staticMethod("zero", () => Vector3(0, 0, 0));
-		vec3.push(lua.L);
+		vec3.metaMethod(LuaMetaKey.tostring, (Vector3* v) { return v.toString(); });
 
+		vec3.push(lua.L);
 		lua_setglobal(lua.L, "Vector3");
 
 		auto a = lua_gettop(lua.L);
