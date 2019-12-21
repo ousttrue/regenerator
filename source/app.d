@@ -80,8 +80,8 @@ int main(string[] args)
 		auto vec3 = new UserType!Vector3;
 		vec3.staticMethod("new", (float x, float y, float z) => Vector3(x, y, z));
 		vec3.staticMethod("zero", () => Vector3(0, 0, 0));
-		vec3.metaMethod(LuaMetaKey.tostring, (Vector3* v) => v.toString());
-		vec3.metaMethod(LuaMetaKey.add, (Vector3* a, Vector3 b) => *a + b);
+		vec3.metaMethod(LuaMetaKey.tostring, (Vector3 *v) => v.toString());
+		vec3.metaMethod(LuaMetaKey.add, (Vector3 a, Vector3 b) => a + b);
 
 		vec3.push(lua.L);
 		lua_setglobal(lua.L, "Vector3");

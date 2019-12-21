@@ -68,6 +68,7 @@ struct UserTypeDummy
 alias LuaFunc = int delegate(lua_State*) @system;
 
 /// 汎用Closure。upvalue#1 から LuaFunc を得て実行する
+/// 状態は、LuaFuncに埋めてある。
 extern (C) int LuaFuncClosure(lua_State* L)
 {
     try
@@ -111,6 +112,7 @@ T lua_to(T)(lua_State* L, int idx)
         {
             static if (isPointer!T)
             {
+                // throw new NotImplementedError("isPointer");
                 return cast(T) lua_touserdata(L, idx);
             }
             else
@@ -192,16 +194,9 @@ int lua_getmetatable_from_type(T)(lua_State* L)
     return lua_gettable(L, LUA_REGISTRYINDEX);
 }
 
-struct StaticMethodMap
+struct MethodMap
 {
-private:
-    LuaFunc[string] m_methodMap;
-
-public:
-    void staticMethod(string name, const LuaFunc lf)
-    {
-        m_methodMap[name] = lf;
-    }
+    LuaFunc[string] Map;
 
     // stack#1: userdata
     // stack#2: key
@@ -210,7 +205,7 @@ public:
         auto key = to!string(lua_tostring(L, 2));
         if (key)
         {
-            LuaFunc* found = key in m_methodMap;
+            LuaFunc* found = key in Map;
             if (found)
             {
                 // upvalue#1
@@ -246,14 +241,15 @@ public:
 
 class UserType(T)
 {
+    // IndexDispatcher!T IndexDispatcher;
+
 private:
-    StaticMethodMap m_staticMethods;
+    MethodMap m_staticMethods;
     LuaFunc m_typeIndexClosure;
 
     LuaFunc[LuaMetaKey] m_metamethodMap;
 
-    // IndexDispatcher!T m_indexDispatcher;
-    // LuaFunc m_instanceIndexClosure;
+    LuaFunc m_instanceIndexClosure;
 
     void create_type_metatable(lua_State* L)
     {
@@ -318,7 +314,7 @@ public:
 
     void staticMethod(RET, ARGS...)(string name, RET delegate(ARGS) method)
     {
-        m_staticMethods.staticMethod(name, to_luafunc(method));
+        m_staticMethods.Map[name] = to_luafunc(method);
     }
 
     void metaMethod(RET, ARGS...)(LuaMetaKey key, RET delegate(ARGS) method)
