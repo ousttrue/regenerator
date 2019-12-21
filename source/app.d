@@ -4,9 +4,11 @@ import std.experimental.logger;
 import std.conv;
 import std.format;
 import std.typecons;
+import std.file;
 import clangparser;
 import exporter.processor;
 import exporter.dlangexporter;
+import exporter.source;
 import lua;
 import luamacros;
 import luahelper;
@@ -31,76 +33,88 @@ struct Vector3
 	}
 }
 
-extern (C) int lua_parse(lua_State* L)
+// parse(headers, includes, defines, externC);
+extern (C) int luaFunc_parse(lua_State* L)
 {
 	log("call");
+
+	auto headers = lua_to!(string[])(L, 1);
+	auto includes = lua_to!(string[])(L, 2);
+	auto defines = lua_to!(string[])(L, 3);
+	auto externC = lua_to!bool(L, 4);
+
+	// string dir;
+	// bool omitEnumPrefix = false;
+
+	auto parser = new Parser();
+
+	// 型情報を集める
+	log("parse...");
+	parser.parse(headers, includes, defines, externC);
+
+	// // 出力する情報を整理する
+	log("process...");
+	auto sourceMap = process(parser, headers);
+
+	lua_createtable(L, 0, cast(int) sourceMap.length);
+	auto table = lua_gettop(L);
+	foreach (k, ref v; sourceMap)
+	{
+		lua_push(L, &v);
+		lua_setfield(L, table, k.toStringz);
+	}
+
+	return 1;
+}
+
+extern (C) int luaFunc_exists(lua_State* L)
+{
+	auto path = lua_to!string(L, 1);
+	lua_pushboolean(L, exists(path) ? true : false);
+	return 1;
+}
+
+extern (C) int luaFunc_rmdirRecurse(lua_State* L)
+{
+	auto path = lua_to!string(L, 1);
+	rmdirRecurse(path);
 	return 0;
+}
+
+void open_file(lua_State* L)
+{
+	lua_createtable(L, 0, 0);
+
+	lua_pushcclosure(L, &luaFunc_exists, 0);
+	lua_setfield(L, -2, "exists");
+
+	lua_pushcclosure(L, &luaFunc_rmdirRecurse, 0);
+	lua_setfield(L, -2, "rmdirRecurse");
+
+	lua_setglobal(L, "file");
 }
 
 int main(string[] args)
 {
-	// string[] headers;
-	// string dir;
-	// string[] includes;
-	// string[] defines;
-	// string script;
-	// bool omitEnumPrefix = false;
-	// bool externC = false;
-	// getopt(args, //
-	// 		"include|I", &includes, //
-	// 		"define|D", &defines, //
-	// 		"outdir", &dir, //
-	// 		"omitEnumPrefix|E", &omitEnumPrefix, //
-	// 		"externC|C", &externC, //
-	// 		"lua",
-	// 		&script, //
-	// 		std.getopt.config.required, // 
-	// 		"header|H", &headers //
-	// 		);
-
-	// auto parser = new Parser();
-
-	// // 型情報を集める
-	// log("parse...");
-	// parser.parse(headers, includes, defines, externC);
-
-	// // 出力する情報を整理する
-	// log("process...");
-	// auto sourceMap = process(parser, headers);
-
-	// if (dir)
-	// {
-	// 	if (sourceMap.empty)
-	// 	{
-	// 		throw new Exception("empty");
-	// 	}
-
-	// 	// D言語に変換する
-	// 	log("generate dlang...");
-	// 	dlangExport(sourceMap, dir, omitEnumPrefix);
-	// }
-
-	// if (!script.empty)
-	// {
 	auto lua = new LuaState();
+
+	// default libraries
 	luaL_openlibs(lua.L);
 
-	// auto vec3 = new UserType!Vector3;
-	// vec3.staticMethod("new", (float x, float y, float z) => Vector3(x, y, z));
-	// vec3.staticMethod("zero", () => Vector3(0, 0, 0));
-	// vec3.metaMethod(LuaMetaKey.tostring, (Vector3* v) => v.toString());
-	// vec3.metaMethod(LuaMetaKey.add, (Vector3 a, Vector3 b) => a + b);
-	// vec3.instance.Getter("x", (Vector3* value) { return value.x; });
+	// utility
+	open_file(lua.L);
 
-	// vec3.push(lua.L);
-	// lua_setglobal(lua.L, "Vector3");
+	// export class Source
+	auto source = new UserType!Source;
+	source.instance.Getter("empty", (Source* s) => s.empty);
+	source.push(lua.L);
+	lua_setglobal(lua.L, "Source");
 
-	// auto a = lua_gettop(lua.L);
+	// parse
+	lua_register(lua.L, "parse", &luaFunc_parse);
 
-	lua_register(lua.L, "parse", &lua_parse);
-
+	// run
 	lua.doScript(args);
-	// }
 
 	return 0;
 }

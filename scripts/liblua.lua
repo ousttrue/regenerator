@@ -1,5 +1,9 @@
 local args = {...}
 
+function printf(fmt, ...)
+    print(string.format(fmt, ...))
+end
+
 --
 -- -X => opt[X] = true
 -- -X 1 => opt[X] = 1
@@ -60,7 +64,7 @@ local opts = getopt(args)
 function show_table(t, indent)
     indent = indent or ""
     for k, v in pairs(t) do
-        print(string.format("%s%s => %s", indent, k, v))
+        printf("%s%s => %s", indent, k, v)
         if type(v) == "table" then
             show_table(v, indent .. "  ")
         end
@@ -69,26 +73,30 @@ end
 show_table(opts)
 print()
 
-print("parse...");
-local headers = opts['H']
-local includes = opts['I']
-local defines = opts['D']
-local externC = opts['C']
+print("parse...")
+local headers = opts["H"]
+local includes = opts["I"]
+local defines = opts["D"]
+local externC = opts["C"]
+local omitEnumPrefix = opts["E"]
+local dir = opts["outdir"]
 -- 型情報を集める
-local sourcemap = parse(headers, includes, defines, externC);
-print(sourcemap)
+local sourceMap = parse(headers, includes, defines, externC)
 
+if not dir then
+    return
+end
 
--- print("hello lua")
--- print(Vector3)
--- local vec = Vector3.new(1, 2, 3)
--- print(vec)
--- local zero = Vector3.zero()
--- print(zero)
--- for k, v in pairs(getmetatable(zero)) do
---     print(k, v)
--- end
+if sourceMap.empty then
+    error("empty")
+end
 
--- -- local v = Vector3.new(1)
--- print(vec + vec)
--- print(vec.x)
+-- D言語に変換する
+print("generate dlang...")
+-- dlangExport(sourceMap, dir, omitEnumPrefix)
+
+-- clear dir
+if file.exists(dir) then
+    printf("rmdir %s", dir)
+    file.rmdirRecurse(dir)
+end

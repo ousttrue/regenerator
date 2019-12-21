@@ -78,7 +78,7 @@ class LuaState
         }
 
         auto file = args[1];
-        args = args[2..$];
+        args = args[2 .. $];
 
         // parse script
         auto chunk = luaL_loadfile(L, file.toStringz);
@@ -107,6 +107,7 @@ class LuaState
 
 struct UserTypeDummy
 {
+    void* value;
 }
 
 alias LuaFunc = int delegate(lua_State*) @system;
@@ -128,13 +129,18 @@ extern (C) int LuaFuncClosure(lua_State* L)
     }
 }
 
-T lua_to(T : string)(lua_State* L, int idx)
+string lua_to(T : string)(lua_State* L, int idx)
 {
     auto value = lua_tostring(L, idx);
     return to!string(value);
 }
 
-T lua_to(T : int)(lua_State* L, int idx)
+bool lua_to(T : bool)(lua_State* L, int idx)
+{
+    return lua_toboolean(L, idx) != 0;
+}
+
+int lua_to(T : int)(lua_State* L, int idx)
 {
     auto value = luaL_checkinteger(L, idx);
     return cast(int) value;
@@ -144,6 +150,32 @@ T lua_to(T : float)(lua_State* L, int idx)
 {
     auto value = luaL_checknumber(L, idx);
     return cast(float) value;
+}
+
+T[] lua_to(T : T[])(lua_State* L, int idx)
+{
+    T[] values;
+    auto t = lua_type(L, idx);
+    if (t == LUA_TTABLE)
+    {
+        auto n = lua_rawlen(L, idx);
+        for (int i = 1; i <= n; ++i)
+        {
+            lua_geti(L, idx, i);
+            values ~= lua_to!T(L, lua_gettop(L));
+            lua_pop(L, 1);
+        }
+    }
+    else if (t == LUA_TNIL)
+    {
+
+    }
+    else
+    {
+        // non table value
+        values ~= lua_to!T(L, idx);
+    }
+    return values;
 }
 
 T lua_to(T)(lua_State* L, int idx)
