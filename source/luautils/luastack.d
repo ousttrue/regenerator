@@ -2,9 +2,30 @@ module luautils.luastack;
 import std.traits;
 import std.conv;
 import std.string;
-import std.typecons;
 import lua;
 import luamacros;
+
+// luastack
+//
+// # class T(by pointer)
+// ## push: class T
+// &t
+// ## push: class T*
+// t
+// ## to: class T
+// *t
+// ## to: class T*
+// t
+//
+// # struct T(by value)
+// ## push: class T
+// t
+// ## push: class T*
+// *t
+// ## to: class T
+// t
+// ## to: class T*
+// &t
 
 template rawtype(T)
 {
@@ -32,6 +53,28 @@ int lua_getmetatable_from_type(T)(lua_State* L)
     return lua_gettable(L, LUA_REGISTRYINDEX);
 }
 
+//
+// primitives
+//
+
+int lua_push(T : string)(lua_State* L, T value)
+{
+    lua_pushstring(L, value.toStringz);
+    return 1;
+}
+
+int lua_push(T : float)(lua_State* L, T value)
+{
+    lua_pushnumber(L, value);
+    return 1;
+}
+
+bool lua_push(T : bool)(lua_State* L, T value)
+{
+    lua_pushboolean(L, value);
+    return 1;
+}
+
 string lua_to(T : string)(lua_State* L, int idx)
 {
     auto value = lua_tostring(L, idx);
@@ -54,6 +97,10 @@ T lua_to(T : float)(lua_State* L, int idx)
     auto value = luaL_checknumber(L, idx);
     return cast(float) value;
 }
+
+//
+// collection
+//
 
 T[] lua_to(T : T[])(lua_State* L, int idx)
 {
@@ -79,6 +126,33 @@ T[] lua_to(T : T[])(lua_State* L, int idx)
         values ~= lua_to!T(L, idx);
     }
     return values;
+}
+
+//
+// usertype
+//
+
+int lua_push(T)(lua_State* L, T value)
+{
+    auto p = cast(T*) lua_newuserdata(L, T.sizeof);
+    auto pushedType = lua_getmetatable_from_type!T(L);
+    if (pushedType)
+    {
+        // set metatable to type userdata
+        lua_setmetatable(L, -2);
+        *p = value;
+        return 1;
+    }
+    else
+    {
+        // no metatable
+        lua_pop(L, 1);
+
+        // error
+        lua_pushstring(L, "push unknown type [%s]".format(typeid(T)).toStringz);
+        lua_error(L);
+        return 1;
+    }
 }
 
 T lua_to(T)(lua_State* L, int idx)
@@ -115,64 +189,5 @@ T lua_to(T)(lua_State* L, int idx)
     else
     {
         return T();
-    }
-}
-
-auto lua_totuple()(lua_State* L, int idx)
-{
-    return tuple();
-}
-
-Tuple!A lua_totuple(A)(lua_State* L, int idx)
-{
-    A first = lua_to!A(L, idx);
-    return tuple(first);
-}
-
-Tuple!ARGS lua_totuple(ARGS...)(lua_State* L, int idx)
-{
-    auto first = lua_to!(ARGS[0])(L, idx);
-    auto rest = lua_totuple!(ARGS[1 .. $])(L, idx + 1);
-    return tuple(first) ~ rest;
-}
-
-int lua_push(T : string)(lua_State* L, T value)
-{
-    lua_pushstring(L, value.toStringz);
-    return 1;
-}
-
-int lua_push(T : float)(lua_State* L, T value)
-{
-    lua_pushnumber(L, value);
-    return 1;
-}
-
-bool lua_push(T : bool)(lua_State* L, T value)
-{
-    lua_pushboolean(L, value);
-    return 1;
-}
-
-int lua_push(T)(lua_State* L, T value)
-{
-    auto p = cast(T*) lua_newuserdata(L, T.sizeof);
-    auto pushedType = lua_getmetatable_from_type!T(L);
-    if (pushedType)
-    {
-        // set metatable to type userdata
-        lua_setmetatable(L, -2);
-        *p = value;
-        return 1;
-    }
-    else
-    {
-        // no metatable
-        lua_pop(L, 1);
-
-        // error
-        lua_pushstring(L, "push unknown type [%s]".format(typeid(T)).toStringz);
-        lua_error(L);
-        return 1;
     }
 }

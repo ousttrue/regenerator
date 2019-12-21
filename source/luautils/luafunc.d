@@ -1,5 +1,6 @@
 module luautils.luafunc;
 import std.string;
+import std.typecons;
 import lua;
 import luamacros;
 import luautils.luastack;
@@ -21,6 +22,28 @@ extern (C) int LuaFuncClosure(lua_State* L)
         lua_error(L);
         return 1;
     }
+}
+
+//
+// tuple
+//
+
+auto lua_totuple()(lua_State* L, int idx)
+{
+    return tuple();
+}
+
+Tuple!A lua_totuple(A)(lua_State* L, int idx)
+{
+    A first = lua_to!A(L, idx);
+    return tuple(first);
+}
+
+Tuple!ARGS lua_totuple(ARGS...)(lua_State* L, int idx)
+{
+    auto first = lua_to!(ARGS[0])(L, idx);
+    auto rest = lua_totuple!(ARGS[1 .. $])(L, idx + 1);
+    return tuple(first) ~ rest;
 }
 
 LuaFunc to_luafunc(R, ARGS...)(R delegate(ARGS) f)
