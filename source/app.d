@@ -76,6 +76,7 @@ int main(string[] args)
 	// if (!script.empty)
 	// {
 	auto lua = new LuaState();
+	luaL_openlibs(lua.L);
 
 	auto vec3 = new UserType!Vector3;
 	vec3.staticMethod("new", (float x, float y, float z) => Vector3(x, y, z));
