@@ -2,10 +2,10 @@ module luahelper;
 import std.string;
 import std.typecons;
 import std.conv;
-import std.traits;
 import std.experimental.logger;
 import lua;
 import luamacros;
+import luastack; 
 
 ///
 /// UserType has 2 metatables.
@@ -30,20 +30,7 @@ enum LuaMetaKey
     add = "__add",
 }
 
-ulong get_hash(T)()
-{
-    static if (isPointer!T)
-    {
-        auto ti = typeid(PointerTarget!T);
-    }
-    else
-    {
-        auto ti = typeid(T);
-    }
-    auto hash = ti.toHash();
-    // logf("%s => %d", ti.name, hash);
-    return hash;
-}
+
 
 // ulong get_hash(T : T*)()
 // {
