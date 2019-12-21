@@ -24,9 +24,15 @@ void lua_pop(lua_State* L, int n)
 
 // #define lua_newtable(L)		lua_createtable(L, 0, 0)
 
-// #define lua_register(L,n,f) (lua_pushcfunction(L, (f)), lua_setglobal(L, (n)))
+void lua_register(lua_State* L, const char* n, lua_CFunction f)
+{
+    lua_pushcfunction(L, (f)), lua_setglobal(L, (n));
+}
 
-// #define lua_pushcfunction(L,f)	lua_pushcclosure(L, (f), 0)
+void lua_pushcfunction(lua_State* L, lua_CFunction f)
+{
+    lua_pushcclosure(L, (f), 0);
+}
 
 // #define lua_isfunction(L,n)	(lua_type(L, (n)) == LUA_TFUNCTION)
 // #define lua_istable(L,n)	(lua_type(L, (n)) == LUA_TTABLE)

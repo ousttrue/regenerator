@@ -8,6 +8,7 @@ import clangparser;
 import exporter.processor;
 import exporter.dlangexporter;
 import lua;
+import luamacros;
 import luahelper;
 
 struct Vector3
@@ -28,6 +29,12 @@ struct Vector3
 	{
 		return "Vector3{%f, %f, %f}".format(x, y, z);
 	}
+}
+
+extern (C) int lua_parse(lua_State* L)
+{
+	log("call");
+	return 0;
 }
 
 int main(string[] args)
@@ -78,17 +85,19 @@ int main(string[] args)
 	auto lua = new LuaState();
 	luaL_openlibs(lua.L);
 
-	auto vec3 = new UserType!Vector3;
-	vec3.staticMethod("new", (float x, float y, float z) => Vector3(x, y, z));
-	vec3.staticMethod("zero", () => Vector3(0, 0, 0));
-	vec3.metaMethod(LuaMetaKey.tostring, (Vector3* v) => v.toString());
-	vec3.metaMethod(LuaMetaKey.add, (Vector3 a, Vector3 b) => a + b);
-	vec3.instance.Getter("x", (Vector3* value) { return value.x; });
+	// auto vec3 = new UserType!Vector3;
+	// vec3.staticMethod("new", (float x, float y, float z) => Vector3(x, y, z));
+	// vec3.staticMethod("zero", () => Vector3(0, 0, 0));
+	// vec3.metaMethod(LuaMetaKey.tostring, (Vector3* v) => v.toString());
+	// vec3.metaMethod(LuaMetaKey.add, (Vector3 a, Vector3 b) => a + b);
+	// vec3.instance.Getter("x", (Vector3* value) { return value.x; });
 
-	vec3.push(lua.L);
-	lua_setglobal(lua.L, "Vector3");
+	// vec3.push(lua.L);
+	// lua_setglobal(lua.L, "Vector3");
 
-	auto a = lua_gettop(lua.L);
+	// auto a = lua_gettop(lua.L);
+
+	lua_register(lua.L, "parse", &lua_parse);
 
 	lua.doScript(args);
 	// }

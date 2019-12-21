@@ -58,6 +58,7 @@ end
 
 local opts = getopt(args)
 function show_table(t, indent)
+    indent = indent or ""
     for k, v in pairs(t) do
         print(string.format("%s%s => %s", indent, k, v))
         if type(v) == "table" then
@@ -65,7 +66,18 @@ function show_table(t, indent)
         end
     end
 end
-show_table(opts, "")
+show_table(opts)
+print()
+
+print("parse...");
+local headers = opts['H']
+local includes = opts['I']
+local defines = opts['D']
+local externC = opts['C']
+-- 型情報を集める
+local sourcemap = parse(headers, includes, defines, externC);
+print(sourcemap)
+
 
 -- print("hello lua")
 -- print(Vector3)
