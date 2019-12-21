@@ -11,9 +11,7 @@ import exporter.dlangexporter;
 import exporter.source;
 import lua;
 import luamacros;
-import luastack;
-import luahelper;
-import luastate;
+import luautils;
 
 struct Vector3
 {

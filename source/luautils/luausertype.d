@@ -1,12 +1,12 @@
-module luahelper;
+module luautils.luausertype;
 import std.string;
 import std.typecons;
 import std.conv;
 import std.experimental.logger;
 import lua;
 import luamacros;
-import luastack; 
-import luafunc;
+import luautils.luastack; 
+import luautils.luafunc;
 
 ///
 /// UserType has 2 metatables.

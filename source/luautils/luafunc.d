@@ -1,8 +1,8 @@
-module luafunc;
+module luautils.luafunc;
 import std.string;
 import lua;
 import luamacros;
-import luastack;
+import luautils.luastack;
 
 alias LuaFunc = int delegate(lua_State*) @system;
 

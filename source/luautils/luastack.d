@@ -1,4 +1,4 @@
-module luastack;
+module luautils.luastack;
 import std.traits;
 import std.conv;
 import std.string;

@@ -1,4 +1,4 @@
-module luastate;
+module luautils.luastate;
 import lua;
 import luamacros;
 import std.conv;
