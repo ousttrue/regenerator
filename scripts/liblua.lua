@@ -106,17 +106,64 @@ macroMap = {
     LUA_VERSUFFIX = 'enum LUA_VERSUFFIX = "_" ~ LUA_VERSION_MAJOR ~ "_" ~ LUA_VERSION_MINOR;'
 }
 
-function DDecl(f, decl, omitEnumPrefix)
-    if decl.type == 'Typedef' then
-        print('typedef', decl)
-    elseif decl.type == 'Enum' then
-        print('enum', decl)
-    elseif decl.type == 'Struct' then
-        print('struct', decl)
-    elseif decl.type == 'Function'then
-        print('function', decl)
+TYPE_MAP = {
+    Void = "void",
+    Bool = "bool",
+    Int8 = "char",
+    Int16 = "short",
+    Int32 = "int",
+    Int64 = "long",
+    UInt8 = "ubyte",
+    UInt16 = "ushort",
+    UInt32 = "uint",
+    UInt64 = "ulong",
+    Float = "float",
+    Double = "double"
+}
+
+function DType(t)
+    print('DType', t)
+    local name = TYPE_MAP[t.type]
+    if name then
+        return name
+    end
+    if t.type == "Pointer" then
+        return DPointer(t)
+    elseif t.type == "Array" then
+        return DArray(t)
     else
-        error('unknown', decl)
+        return t.name
+    end
+end
+
+function DTypedefDecl(f, t)
+    print(t, t.ref)
+    local dst = DType(t.ref.type)
+    if dst then
+        if t.name == dst then
+            -- f.writefln("// samename: %s", t.m_name);
+            return
+        end
+
+        writefln(f, "alias %s = %s;", t.name, dst)
+        return
+    end
+
+    -- nameless
+    writeln(f, "// typedef target nameless")
+end
+
+function DDecl(f, decl, omitEnumPrefix)
+    if decl.type == "Typedef" then
+        DTypedefDecl(f, decl)
+    elseif decl.type == "Enum" then
+        print("enum", decl)
+    elseif decl.type == "Struct" then
+        print("struct", decl)
+    elseif decl.type == "Function" then
+        print("function", decl)
+    else
+        error("unknown", decl)
     end
 end
 

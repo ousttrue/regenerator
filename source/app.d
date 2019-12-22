@@ -106,6 +106,35 @@ void open_file(lua_State* L)
 	lua_setglobal(L, "file");
 }
 
+void push_clangdecl(lua_State* L, Decl decl)
+{
+	castSwitch!( //
+			(Void decl) => lua_push(L, decl), //
+			(Bool decl) => lua_push(L, decl), //
+			(Int8 decl) => lua_push(L, decl), //
+			(Int16 decl) => lua_push(L,
+				decl), //
+			(Int32 decl) => lua_push(L, decl), //
+			(Int64 decl) => lua_push(L,
+				decl), //
+			(UInt8 decl) => lua_push(L, decl), //
+			(UInt16 decl) => lua_push(L, decl), //
+			(UInt32 decl) => lua_push(L,
+				decl), //
+			(UInt64 decl) => lua_push(L, decl), //
+			(Float decl) => lua_push(L, decl), //
+			(Double decl) => lua_push(L,
+				decl), //
+			(Pointer decl) => lua_push(L, decl), //
+			(Array decl) => lua_push(L, decl), //
+			(clangdecl.Typedef decl) => lua_push(L,
+				decl), //
+			(Enum decl) => lua_push(L, decl), //
+			(Struct decl) => lua_push(L, decl), //
+			(Function decl) => lua_push(L, decl) //
+			)(decl);
+}
+
 int main(string[] args)
 {
 	auto lua = new LuaState();
@@ -126,15 +155,9 @@ int main(string[] args)
 	source.instance.Getter("types", (lua_State* L) {
 		auto s = lua_to!(Source*)(L, 1);
 		lua_createtable(L, cast(int) s.m_types.length, 0);
-		foreach (i, decl; s.m_types)
+		foreach (i, ref decl; s.m_types)
 		{
-			castSwitch!( //
-				(clangdecl.Typedef decl) => lua_push(L, decl), //
-				(Enum decl) => lua_push(L, decl), //
-				(Struct decl) => lua_push(L,
-				decl), //
-				(Function decl) => lua_push(L, decl) //
-				)(decl);
+			push_clangdecl(L, decl);
 			lua_seti(L, -2, i + 1);
 		}
 		return 1;
@@ -151,21 +174,34 @@ int main(string[] args)
 	lua_setglobal(lua.L, "MacroDefinition");
 
 	// export class UserDecl
+	auto typeRef = new UserType!TypeRef;
+	typeRef.instance.Getter("type", (lua_State* L) {
+		auto s = lua_to!(TypeRef*)(L, 1);
+		push_clangdecl(L, s.type);
+		return 1;
+	});
+	typeRef.push(lua.L);
+	lua_setglobal(lua.L, "TypeRef");
+
 	auto typeDef = new UserType!(clangdecl.Typedef);
+	typeDef.instance.Getter("type", (clangdecl.Typedef* d) => "Typedef");
+	typeDef.instance.Getter("ref", (clangdecl.Typedef* d) => d.m_typeref);
 	typeDef.push(lua.L);
-	typeDef.instance.Getter("type", s => "Typedef");
 	lua_setglobal(lua.L, "Typedef");
+
 	auto enumType = new UserType!(Enum);
-	enumType.push(lua.L);
 	enumType.instance.Getter("type", s => "Enum");
+	enumType.push(lua.L);
 	lua_setglobal(lua.L, "Enum");
+
 	auto structType = new UserType!(Struct);
-	structType.push(lua.L);
 	structType.instance.Getter("type", s => "Struct");
+	structType.push(lua.L);
 	lua_setglobal(lua.L, "Struct");
+
 	auto func = new UserType!(Function);
-	func.push(lua.L);
 	func.instance.Getter("type", s => "Function");
+	func.push(lua.L);
 	lua_setglobal(lua.L, "Function");
 
 	// parse
