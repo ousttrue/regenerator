@@ -241,12 +241,12 @@ class Enum : UserDecl
 
 class Typedef : UserDecl
 {
-    TypeRef typeRef;
+    TypeRef typeref;
 
     this(string path, int line, string name, Decl type, bool isConst = false)
     {
         super(path, line, name);
-        typeRef = TypeRef(type, isConst);
+        typeref = TypeRef(type, isConst);
     }
 
     Decl getConcreteDecl(Decl[] path = [])
@@ -259,7 +259,7 @@ class Typedef : UserDecl
             }
         }
 
-        auto nest = cast(Typedef) typeRef.type;
+        auto nest = cast(Typedef) typeref.type;
         if (!nest)
         {
             return nest;
@@ -289,6 +289,11 @@ class Function : UserDecl
         this.params = params;
         this.dllExport = dllExport;
         this.externC = externC;
+    }
+
+    override string toString() const
+    {
+        return "%s %s(%s)".format(ret, name, params);
     }
 }
 

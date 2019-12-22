@@ -121,8 +121,18 @@ TYPE_MAP = {
     Double = "double"
 }
 
+function DPointer(p)
+    if p.ref.type.name == "ID3DInclude" then
+        return "void*   "
+    elseif isInterface(p.ref.type) then
+        return string.format("%s", DType(p.typeref.type))
+    else
+        return string.format("%s*", DType(p.typeref.type))
+    end
+end
+
 function DType(t)
-    print('DType', t)
+    print("DType", t)
     local name = TYPE_MAP[t.class]
     if name then
         return name

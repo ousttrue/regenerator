@@ -141,7 +141,8 @@ private:
         auto found = key in m_map;
         if (!found)
         {
-            lua_pushstring(L, "'%s' is not found in __index".format(key).toStringz);
+            lua_pushstring(L, "'%s' is not found in __index in %s".format(key,
+                    typeid(T).name).toStringz);
             lua_error(L);
             return 1;
         }
