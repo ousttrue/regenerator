@@ -129,7 +129,6 @@ int lua_push(T : T[])(lua_State* L, T[] values)
 //
 // usertype
 //
-//
 // # class T(by pointer)
 // ## push: class T
 // &t
@@ -140,7 +139,10 @@ int lua_push(T : T[])(lua_State* L, T[] values)
 // ## to: class T*
 // t
 //
-// # struct T(by value)
+// # struct not POD(must pointer)
+// TODO:
+//
+// # struct POD(by value)
 // ## push: class T
 // t
 // ## push: class T*
