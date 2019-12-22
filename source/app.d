@@ -5,6 +5,7 @@ import std.conv;
 import std.format;
 import std.typecons;
 import std.file;
+import std.algorithm;
 import clangparser;
 import clangdecl;
 import exporter.processor;
@@ -122,7 +123,22 @@ int main(string[] args)
 	source.instance.Getter("imports", (Source* s) => s.m_imports);
 	source.instance.Getter("modules", (Source* s) => s.m_modules);
 	source.instance.Getter("macros", (Source* s) => s.m_macros);
-	source.instance.Getter("types", (Source* s) => s.m_types);
+	source.instance.Getter("types", (lua_State* L) {
+		auto s = lua_to!(Source*)(L, 1);
+		lua_createtable(L, cast(int) s.m_types.length, 0);
+		foreach (i, decl; s.m_types)
+		{
+			castSwitch!( //
+				(clangdecl.Typedef decl) => lua_push(L, decl), //
+				(Enum decl) => lua_push(L, decl), //
+				(Struct decl) => lua_push(L,
+				decl), //
+				(Function decl) => lua_push(L, decl) //
+				)(decl);
+			lua_seti(L, -2, i + 1);
+		}
+		return 1;
+	});
 	source.push(lua.L);
 	lua_setglobal(lua.L, "Source");
 
@@ -135,9 +151,22 @@ int main(string[] args)
 	lua_setglobal(lua.L, "MacroDefinition");
 
 	// export class UserDecl
-	auto userDecl = new UserType!UserDecl;
-	userDecl.push(lua.L);
-	lua_setglobal(lua.L, "UserDecl");
+	auto typeDef = new UserType!(clangdecl.Typedef);
+	typeDef.push(lua.L);
+	typeDef.instance.Getter("type", s => "Typedef");
+	lua_setglobal(lua.L, "Typedef");
+	auto enumType = new UserType!(Enum);
+	enumType.push(lua.L);
+	enumType.instance.Getter("type", s => "Enum");
+	lua_setglobal(lua.L, "Enum");
+	auto structType = new UserType!(Struct);
+	structType.push(lua.L);
+	structType.instance.Getter("type", s => "Struct");
+	lua_setglobal(lua.L, "Struct");
+	auto func = new UserType!(Function);
+	func.push(lua.L);
+	func.instance.Getter("type", s => "Function");
+	lua_setglobal(lua.L, "Function");
 
 	// parse
 	lua_register(lua.L, "parse", &luaFunc_parse);

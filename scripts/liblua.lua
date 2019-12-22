@@ -106,6 +106,20 @@ macroMap = {
     LUA_VERSUFFIX = 'enum LUA_VERSUFFIX = "_" ~ LUA_VERSION_MAJOR ~ "_" ~ LUA_VERSION_MINOR;'
 }
 
+function DDecl(f, decl, omitEnumPrefix)
+    if decl.type == 'Typedef' then
+        print('typedef', decl)
+    elseif decl.type == 'Enum' then
+        print('enum', decl)
+    elseif decl.type == 'Struct' then
+        print('struct', decl)
+    elseif decl.type == 'Function'then
+        print('function', decl)
+    else
+        error('unknown', decl)
+    end
+end
+
 print("generate dlang...")
 -- dlangExport(sourceMap, dir, omitEnumPrefix)
 
@@ -207,7 +221,7 @@ for k, source in pairs(sourceMap) do
 
         -- types
         for j, decl in ipairs(source.types) do
-            -- DDecl(&f, decl, omitEnumPrefix)
+            DDecl(f, decl, omitEnumPrefix)
         end
 
         io.close(f)

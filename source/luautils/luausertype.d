@@ -75,6 +75,11 @@ struct StaticMethodMap
 
 struct IndexDispatcher(T)
 {
+    void Getter(string name, LuaFunc f)
+    {
+        m_map[name] = MetaValue(true, f);
+    }
+
     void Getter(S)(string name, S delegate(T*) f)
     {
         // stack#1: userdata
