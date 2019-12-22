@@ -6,6 +6,7 @@ import std.format;
 import std.typecons;
 import std.file;
 import clangparser;
+import clangdecl;
 import exporter.processor;
 import exporter.dlangexporter;
 import exporter.source;
@@ -121,14 +122,22 @@ int main(string[] args)
 	source.instance.Getter("imports", (Source* s) => s.m_imports);
 	source.instance.Getter("modules", (Source* s) => s.m_modules);
 	source.instance.Getter("macros", (Source* s) => s.m_macros);
+	source.instance.Getter("types", (Source* s) => s.m_types);
 	source.push(lua.L);
 	lua_setglobal(lua.L, "Source");
 
 	// export struct MacroDefinition
 	auto macroDef = new UserType!MacroDefinition;
-	macroDef.metaMethod(LuaMetaKey.tostring, (MacroDefinition *m) => m.toString);
+	macroDef.metaMethod(LuaMetaKey.tostring, (MacroDefinition* m) => m.toString);
+	macroDef.instance.Getter("name", (MacroDefinition* m) => m.name);
+	macroDef.instance.Getter("tokens", (MacroDefinition* m) => m.tokens);
 	macroDef.push(lua.L);
 	lua_setglobal(lua.L, "MacroDefinition");
+
+	// export class UserDecl
+	auto userDecl = new UserType!UserDecl;
+	userDecl.push(lua.L);
+	lua_setglobal(lua.L, "UserDecl");
 
 	// parse
 	lua_register(lua.L, "parse", &luaFunc_parse);
