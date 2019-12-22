@@ -3,6 +3,7 @@ import std.traits;
 import std.conv;
 import std.string;
 import std.exception;
+import std.experimental.logger;
 import lua;
 import luamacros;
 
@@ -112,7 +113,14 @@ int lua_push(T : T[])(lua_State* L, T[] values)
     lua_createtable(L, cast(int) values.length, 0);
     foreach (i, ref value; values)
     {
-        lua_push(L, &value);
+        static if (is(T : Object))
+        {
+            lua_push(L, &value);
+        }
+        else
+        {
+            lua_push(L, value);
+        }
         lua_seti(L, -2, i + 1);
     }
     return 1;
@@ -142,22 +150,71 @@ int lua_push(T : T[])(lua_State* L, T[] values)
 // ## to: class T*
 // &t
 
-///
-/// push Object
-///
-int lua_push(T : Object)(lua_State* L, T* value)
+template ClassOrStruct(T)
 {
-    auto p = cast(T**) lua_newuserdata(L, T.sizeof);
-    auto pushedType = lua_getmetatable_from_type!T(L);
-    if (pushedType)
+    immutable auto tIsPointer = isPointer!T;
+    static if (tIsPointer)
     {
-        // set metatable to type userdata
-        lua_setmetatable(L, -2);
-        *p = value;
-        return 1;
+        alias TT = PointerTarget!T;
     }
     else
     {
+        alias TT = T;
+    }
+
+    // double pointer is not implemented
+    static assert(!isPointer!TT);
+
+    // class
+    int push(lua_State* L, T value)
+    {
+        // set metatable to type userdata
+        static if (is(TT : Object))
+        {
+            // class
+            auto size = (TT*).sizeof;
+            auto p = cast(TT**) lua_newuserdata(L, size);
+            auto hasMetatable = lua_getmetatable_from_type!TT(L);
+            if (hasMetatable)
+            {
+                static if (tIsPointer)
+                {
+                    // pointer
+                    *p = value;
+                    lua_setmetatable(L, -2);
+                }
+                else
+                {
+                    // pointer
+                    *p = &value;
+                    lua_setmetatable(L, -2);
+                }
+                return 1;
+            }
+        }
+        else
+        {
+            // struct
+            auto p = cast(TT*) lua_newuserdata(L, TT.sizeof);
+            auto hasMetatable = lua_getmetatable_from_type!TT(L);
+            if (hasMetatable)
+            {
+                static if (tIsPointer)
+                {
+                    // copy
+                    *p = *value;
+                    lua_setmetatable(L, -2);
+                }
+                else
+                {
+                    // copy
+                    *p = value;
+                    lua_setmetatable(L, -2);
+                }
+                return 1;
+            }
+        }
+
         // no metatable
         lua_pop(L, 1);
 
@@ -166,57 +223,68 @@ int lua_push(T : Object)(lua_State* L, T* value)
         lua_error(L);
         return 1;
     }
-}
 
-T lua_to(T)(lua_State* L, int idx)
-{
-    static if (isPointer!T)
+    T defReturn()
     {
-        return lua_to_object_pointer!(rawtype!T)(L, idx);
+        T value;
+        return value;
     }
-    else
-    {
-        throw new Exception("lua_to!T");
-    }
-}
 
-T* lua_to_object_pointer(T : Object)(lua_State* L, int idx)
-{
-    auto t = lua_type(L, idx);
-    if (t == LUA_TUSERDATA)
+    T to(lua_State* L, int idx)
     {
+        auto t = lua_type(L, idx);
+        if (t != LUA_TUSERDATA)
+        {
+            return defReturn();
+        }
         if (!lua_getmetatable(L, idx))
         {
-            return null;
+            return defReturn();
         }
-        lua_getmetatable_from_type!T(L);
+
+        lua_getmetatable_from_type!TT(L);
         auto isEqual = lua_rawequal(L, -1, -2);
         lua_pop(L, 2); // remove both metatables
-        if (isEqual)
+        if (!isEqual)
         {
-            // userdata metatable and metatable from type is same
-            // static if (isPointer!T)
-            // {
-            //     // throw new NotImplementedError("isPointer");
-            //     return cast(T) lua_touserdata(L, idx);
-            // }
-            // else
+            return defReturn();
+        }
+
+        static if (is(TT : Object))
+        {
+            // class
+            auto p = cast(TT**) lua_touserdata(L, idx);
+            static if (tIsPointer)
             {
-                auto p = cast(T**) lua_touserdata(L, idx);
-                debug
-                {
-                    auto a = 0;
-                }
                 return *p;
+            }
+            else
+            {
+                return **p;
             }
         }
         else
         {
-            return null;
+            // struct
+            auto p = cast(TT*) lua_touserdata(L, idx);
+            static if (tIsPointer)
+            {
+                return p;
+            }
+            else
+            {
+                return *p;
+            }
         }
     }
-    else
-    {
-        return null;
-    }
+}
+
+int lua_push(T)(lua_State* L, T value)
+{
+    return ClassOrStruct!T.push(L, value);
+}
+
+T lua_to(T)(lua_State* L, int idx)
+{
+    return ClassOrStruct!T.to(L, idx);
 }

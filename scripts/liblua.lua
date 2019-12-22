@@ -164,41 +164,42 @@ for k, source in pairs(sourceMap) do
             if not src.empty then
                 writefln(f, "import %s.%s;", packageName, src.name)
             end
-            --         foreach (m; src.m_modules)
-            --         {
-            --             if (modules.find(m).empty)
-            --             {
-            --                 f.writefln("import %s;", m);
-            --                 modules ~= m;
-            --                 if (m == moduleName!(core.sys.windows.unknwn))
-            --                 {
-            --                     f.writefln("import %s.guidutil;", packageName);
-            --                     useGuid = true;
-            --                 }
-            --             }
-            --         }
-            --     }
-            --     // const
-            --     foreach (macroDefinition; source.m_macros)
-            --     {
-            --         if (macroDefinition.tokens[0][0].isAlpha)
-            --         {
-            --             // typedef ?
-            --             // IID_ID3DBlob = IID_ID3D10Blob;
-            --             // INTERFACE = ID3DInclude;
-            --             continue;
-            --         }
-            --         auto p = macroDefinition.name in macroMap;
-            --         if (p)
-            --         {
-            --             f.writeln(*p);
-            --         }
-            --         else
-            --         {
-            --             f.writefln("enum %s = %s;", macroDefinition.name,
-            --                     macroDefinition.tokens.join(" "));
-            --         }
-            --     }
+
+            for j, m in ipairs(src.modules) do
+                print(j, m)
+                if modules.find(m).empty then
+                    writefln(f, "import %s;", m)
+                    table.insert(modules, m)
+                -- if m == moduleName!(core.sys.windows.unknwn) then
+                --     f.writefln("import %s.guidutil;", packageName);
+                --     useGuid = true;
+                -- end
+                end
+            end
+
+            -- const
+            for j, macroDefinition in ipairs(source.macros) do
+                print(j, macroDefinition)
+                --     {
+                --         if (macroDefinition.tokens[0][0].isAlpha)
+                --         {
+                --             // typedef ?
+                --             // IID_ID3DBlob = IID_ID3D10Blob;
+                --             // INTERFACE = ID3DInclude;
+                --             continue;
+                --         }
+                --         auto p = macroDefinition.name in macroMap;
+                --         if (p)
+                --         {
+                --             f.writeln(*p);
+                --         }
+                --         else
+                --         {
+                --             f.writefln("enum %s = %s;", macroDefinition.name,
+                --                     macroDefinition.tokens.join(" "));
+                --         }
+            end
+
             --     // types
             --     foreach (decl; source.m_types)
             --     {

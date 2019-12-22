@@ -119,6 +119,8 @@ int main(string[] args)
 	source.instance.Getter("empty", (Source* s) => s.empty);
 	source.instance.Getter("name", (Source* s) => s.getName);
 	source.instance.Getter("imports", (Source* s)=> s.m_imports);
+	source.instance.Getter("modules", (Source* s)=> s.m_modules);
+	source.instance.Getter("macros", (Source* s)=> s.m_macros);
 	source.push(lua.L);
 	lua_setglobal(lua.L, "Source");
 
