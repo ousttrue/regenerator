@@ -49,7 +49,7 @@ int lua_push(T : float)(lua_State* L, T value)
     return 1;
 }
 
-bool lua_push(T : bool)(lua_State* L, T value)
+int lua_push(T : bool)(lua_State* L, T value)
 {
     lua_pushboolean(L, value);
     return 1;

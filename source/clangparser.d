@@ -20,6 +20,18 @@ struct MacroDefinition
 {
     string name;
     string[] tokens;
+
+    string toString() const
+    {
+        if (tokens.length == 1)
+        {
+            return "%s = %s".format(name, tokens[0]);
+        }
+        else
+        {
+            return "%s = %s".format(name, tokens);
+        }
+    }
 }
 
 class Header
