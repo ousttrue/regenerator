@@ -81,6 +81,13 @@ extern (C) int luaFunc_rmdirRecurse(lua_State* L)
 	return 0;
 }
 
+extern (C) int luaFunc_mkdirRecurse(lua_State* L)
+{
+	auto path = lua_to!string(L, 1);
+	mkdirRecurse(path);
+	return 0;
+}
+
 void open_file(lua_State* L)
 {
 	lua_createtable(L, 0, 0);
@@ -90,6 +97,9 @@ void open_file(lua_State* L)
 
 	lua_pushcclosure(L, &luaFunc_rmdirRecurse, 0);
 	lua_setfield(L, -2, "rmdirRecurse");
+
+	lua_pushcclosure(L, &luaFunc_mkdirRecurse, 0);
+	lua_setfield(L, -2, "mkdirRecurse");
 
 	lua_setglobal(L, "file");
 }
@@ -107,6 +117,7 @@ int main(string[] args)
 	// export class Source
 	auto source = new UserType!Source;
 	source.instance.Getter("empty", (Source* s) => s.empty);
+	source.instance.Getter("name", (Source* s) => s.getName);
 	source.push(lua.L);
 	lua_setglobal(lua.L, "Source");
 

@@ -9,7 +9,8 @@
             "command": "dub",
             "args": [
                 "build",
-                "-b", "debug",
+                "-b",
+                "debug"
             ],
             "group": {
                 "kind": "build",
@@ -17,12 +18,22 @@
             },
             "presentation": {
                 "reveal": "always",
-                // "panel": "new",
-                "clear": true,
+                "clear": true
             },
             "problemMatcher": [
                 "$dmd"
-            ],
+            ]
         },
+        {
+            "label": "revert",
+            "type": "shell",
+            "command": "git",
+            "args": [
+                "checkout",
+                "--",
+                "source/lua"
+            ],
+            "problemMatcher": []
+        }
     ]
 }

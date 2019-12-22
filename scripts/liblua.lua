@@ -98,7 +98,33 @@ print("generate dlang...")
 -- clear dir
 if file.exists(dir) then
     printf("rmdir %s", dir)
-    -- file.rmdirRecurse(dir)
+    file.rmdirRecurse(dir)
+end
+
+function rfind(src, pred)
+    local i = nil
+    -- print(src)
+    for i = #src, 1, -1 do
+        local c = string.sub(src, i, i)
+        -- printf("%d %s", i, c)
+        if pred(c) then
+            -- printf("found: %s %d", src, i)
+            return i
+        end
+    end
+end
+
+function basename(src)
+    local function pred(c)
+        if c == "/" or c == "\\" then
+            return true
+        end
+    end
+    local i = rfind(src, pred)
+    if i then
+        return string.sub(src, i + 1)
+    end
+    return src
 end
 
 -- write each source
@@ -106,71 +132,71 @@ local useGuid = false
 for k, source in pairs(sourceMap) do
     -- source.writeTo(dir);
     if not source.empty then
-        print(k, source)
-        local packageName, ext = stripExtension(basename(dir))
+        -- print(k, source)
+        local packageName = basename(dir)
 
         -- open
-        local path = string.format("%s/%s.d", dir, source.getName())
-        printf("writeTo: %s(%d)", path, source.m_types.length)
+        local path = string.format("%s/%s.d", dir, source.name)
+        printf("writeTo: %s", path)
         file.mkdirRecurse(dir)
 
-        local f = io.open(path, "w");
-    --     f.writeln(HEADLINE);
-    --     f.writefln("module %s.%s;", packageName, source.getName());
+        local f = io.open(path, "w")
+        --     f.writeln(HEADLINE);
+        --     f.writefln("module %s.%s;", packageName, source.getName());
 
-    --     // imports
-    --     string[] modules;
-    --     foreach (src; source.m_imports)
-    --     {
-    --         if (!src.empty)
-    --         {
-    --             f.writefln("import %s.%s;", packageName, src.getName());
-    --         }
+        --     // imports
+        --     string[] modules;
+        --     foreach (src; source.m_imports)
+        --     {
+        --         if (!src.empty)
+        --         {
+        --             f.writefln("import %s.%s;", packageName, src.getName());
+        --         }
 
-    --         foreach (m; src.m_modules)
-    --         {
-    --             if (modules.find(m).empty)
-    --             {
-    --                 f.writefln("import %s;", m);
-    --                 modules ~= m;
+        --         foreach (m; src.m_modules)
+        --         {
+        --             if (modules.find(m).empty)
+        --             {
+        --                 f.writefln("import %s;", m);
+        --                 modules ~= m;
 
-    --                 if (m == moduleName!(core.sys.windows.unknwn))
-    --                 {
-    --                     f.writefln("import %s.guidutil;", packageName);
-    --                     useGuid = true;
-    --                 }
-    --             }
-    --         }
-    --     }
+        --                 if (m == moduleName!(core.sys.windows.unknwn))
+        --                 {
+        --                     f.writefln("import %s.guidutil;", packageName);
+        --                     useGuid = true;
+        --                 }
+        --             }
+        --         }
+        --     }
 
-    --     // const
-    --     foreach (macroDefinition; source.m_macros)
-    --     {
-    --         if (macroDefinition.tokens[0][0].isAlpha)
-    --         {
-    --             // typedef ?
-    --             // IID_ID3DBlob = IID_ID3D10Blob;
-    --             // INTERFACE = ID3DInclude;
-    --             continue;
-    --         }
+        --     // const
+        --     foreach (macroDefinition; source.m_macros)
+        --     {
+        --         if (macroDefinition.tokens[0][0].isAlpha)
+        --         {
+        --             // typedef ?
+        --             // IID_ID3DBlob = IID_ID3D10Blob;
+        --             // INTERFACE = ID3DInclude;
+        --             continue;
+        --         }
 
-    --         auto p = macroDefinition.name in macroMap;
-    --         if (p)
-    --         {
-    --             f.writeln(*p);
-    --         }
-    --         else
-    --         {
-    --             f.writefln("enum %s = %s;", macroDefinition.name,
-    --                     macroDefinition.tokens.join(" "));
-    --         }
-    --     }
+        --         auto p = macroDefinition.name in macroMap;
+        --         if (p)
+        --         {
+        --             f.writeln(*p);
+        --         }
+        --         else
+        --         {
+        --             f.writefln("enum %s = %s;", macroDefinition.name,
+        --                     macroDefinition.tokens.join(" "));
+        --         }
+        --     }
 
-    --     // types
-    --     foreach (decl; source.m_types)
-    --     {
-    --         DDecl(&f, decl, omitEnumPrefix);
-    --     }
+        --     // types
+        --     foreach (decl; source.m_types)
+        --     {
+        --         DDecl(&f, decl, omitEnumPrefix);
+        --     }
         io.close(f)
     end
 end

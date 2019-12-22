@@ -5,7 +5,7 @@ import std.conv;
 import std.experimental.logger;
 import lua;
 import luamacros;
-import luautils.luastack; 
+import luautils.luastack;
 import luautils.luafunc;
 
 ///
@@ -77,7 +77,24 @@ struct IndexDispatcher(T)
 {
     void Getter(S)(string name, S delegate(T*) f)
     {
+        // stack#1: userdata
+        // stack#2: key
         m_map[name] = MetaValue(true, to_luafunc(f));
+    }
+
+    void Setter(S)(string name, void delegate(T*, S) f)
+    {
+        // stack#1: userdata
+        // stack#2: key
+        // stack#3: value ?
+        throw new Exception("NotImplemented");
+    }
+
+    void Method(S)(string name, S delegate(T*) f)
+    {
+        // upvalue#1: body
+        // upvalue#2: userdata
+        throw new Exception("NotImplemented");
     }
 
     // stack#1: userdata
@@ -129,6 +146,8 @@ private:
             try
             {
                 // execute getter or setter
+                // stack#1: userdata
+                // stack#2: key
                 return found.func(L);
             }
             catch (Exception ex)
@@ -138,14 +157,16 @@ private:
                 return 1;
             }
         }
-
-        // upvalue#1: body
-        lua_pushlightuserdata(L, &found.func);
-        // upvalue#2: userdata
-        lua_pushvalue(L, -3);
-        // closure
-        lua_pushcclosure(L, &LuaFuncClosure, 2);
-        return 1;
+        else
+        {
+            // upvalue#1: body
+            lua_pushlightuserdata(L, &found.func);
+            // upvalue#2: userdata
+            lua_pushvalue(L, -3);
+            // closure
+            lua_pushcclosure(L, &LuaFuncClosure, 2);
+            return 1;
+        }
     }
 }
 
