@@ -123,13 +123,13 @@ TYPE_MAP = {
 
 function DType(t)
     print('DType', t)
-    local name = TYPE_MAP[t.type]
+    local name = TYPE_MAP[t.class]
     if name then
         return name
     end
-    if t.type == "Pointer" then
+    if t.class == "Pointer" then
         return DPointer(t)
-    elseif t.type == "Array" then
+    elseif t.class == "Array" then
         return DArray(t)
     else
         return t.name
@@ -154,13 +154,13 @@ function DTypedefDecl(f, t)
 end
 
 function DDecl(f, decl, omitEnumPrefix)
-    if decl.type == "Typedef" then
+    if decl.class == "Typedef" then
         DTypedefDecl(f, decl)
-    elseif decl.type == "Enum" then
+    elseif decl.class == "Enum" then
         print("enum", decl)
-    elseif decl.type == "Struct" then
+    elseif decl.class == "Struct" then
         print("struct", decl)
-    elseif decl.type == "Function" then
+    elseif decl.class == "Function" then
         print("function", decl)
     else
         error("unknown", decl)
