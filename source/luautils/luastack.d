@@ -170,6 +170,14 @@ template ClassOrStruct(T)
     // class
     int push(lua_State* L, T value)
     {
+        static if(tIsPointer)
+        {
+            if(value==null)
+            {
+                return 0;
+            }
+        }
+
         // set metatable to type userdata
         static if (!tIsPOD)
         {

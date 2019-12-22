@@ -121,18 +121,32 @@ TYPE_MAP = {
     Double = "double"
 }
 
+function isInterface(decl)
+    decl = decl.typedefSource
+
+    if decl.class ~= "Struct" then
+        return false
+    end
+
+    if decl.definition then
+        -- resolve forward decl
+        decl = decl.definition
+    end
+
+    return decl.isInterface
+end
+
 function DPointer(p)
     if p.ref.type.name == "ID3DInclude" then
         return "void*   "
     elseif isInterface(p.ref.type) then
-        return string.format("%s", DType(p.typeref.type))
+        return string.format("%s", DType(p.ref.type))
     else
-        return string.format("%s*", DType(p.typeref.type))
+        return string.format("%s*", DType(p.ref.type))
     end
 end
 
 function DType(t)
-    print("DType", t)
     local name = TYPE_MAP[t.class]
     if name then
         return name

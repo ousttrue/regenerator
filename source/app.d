@@ -143,14 +143,28 @@ string get_last(string src)
 	return src[p + 1 .. $];
 }
 
+Decl GetTypedefSource(Decl decl)
+{
+	while (true)
+	{
+		auto typedefDecl = cast(clangdecl.Typedef) decl;
+		if (!typedefDecl)
+		{
+			break;
+		}
+		decl = typedefDecl.typeref.type;
+	}
+	return decl;
+}
+
 string GetName(Decl decl)
 {
-    auto userDecl = cast(UserDecl) decl;
-    if (!userDecl)
-    {
-        return "";
-    }
-    return userDecl.name;
+	auto userDecl = cast(UserDecl) decl;
+	if (!userDecl)
+	{
+		return "";
+	}
+	return userDecl.name;
 }
 
 UserType!T register_type(T : Decl)(lua_State* L)
@@ -159,9 +173,19 @@ UserType!T register_type(T : Decl)(lua_State* L)
 
 	auto name = get_last(typeid(T).name);
 	user.instance.Getter("class", (T* self) => name);
-	user.metaMethod(LuaMetaKey.tostring, (T*self)=>self.toString);
+	user.metaMethod(LuaMetaKey.tostring, (T* self) => self.toString);
 
 	user.instance.Getter("name", (T* self) => (*self).GetName);
+	user.instance.Getter("typedefSource", (lua_State* L) {
+		auto self = lua_to!T(L, 1);
+		auto source = self.GetTypedefSource;
+		if (!source)
+		{
+			return 0;
+		}
+		push_clangdecl(L, source);
+		return 1;
+	});
 
 	user.push(L);
 	lua_setglobal(L, name.toStringz);
@@ -180,11 +204,11 @@ int main(string[] args)
 
 	// export class Source
 	auto source = new UserType!Source;
-	source.instance.Getter("empty", (Source* s) => s.empty);
-	source.instance.Getter("name", (Source* s) => s.getName);
-	source.instance.Getter("imports", (Source* s) => s.m_imports);
-	source.instance.Getter("modules", (Source* s) => s.m_modules);
-	source.instance.Getter("macros", (Source* s) => s.m_macros);
+	source.instance.Getter("empty", (Source* self) => self.empty);
+	source.instance.Getter("name", (Source* self) => self.getName);
+	source.instance.Getter("imports", (Source* self) => self.m_imports);
+	source.instance.Getter("modules", (Source* self) => self.m_modules);
+	source.instance.Getter("macros", (Source* self) => self.m_macros);
 	source.instance.Getter("types", (lua_State* L) {
 		auto s = lua_to!(Source*)(L, 1);
 		lua_createtable(L, cast(int) s.m_types.length, 0);
@@ -229,16 +253,25 @@ int main(string[] args)
 	auto f64 = register_type!Double(lua.L);
 
 	auto pt = register_type!Pointer(lua.L);
-	pt.instance.Getter("ref", (Pointer*self) => self.typeref);
+	pt.instance.Getter("ref", (Pointer* self) => self.typeref);
 
 	auto ar = register_type!Array(lua.L);
 
 	auto typedefType = register_type!(clangdecl.Typedef)(lua.L);
-	typedefType.instance.Getter("ref", (clangdecl.Typedef* d) => d.typeref);
+	typedefType.instance.Getter("ref", (clangdecl.Typedef* self) => self.typeref);
 
 	auto enumType = register_type!Enum(lua.L);
 
 	auto structType = register_type!Struct(lua.L);
+	structType.instance.Getter("definition", (lua_State* L) {
+		auto self = lua_to!Struct(L, 1);
+		if(!self.definition)
+		{
+			return 0;
+		}
+		push_clangdecl(L, self.definition);
+		return 1;
+	});
 
 	auto funcType = register_type!Function(lua.L);
 
