@@ -212,4 +212,17 @@ for k, source in pairs(sourceMap) do
 
         io.close(f)
     end
+
+    -- write package.d
+    do
+        local packageName = basename(dir)
+        local path = string.format("%s/package.d", dir)
+        local f = io.open(path, "w")
+        writefln(f, "module %s;", packageName)
+        for k, source in pairs(sourceMap) do
+            if not source.empty then
+                writefln(f, "public import %s.%s;", packageName, source.name)
+            end
+        end
+    end
 end
