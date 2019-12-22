@@ -130,6 +130,7 @@ int lua_push(T : T[])(lua_State* L, T[] values)
 // usertype
 //
 // # class T(by pointer)
+// TODO: keep reference for GC
 // ## push: class T
 // &t
 // ## push: class T*
