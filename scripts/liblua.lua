@@ -61,16 +61,16 @@ function getopt(arg)
 end
 
 local opts = getopt(args)
-function show_table(t, indent)
+function print_table(t, indent)
     indent = indent or ""
     for k, v in pairs(t) do
         printf("%s%s => %s", indent, k, v)
         if type(v) == "table" then
-            show_table(v, indent .. "  ")
+            print_table(v, indent .. "  ")
         end
     end
 end
-show_table(opts)
+print_table(opts)
 print()
 
 print("parse...")
