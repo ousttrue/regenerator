@@ -152,7 +152,7 @@ int lua_push(T : T[])(lua_State* L, T[] values)
 
 template ClassOrStruct(T)
 {
-    immutable auto tIsPointer = isPointer!T;
+    immutable tIsPointer = isPointer!T;
     static if (tIsPointer)
     {
         alias TT = PointerTarget!T;
@@ -165,11 +165,13 @@ template ClassOrStruct(T)
     // double pointer is not implemented
     static assert(!isPointer!TT);
 
+    immutable tIsPOD = __traits(isPOD, TT);
+
     // class
     int push(lua_State* L, T value)
     {
         // set metatable to type userdata
-        static if (is(TT : Object))
+        static if (!tIsPOD)
         {
             // class
             auto size = (TT*).sizeof;
@@ -194,7 +196,7 @@ template ClassOrStruct(T)
         }
         else
         {
-            // struct
+            // POD
             auto p = cast(TT*) lua_newuserdata(L, TT.sizeof);
             auto hasMetatable = lua_getmetatable_from_type!TT(L);
             if (hasMetatable)
@@ -250,7 +252,7 @@ template ClassOrStruct(T)
             return defReturn();
         }
 
-        static if (is(TT : Object))
+        static if (!tIsPOD)
         {
             // class
             auto p = cast(TT**) lua_touserdata(L, idx);
