@@ -107,6 +107,17 @@ T[] lua_to(T : T[])(lua_State* L, int idx)
     return values;
 }
 
+int lua_push(T : T[])(lua_State* L, T[] values)
+{
+    lua_createtable(L, cast(int) values.length, 0);
+    foreach (i, ref value; values)
+    {
+        lua_push(L, &value);
+        lua_seti(L, -2, i + 1);
+    }
+    return 1;
+}
+
 //
 // usertype
 //

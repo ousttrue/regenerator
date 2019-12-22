@@ -118,6 +118,7 @@ int main(string[] args)
 	auto source = new UserType!Source;
 	source.instance.Getter("empty", (Source* s) => s.empty);
 	source.instance.Getter("name", (Source* s) => s.getName);
+	source.instance.Getter("imports", (Source* s)=> s.m_imports);
 	source.push(lua.L);
 	lua_setglobal(lua.L, "Source");
 
