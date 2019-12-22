@@ -93,8 +93,10 @@ int luaL_dofile(lua_State* L, const char* fn)
     return (luaL_loadfile(L, fn) || lua_pcall(L, 0, LUA_MULTRET, 0));
 }
 
-// #define luaL_dostring(L, s) \
-// 	(luaL_loadstring(L, s) || lua_pcall(L, 0, LUA_MULTRET, 0))
+int luaL_dostring(lua_State* L, const char* s)
+{
+    return (luaL_loadstring(L, s) || lua_pcall(L, 0, LUA_MULTRET, 0));
+}
 
 // #define luaL_getmetatable(L,n)	(lua_getfield(L, LUA_REGISTRYINDEX, (n)))
 

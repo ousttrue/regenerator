@@ -21,7 +21,27 @@ class LuaState
         lua_close(L);
     }
 
-    void doScript(string[] args)
+    void doScript(string src)
+    {
+        // parse script
+        auto chunk = luaL_dostring(L, src.toStringz);
+        if (chunk)
+        {
+            // error
+            error(to!string(lua_tostring(L, -1)));
+            return;
+        }
+
+        // execute chunk
+        auto result = lua_pcall(L, 0, LUA_MULTRET, 0);
+        if (result)
+        {
+            error(to!string(lua_tostring(L, -1)));
+            return;
+        }
+    }
+
+    void cmdline(string[] args)
     {
         if (args.length < 2)
         {

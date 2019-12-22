@@ -9,6 +9,9 @@
 	"libs": [
 		"C:/Program Files/LLVM/lib/libclang"
 	],
+	"dflags": [
+		"-J=source"
+	],
 	"buildTypes": {
 		"debug": {
 			"dflags": [

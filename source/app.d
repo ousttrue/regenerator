@@ -192,6 +192,8 @@ UserType!T register_type(T : Decl)(lua_State* L)
 	return user;
 }
 
+string LUA_PREDEFINE = import("predefine.lua");
+
 int main(string[] args)
 {
 	auto lua = new LuaState();
@@ -265,7 +267,7 @@ int main(string[] args)
 	auto structType = register_type!Struct(lua.L);
 	structType.instance.Getter("definition", (lua_State* L) {
 		auto self = lua_to!Struct(L, 1);
-		if(!self.definition)
+		if (!self.definition)
 		{
 			return 0;
 		}
@@ -278,8 +280,10 @@ int main(string[] args)
 	// parse
 	lua_register(lua.L, "parse", &luaFunc_parse);
 
+	lua.doScript(LUA_PREDEFINE);
+
 	// run
-	lua.doScript(args);
+	lua.cmdline(args);
 
 	return 0;
 }
