@@ -472,7 +472,7 @@ class Parser
             Typedef typedefDecl = cast(Typedef) v;
             if (typedefDecl)
             {
-                UserDecl userType = cast(UserDecl) typedefDecl.m_typeref.type;
+                UserDecl userType = cast(UserDecl) typedefDecl.typeRef.type;
                 if (userType && !userType.name)
                 {
                     // set typedef name

@@ -38,7 +38,7 @@ Decl GetTypedefSource(Decl decl)
         {
             break;
         }
-        decl = typedefDecl.m_typeref.type;
+        decl = typedefDecl.typeRef.type;
     }
     return decl;
 }
@@ -118,7 +118,7 @@ string DType(Decl t)
 
 void DTypedefDecl(File* f, Typedef t)
 {
-    auto dst = DType(t.m_typeref.type);
+    auto dst = DType(t.typeRef.type);
     if (dst)
     {
         if (t.name == dst)

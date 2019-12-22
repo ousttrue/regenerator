@@ -185,7 +185,8 @@ int main(string[] args)
 
 	auto typeDef = new UserType!(clangdecl.Typedef);
 	typeDef.instance.Getter("type", (clangdecl.Typedef* d) => "Typedef");
-	typeDef.instance.Getter("ref", (clangdecl.Typedef* d) => d.m_typeref);
+	typeDef.instance.Getter("name", (clangdecl.Typedef* d) => d.name);
+	typeDef.instance.Getter("ref", (clangdecl.Typedef* d) => d.typeRef);
 	typeDef.push(lua.L);
 	lua_setglobal(lua.L, "Typedef");
 

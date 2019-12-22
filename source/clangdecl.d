@@ -241,12 +241,12 @@ class Enum : UserDecl
 
 class Typedef : UserDecl
 {
-    TypeRef m_typeref;
+    TypeRef typeRef;
 
     this(string path, int line, string name, Decl type, bool isConst = false)
     {
         super(path, line, name);
-        m_typeref = TypeRef(type, isConst);
+        typeRef = TypeRef(type, isConst);
     }
 
     Decl getConcreteDecl(Decl[] path = [])
@@ -259,7 +259,7 @@ class Typedef : UserDecl
             }
         }
 
-        auto nest = cast(Typedef) m_typeref.type;
+        auto nest = cast(Typedef) typeRef.type;
         if (!nest)
         {
             return nest;

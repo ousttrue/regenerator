@@ -146,7 +146,7 @@ class Processor
         }
         else if (typedefDecl)
         {
-            addDecl(_decl ~ typedefDecl.m_typeref.type, from);
+            addDecl(_decl ~ typedefDecl.typeRef.type, from);
         }
         else if (structDecl)
         {
