@@ -87,10 +87,10 @@ local function DEnumDecl(f, decl, omitEnumPrefix)
     end
 
     writef(f, "enum %s", decl.name)
-    f.writeln()
+    writeln(f)
 
     if omitEnumPrefix then
-        omit(decl)
+        decl.omit()
     end
 
     writeln(f, "{")
@@ -245,7 +245,7 @@ local function DConst(f, macroDefinition, macro_map)
     end
 end
 
-local function DSource(f, packageName, source, macro_map, declFilter)
+local function DSource(f, packageName, source, macro_map, declFilter, omitEnumPrefix)
     writeln(f, HEADLINE)
     writefln(f, "module %s.%s;", packageName, source.name)
 

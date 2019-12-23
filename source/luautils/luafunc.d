@@ -54,3 +54,23 @@ LuaFunc to_luafunc(R, ARGS...)(R delegate(ARGS) f)
         return lua_push!R(L, value);
     };
 }
+
+LuaFunc to_luamethod(R, A, ARGS...)(R delegate(A, ARGS) f)
+{
+    return delegate(lua_State* L) {
+        auto self = lua_to!A(L, lua_upvalueindex(2)); // upvalue#2
+        auto _args = lua_totuple!ARGS(L, 1);
+        auto args = tuple(self) ~ _args;
+
+        static if (is(R == void))
+        {
+            f(args.expand);
+            return 0;
+        }
+        else
+        {
+            auto value = f(args.expand);
+            return lua_push!R(L, value);
+        }
+    };
+}

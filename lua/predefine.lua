@@ -69,8 +69,14 @@ function print_table(t, indent)
 end
 
 function writeln(f, text)
-    f:write(text)
+    if text then
+        f:write(text)
+    end
     f:write("\n")
+end
+
+function writef(f, fmt, ...)
+    f:write(string.format(fmt, ...))
 end
 
 function writefln(f, fmt, ...)

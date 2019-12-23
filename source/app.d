@@ -11,6 +11,7 @@ import clangdecl;
 import exporter.processor;
 import exporter.dlangexporter;
 import exporter.source;
+import exporter.omitenumprefix;
 import liblua;
 import luamacros;
 import luautils;
@@ -271,6 +272,7 @@ int main(string[] args)
 
 	auto enumType = register_type!Enum(lua.L);
 	enumType.instance.Getter("values", (Enum* self) => self.values);
+	enumType.instance.Method("omit", (Enum* self) => omit(*self));
 
 	auto field = new UserType!Field;
 	field.instance.Getter("name", (Field* self) => self.name);

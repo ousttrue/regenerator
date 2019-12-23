@@ -99,7 +99,7 @@ struct IndexDispatcher(T)
     {
         // upvalue#1: body
         // upvalue#2: userdata
-        throw new Exception("NotImplemented");
+        m_map[name] = MetaValue(false, to_luamethod(f));
     }
 
     // stack#1: userdata

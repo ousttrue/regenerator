@@ -32,7 +32,8 @@
             "args": [
                 "checkout",
                 "--",
-                "source/liblua"
+                "source/libclang",
+                "source/liblua",
             ],
             "problemMatcher": []
         }

@@ -4,6 +4,20 @@ import luamacros;
 import std.conv;
 import std.string;
 import std.experimental.logger;
+import luautils.luastack;
+
+extern (C) int traceback(lua_State* L)
+{
+    lua_pushglobaltable(L);
+    lua_getfield(L, -1, "debug");
+    lua_getfield(L, -1, "traceback");
+    lua_pushvalue(L, 1);
+    lua_pushinteger(L, 2);
+    lua_call(L, 2, 1);
+    auto msg = lua_to!string(L, -1);
+    errorf("%s", msg);
+    return 1;
+}
 
 class LuaState
 {
@@ -61,6 +75,9 @@ class LuaState
             error(to!string(lua_tostring(L, -1)));
             return;
         }
+
+        // lua_pushcfunction(L, &traceback);
+        // auto handler = lua_gettop(L);
 
         // push arguments
         foreach (arg; args)

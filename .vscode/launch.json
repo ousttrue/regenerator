@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "lua",
+            "name": "liblua",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/regenerator.exe",
@@ -23,21 +23,14 @@
             "visualizerFile": "${workspaceFolder}/.vscode/d.natvis"
         },
         {
-            "name": "dclangen libclang",
+            "name": "libclang",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/regenerator.exe",
             "args": [
-                // "${workspaceFolder}/sample.h",
-                "-E",
-                "-I",
+                "${workspaceFolder}/lua/d_libclang.lua",
                 "C:/Program Files/LLVM/include",
-                "--outdir",
-                "${workspaceFolder}\\source\\libclang",
-                "-H",
-                "C:/Program Files/LLVM/include/clang-c/Index.h",
-                "-H",
-                "C:/Program Files/LLVM/include/clang-c/CXString.h",
+                "${workspaceFolder}/source/libclang",
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
