@@ -3,7 +3,7 @@ import std.string;
 import std.typecons;
 import std.conv;
 import std.experimental.logger;
-import lua;
+import liblua;
 import luamacros;
 import luautils.luastack;
 import luautils.luafunc;

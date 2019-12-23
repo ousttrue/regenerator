@@ -4,7 +4,7 @@ import std.conv;
 import std.string;
 import std.exception;
 import std.experimental.logger;
-import lua;
+import liblua;
 import luamacros;
 
 template rawtype(T)

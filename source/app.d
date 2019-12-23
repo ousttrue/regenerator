@@ -11,7 +11,7 @@ import clangdecl;
 import exporter.processor;
 import exporter.dlangexporter;
 import exporter.source;
-import lua;
+import liblua;
 import luamacros;
 import luautils;
 

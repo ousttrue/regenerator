@@ -1,5 +1,5 @@
 module luautils.luastate;
-import lua;
+import liblua;
 import luamacros;
 import std.conv;
 import std.string;

@@ -1,7 +1,7 @@
 module luautils.luafunc;
 import std.string;
 import std.typecons;
-import lua;
+import liblua;
 import luamacros;
 import luautils.luastack;
 

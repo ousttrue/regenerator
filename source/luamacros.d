@@ -1,5 +1,5 @@
 module luamacros;
-import lua;
+import liblua;
 
 int lua_pcall(lua_State* L, int n, int r, int f)
 {
