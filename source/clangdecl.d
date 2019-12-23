@@ -272,7 +272,7 @@ class Typedef : UserDecl
 struct Param
 {
     string name;
-    TypeRef typeRef;
+    TypeRef typeref;
 }
 
 class Function : UserDecl

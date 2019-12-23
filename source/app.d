@@ -233,9 +233,10 @@ int main(string[] args)
 
 	// export class UserDecl
 	auto typeRef = new UserType!TypeRef;
+	typeRef.instance.Getter("hasConstRecursive", (TypeRef* self) => self.hasConstRecursive);
 	typeRef.instance.Getter("type", (lua_State* L) {
-		auto s = lua_to!(TypeRef*)(L, 1);
-		push_clangdecl(L, s.type);
+		auto self = lua_to!(TypeRef*)(L, 1);
+		push_clangdecl(L, self.type);
 		return 1;
 	});
 	typeRef.push(lua.L);
@@ -258,12 +259,11 @@ int main(string[] args)
 	pt.instance.Getter("ref", (Pointer* self) => self.typeref);
 
 	auto ar = register_type!Array(lua.L);
+	ar.instance.Getter("ref", (Array* self) => self.typeref);
+	ar.instance.Getter("size", (Array* self) => self.size);
 
 	auto typedefType = register_type!(clangdecl.Typedef)(lua.L);
 	typedefType.instance.Getter("ref", (clangdecl.Typedef* self) => self.typeref);
-
-	auto enumType = register_type!Enum(lua.L);
-	enumType.instance.Getter("values", (Enum* self) => self.values);
 
 	auto enumValue = new UserType!EnumValue;
 	enumValue.instance.Getter("name", (EnumValue* self) => self.name);
@@ -271,7 +271,26 @@ int main(string[] args)
 	enumValue.push(lua.L);
 	lua_setglobal(lua.L, "EnumValue");
 
+	auto enumType = register_type!Enum(lua.L);
+	enumType.instance.Getter("values", (Enum* self) => self.values);
+
+	auto field = new UserType!Field;
+	field.instance.Getter("name", (Field* self) => self.name);
+	field.instance.Getter("type", (lua_State* L) {
+		auto self = lua_to!(Field*)(L, 1);
+		push_clangdecl(L, self.type);
+		return 1;
+	});
+	field.push(lua.L);
+	lua_setglobal(lua.L, "Field");
+
 	auto structType = register_type!Struct(lua.L);
+	structType.instance.Getter("isInterface", (Struct* self) => self.isInterface);
+	structType.instance.Getter("isForwardDecl", (Struct* self) => self.forwardDecl);
+	structType.instance.Getter("isUnion", (Struct* self) => self.isUnion);
+	structType.instance.Getter("base", (Struct* self) => self.base);
+	structType.instance.Getter("methods", (Struct* self) => self.methods);
+	structType.instance.Getter("fields", (Struct* self) => self.fields);
 	structType.instance.Getter("definition", (lua_State* L) {
 		auto self = lua_to!Struct(L, 1);
 		if (!self.definition)
@@ -282,7 +301,25 @@ int main(string[] args)
 		return 1;
 	});
 
+	auto param = new UserType!Param;
+	param.instance.Getter("name", (Param* self) => self.name);
+	param.instance.Getter("ref", (Param* self) => self.typeref);
+	param.push(lua.L);
+	lua_setglobal(lua.L, "Param");
+
 	auto funcType = register_type!Function(lua.L);
+	funcType.instance.Getter("dllExport", (Function* self) => self.dllExport);
+	funcType.instance.Getter("isExternC", (Function* self) => self.externC);
+	funcType.instance.Getter("params", (Function* self) => self.params);
+	funcType.instance.Getter("ret", (lua_State* L) {
+		auto self = lua_to!Function(L, 1);
+		// if (!self.ret)
+		// {
+		// 	return 0;
+		// }
+		push_clangdecl(L, self.ret);
+		return 1;
+	});
 
 	// parse
 	lua_register(lua.L, "parse", &luaFunc_parse);

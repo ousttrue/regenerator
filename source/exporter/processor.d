@@ -141,7 +141,7 @@ class Processor
             addDecl(_decl ~ functionDecl.ret, from);
             foreach (param; functionDecl.params)
             {
-                addDecl(_decl ~ param.typeRef.type, from);
+                addDecl(_decl ~ param.typeref.type, from);
             }
         }
         else if (typedefDecl)
@@ -171,7 +171,7 @@ class Processor
                 addDecl(_decl ~ method.ret, from);
                 foreach (param; method.params)
                 {
-                    addDecl(_decl ~ param.typeRef.type, from);
+                    addDecl(_decl ~ param.typeref.type, from);
                 }
             }
         }

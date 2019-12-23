@@ -307,11 +307,11 @@ void DFucntionDecl(File* f, Function decl, string indent, bool isMethod)
         {
             f.write(", ");
         }
-        if (param.typeRef.hasConstRecursive)
+        if (param.typeref.hasConstRecursive)
         {
             f.write("const ");
         }
-        f.write(format("%s %s", DType(param.typeRef.type), DEscapeName(param.name)));
+        f.write(format("%s %s", DType(param.typeref.type), DEscapeName(param.name)));
     }
     f.writeln(");");
 }

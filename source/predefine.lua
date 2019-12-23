@@ -67,3 +67,13 @@ function print_table(t, indent)
         end
     end
 end
+
+function writeln(f, text)
+    f:write(text)
+    f:write("\n")
+end
+
+function writefln(f, fmt, ...)
+    f:write(string.format(fmt, ...))
+    f:write("\n")
+end
