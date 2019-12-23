@@ -2,10 +2,31 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "lua",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/regenerator.exe",
+            "args": [
+                "${workspaceFolder}/scripts/d_liblua.lua",
+                "${workspaceFolder}/submodules/lua",
+                "${workspaceFolder}/source/liblua",
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [
+                {
+                    "name": "PATH",
+                    "value": "C:/Program Files/LLVM/bin"
+                }
+            ],
+            "externalConsole": false,
+            "visualizerFile": "${workspaceFolder}/.vscode/d.natvis"
+        },
+        {
             "name": "dclangen libclang",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/dclangen.exe",
+            "program": "${workspaceFolder}/regenerator.exe",
             "args": [
                 // "${workspaceFolder}/sample.h",
                 "-E",
@@ -30,41 +51,10 @@
             "visualizerFile": "${workspaceFolder}/.vscode/d.natvis"
         },
         {
-            "name": "script",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/dclangen.exe",
-            "args": [
-                "${workspaceFolder}/scripts/liblua.lua",
-                "--outdir",
-                "${workspaceFolder}/source/lua",
-                "-E",
-                "-C",
-                "-D",
-                "LUA_BUILD_AS_DLL=1",
-                "-H",
-                "${workspaceFolder}/submodules/lua/lua.h",
-                "-H",
-                "${workspaceFolder}/submodules/lua/lauxlib.h",
-                "-H",
-                "${workspaceFolder}/submodules/lua/lualib.h",
-            ],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [
-                {
-                    "name": "PATH",
-                    "value": "C:/Program Files/LLVM/bin"
-                }
-            ],
-            "externalConsole": false,
-            "visualizerFile": "${workspaceFolder}/.vscode/d.natvis"
-        },
-        {
             "name": "dclangen lua",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/dclangen.exe",
+            "program": "${workspaceFolder}/regenerator.exe",
             "args": [
                 "--lua",
                 "${workspaceFolder}/scripts/liblua.lua",
@@ -96,7 +86,7 @@
             "name": "dclangen d3d11",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/dclangen.exe",
+            "program": "${workspaceFolder}/regenerator.exe",
             "args": [
                 "--outdir",
                 "${workspaceFolder}/source/d3d11",
@@ -125,7 +115,7 @@
             "name": "dclangen imgui",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/dclangen.exe",
+            "program": "${workspaceFolder}/regenerator.exe",
             "args": [
                 "--outdir",
                 "${workspaceFolder}/source/imgui",

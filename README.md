@@ -3,19 +3,10 @@
 * Parse c++ source by libclang.cindex
 * Generate source
 
-## WIP: lua interface
-
-* complex argument(include, define, extern C etc...)
-* output function filtering
-* type mapping
-* symbol escape
-* source template
-* library specific hard coding(macro)
-
 ## dependencies
 
-* libclang
-* lua
+* libclang in LLVM-9.0 
+* https://github.com/lua/lua/tree/v5.3.5
 
 ## ToDo
 
@@ -32,33 +23,11 @@
 * [x] com interface inheritance
 * [x] macro definition value
 * [ ] function default parameter
-* [ ] lua interface
-* [ ] `const char *` to `const char *`. not `byte *`
+* [x] lua interface
+* [x] `const char *` to `const char *`. not `byte *`
 
 ## Usage
 
-* `--outdir` Output Directory: remove if exists, then write exported files
-* `-I` Include Directory: clang argument
-* `-D` Define
-* `-H` Process Header: file that contains functions and macro definitions
-* `-E` omit enum prefix
-
-### libclang
-
-``` 
-$ dclangen.exe -I "C:/Program Files/LLVM/include" --outdir source/libclang -H "C:/Program Files/LLVM/include/clang-c/Index.h" -H "C:/Program Files/LLVM/include/clang-c/CXString.h"
 ```
-
-### d3d11.h
-
-``` 
-$ dclangen.exe --outdir source/d3d11 -H "C:/Program Files (x86)/Windows Kits/10/Include/10.0.17763.0/um/d3d11.h -H "C:/Program Files (x86)/Windows Kits/10/Include/10.0.17763.0/shared/dxgi.h"
+$ regenerator.exe scripts/liblua.lua {args...}
 ```
-### imgui.h
-
-### lua.h
-
-## clang command line
-
-* https://bastian.rieck.ru/blog/posts/2015/baby_steps_libclang_ast/
-* `-x c++` 

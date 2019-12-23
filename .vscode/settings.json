@@ -4,6 +4,7 @@
     },
     "cSpell.words": [
         "LLVM",
+        "MSVCRTD",
         "cindex",
         "cpptypeinfo",
         "dclangen",
@@ -12,6 +13,8 @@
         "imgui",
         "libclang",
         "liblua",
+        "mscrtlib",
+        "msvcrt",
         "nargs",
         "outdir",
         "struct"

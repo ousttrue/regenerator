@@ -24,7 +24,7 @@ class LuaState
     void doScript(string src)
     {
         // parse script
-        auto chunk = luaL_dostring(L, src.toStringz);
+        auto chunk = luaL_loadstring(L, src.toStringz);
         if (chunk)
         {
             // error

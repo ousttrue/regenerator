@@ -3,9 +3,9 @@
 		"ousttrue"
 	],
 	"copyright": "Copyright © 2019, ousttrue",
-	"description": "A minimal D application.",
-	"license": "proprietary",
-	"name": "dclangen",
+	"description": "parse c++ header and reGenerate code",
+	"license": "MIT",
+	"name": "regenerator",
 	"libs": [
 		"C:/Program Files/LLVM/lib/libclang"
 	],
@@ -17,7 +17,7 @@
 			"dflags": [
 				"-mscrtlib=MSVCRTD",
 				"-g",
-				"-debug",
+				"-debug"
 			],
 			"libs": [
 				"build/Debug/lib/liblua"
