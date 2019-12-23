@@ -7,7 +7,7 @@ local D = require "dlang"
 local args = {...}
 print_table(args)
 
-USAGE = "regenerator.exe d_liblua.lua {lua_source_dir} {d_dst_dir}"
+local USAGE = "regenerator.exe d_liblua.lua {lua_source_dir} {d_dst_dir}"
 local src = args[1]
 local dir = args[2]
 if not dir then
@@ -17,8 +17,8 @@ end
 ------------------------------------------------------------------------------
 -- libclang CIndex
 ------------------------------------------------------------------------------
-LUA_HEADERS = {"lua.h", "lauxlib.h", "lualib.h"}
-LUA_DEFINES = {"LUA_BUILD_AS_DLL=1"} -- public functions has __declspec(dllexport)
+local LUA_HEADERS = {"lua.h", "lauxlib.h", "lualib.h"}
+local LUA_DEFINES = {"LUA_BUILD_AS_DLL=1"} -- public functions has __declspec(dllexport)
 local headers = {}
 for i, f in ipairs(LUA_HEADERS) do
     table.insert(headers, string.format("%s/%s", src, f))
@@ -37,11 +37,44 @@ if not dir then
     return
 end
 
+-- avoid c style cast
+local DMACRO_MAP = {
+    D3D_COMPILE_STANDARD_FILE_INCLUDE = "enum D3D_COMPILE_STANDARD_FILE_INCLUDE = cast(void*)1;",
+    ImDrawCallback_ResetRenderState = "enum ImDrawCallback_ResetRenderState = cast( ImDrawCallback ) ( - 1 );",
+    LUA_VERSION = 'enum LUA_VERSION = "Lua " ~ LUA_VERSION_MAJOR ~ "." ~ LUA_VERSION_MINOR;',
+    LUA_REGISTRYINDEX = "enum LUA_REGISTRYINDEX = ( - 1000000 - 1000 );",
+    LUAL_NUMSIZES = "enum LUAL_NUMSIZES = ( ( lua_Integer ).sizeof  * 16 + ( lua_Number ).sizeof  );",
+    LUA_VERSUFFIX = 'enum LUA_VERSUFFIX = "_" ~ LUA_VERSION_MAJOR ~ "_" ~ LUA_VERSION_MINOR;'
+}
+
 -- clear dir
 if file.exists(dir) then
     printf("rmdir %s", dir)
     file.rmdirRecurse(dir)
 end
+
+local function isExport(decl)
+    if decl.class == "Function" then
+        return decl.dllExport
+    else
+        return true
+    end
+end
+-- if (not isMethod) and (not decl.dllExport) then
+--     -- filtering functions
+--     -- target library(d3d11.h, libclang.h, lua.h) specific...
+
+--     -- for D3D11CreateDevice ... etc
+--     local retType = decl.ret
+--     -- if (!retType)
+--     -- {
+--     --     return;
+--     -- }
+--     if retType.name ~= "HRESULT" then
+--         return
+--     end
+-- -- debug auto isCom = true;
+-- end
 
 local packageName = basename(dir)
 for k, source in pairs(sourceMap) do
@@ -54,7 +87,7 @@ for k, source in pairs(sourceMap) do
         do
             -- open
             local f = io.open(path, "w")
-            D.Source(f, packageName, source)
+            D.Source(f, packageName, source, DMACRO_MAP, isExport)
             io.close(f)
         end
     end
