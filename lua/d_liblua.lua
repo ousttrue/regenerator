@@ -4,6 +4,8 @@ for k, v in pairs(util) do
     _G[k] = v
 end
 
+local D = require "dlang"
+
 ------------------------------------------------------------------------------
 -- command line
 ------------------------------------------------------------------------------
@@ -97,7 +99,7 @@ for k, source in pairs(sourceMap) do
 
         -- types
         for j, decl in ipairs(source.types) do
-            DDecl(f, decl, omitEnumPrefix)
+            D.Decl(f, decl, omitEnumPrefix)
         end
 
         io.close(f)
