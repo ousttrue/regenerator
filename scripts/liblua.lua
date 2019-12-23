@@ -107,6 +107,26 @@ function DTypedefDecl(f, t)
     writeln(f, "// typedef target nameless")
 end
 
+function DEnumDecl(f, decl, omitEnumPrefix)
+    if not decl.name then
+        writeln(f, "// enum nameless")
+        return
+    end
+
+    writef(f, "enum %s", decl.name)
+    f.writeln()
+
+    if omitEnumPrefix then
+        omit(decl)
+    end
+
+    writeln(f, "{")
+    for i, value in ipairs(decl.values) do
+        writefln(f, "    %s = 0x%x,", value.name, value.value)
+    end
+    writeln(f, "}")
+end
+
 function DDecl(f, decl, omitEnumPrefix)
     if decl.class == "Typedef" then
         DTypedefDecl(f, decl)

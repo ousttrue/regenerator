@@ -263,6 +263,13 @@ int main(string[] args)
 	typedefType.instance.Getter("ref", (clangdecl.Typedef* self) => self.typeref);
 
 	auto enumType = register_type!Enum(lua.L);
+	enumType.instance.Getter("values", (Enum* self) => self.values);
+
+	auto enumValue = new UserType!EnumValue;
+	enumValue.instance.Getter("name", (EnumValue* self) => self.name);
+	enumValue.instance.Getter("value", (EnumValue* self) => self.value);
+	enumValue.push(lua.L);
+	lua_setglobal(lua.L, "EnumValue");
 
 	auto structType = register_type!Struct(lua.L);
 	structType.instance.Getter("definition", (lua_State* L) {
