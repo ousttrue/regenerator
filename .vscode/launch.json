@@ -7,7 +7,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/regenerator.exe",
             "args": [
-                "${workspaceFolder}/scripts/d_liblua.lua",
+                "${workspaceFolder}/lua/d_liblua.lua",
                 "${workspaceFolder}/submodules/lua",
                 "${workspaceFolder}/source/liblua",
             ],

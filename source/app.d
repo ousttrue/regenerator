@@ -192,8 +192,6 @@ UserType!T register_type(T : Decl)(lua_State* L)
 	return user;
 }
 
-string LUA_PREDEFINE = import("predefine.lua");
-
 int main(string[] args)
 {
 	auto lua = new LuaState();
@@ -323,8 +321,6 @@ int main(string[] args)
 
 	// parse
 	lua_register(lua.L, "parse", &luaFunc_parse);
-
-	lua.doScript(LUA_PREDEFINE);
 
 	// run
 	lua.cmdline(args);

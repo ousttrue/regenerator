@@ -357,3 +357,5 @@ function DDecl(f, decl, omitEnumPrefix)
         error("unknown", decl)
     end
 end
+
+return _G
