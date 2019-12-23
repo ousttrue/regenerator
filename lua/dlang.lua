@@ -248,6 +248,73 @@ function DDecl(f, decl, omitEnumPrefix)
     end
 end
 
+function DImport(f, packageName, src, modules)
+    if not src.empty then
+        -- inner package
+        writefln(f, "import %s.%s;", packageName, src.name)
+    end
+
+    for j, m in ipairs(src.modules) do
+        -- core.sys.windows.windef etc...
+        if not modules[m] then
+            modules[m] = true
+            writefln(f, "import %s;", m)
+        end
+    end
+end
+
+function DConst(f, macroDefinition)
+    if not isFirstAlpha(macroDefinition.tokens[1]) then
+        local p = DMACRO_MAP[macroDefinition.name]
+        if p then
+            writeln(f, p)
+        else
+            writefln(f, "enum %s = %s;", macroDefinition.name, table.concat(macroDefinition.tokens, " "))
+        end
+    end
+end
+
+function DSource(f, packageName, source)
+    writeln(f, HEADLINE)
+    writefln(f, "module %s.%s;", packageName, source.name)
+
+    -- imports
+    local modules = {}
+    for i, src in ipairs(source.imports) do
+        DImport(f, packageName, src, modules)
+    end
+
+    -- const
+    for j, macroDefinition in ipairs(source.macros) do
+        DConst(f, macroDefinition)
+    end
+
+    -- types
+    for j, decl in ipairs(source.types) do
+        DDecl(f, decl, omitEnumPrefix)
+    end
+end
+
+function DPackage(f, packageName, sourceMap)
+    writeln(f, HEADLINE)
+    writefln(f, "module %s;", packageName)
+    local keys = {}
+    for k, source in pairs(sourceMap) do
+        table.insert(keys, k)
+    end
+    table.sort(keys)
+    for i, k in ipairs(keys) do
+        local source = sourceMap[k]
+        if not source.empty then
+            writefln(f, "public import %s.%s;", packageName, source.name)
+        end
+    end
+end
+
 return {
-    Decl = DDecl
+    Decl = DDecl,
+    Import = DImport,
+    Const = DConst,
+    Package = DPackage,
+    Source = DSource,
 }
