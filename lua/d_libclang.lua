@@ -30,53 +30,30 @@ if sourceMap.empty then
     error("empty")
 end
 
-local omitEnumPrefix = true
-
-------------------------------------------------------------------------------
--- export to dlang
-------------------------------------------------------------------------------
 if not dir then
     return
 end
 
--- avoid c style cast
-local DMACRO_MAP = {
-    D3D_COMPILE_STANDARD_FILE_INCLUDE = "enum D3D_COMPILE_STANDARD_FILE_INCLUDE = cast(void*)1;",
-    ImDrawCallback_ResetRenderState = "enum ImDrawCallback_ResetRenderState = cast( ImDrawCallback ) ( - 1 );",
-    LUA_VERSION = 'enum LUA_VERSION = "Lua " ~ LUA_VERSION_MAJOR ~ "." ~ LUA_VERSION_MINOR;',
-    LUA_REGISTRYINDEX = "enum LUA_REGISTRYINDEX = ( - 1000000 - 1000 );",
-    LUAL_NUMSIZES = "enum LUAL_NUMSIZES = ( ( lua_Integer ).sizeof  * 16 + ( lua_Number ).sizeof  );",
-    LUA_VERSUFFIX = 'enum LUA_VERSUFFIX = "_" ~ LUA_VERSION_MAJOR ~ "_" ~ LUA_VERSION_MINOR;'
-}
+------------------------------------------------------------------------------
+-- export to dlang
+------------------------------------------------------------------------------
+local omitEnumPrefix = true
+local macro_map = { }
+
+local function filter(decl)
+    if decl.class == "Function" then
+        -- export functions only dllExport 
+        return decl.dllExport
+    else
+        return true
+    end
+end
 
 -- clear dir
 if file.exists(dir) then
     printf("rmdir %s", dir)
     file.rmdirRecurse(dir)
 end
-
-local function filter(decl)
-    if decl.class == "Function" then
-        return decl.dllExport
-    else
-        return true
-    end
-end
--- if (not isMethod) and (not decl.dllExport) then
---     -- filtering functions
---     -- target library(d3d11.h, libclang.h, lua.h) specific...
-
---     -- for D3D11CreateDevice ... etc
---     local retType = decl.ret
---     -- if (!retType)
---     -- {
---     --     return;
---     -- }
---     if retType.name ~= "HRESULT" then
---         return
---     end
--- -- debug auto isCom = true;
--- end
 
 local packageName = basename(dir)
 for k, source in pairs(sourceMap) do
@@ -89,7 +66,7 @@ for k, source in pairs(sourceMap) do
         do
             -- open
             local f = io.open(path, "w")
-            D.Source(f, packageName, source, DMACRO_MAP, filter, omitEnumPrefix)
+            D.Source(f, packageName, source, macro_map, filter, omitEnumPrefix)
             io.close(f)
         end
     end

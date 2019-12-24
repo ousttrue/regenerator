@@ -29,5 +29,6 @@
 ## Usage
 
 ```
-$ regenerator.exe scripts/liblua.lua {args...}
+$ regenerator.exe scripts/liblua.lua {lua_src_dir} {d_generate_dir}
+$ regenerator.exe scripts/libclang.lua {clang_include_dir} {d_generate_dir}
 ```

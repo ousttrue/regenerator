@@ -159,10 +159,10 @@ extern(C) void lua_setallocf(lua_State* L, lua_Alloc f, void* ud);
 struct lua_Debug
 {
     int event;
-    char* name;
-    char* namewhat;
-    char* what;
-    char* source;
+    const char* name;
+    const char* namewhat;
+    const char* what;
+    const char* source;
     int currentline;
     int linedefined;
     int lastlinedefined;

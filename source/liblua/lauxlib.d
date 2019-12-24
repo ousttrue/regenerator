@@ -12,7 +12,7 @@ enum LUA_REFNIL = ( - 1 );
 enum LUA_FILEHANDLE = "FILE*";
 struct luaL_Reg
 {
-    char* name;
+    const char* name;
     lua_CFunction func;
 }
 extern(C) void luaL_checkversion_(lua_State* L, lua_Number ver, size_t sz);
