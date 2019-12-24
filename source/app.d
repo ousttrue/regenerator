@@ -288,7 +288,23 @@ int main(string[] args)
 	structType.instance.Getter("isInterface", (Struct* self) => self.isInterface);
 	structType.instance.Getter("isForwardDecl", (Struct* self) => self.forwardDecl);
 	structType.instance.Getter("isUnion", (Struct* self) => self.isUnion);
-	structType.instance.Getter("base", (Struct* self) => self.base);
+	structType.instance.Getter("base", (lua_State* L) {
+		auto self = lua_to!(Struct*)(L, 1);
+		if(!self.base){
+			return 0;
+		}
+		push_clangdecl(L, self.base);
+		return 1;
+	});
+	structType.instance.Getter("iid", (lua_State* L) {
+		auto self = lua_to!Struct(L, 1);
+		if(self.iid.empty)
+		{
+			return 0;
+		}
+		lua_push(L, self.iid.toString);
+		return 1;
+	});
 	structType.instance.Getter("methods", (Struct* self) => self.methods);
 	structType.instance.Getter("fields", (Struct* self) => self.fields);
 	structType.instance.Getter("definition", (lua_State* L) {

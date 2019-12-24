@@ -155,6 +155,11 @@ class Struct : UserDecl
             return true;
         }
 
+        if (name.length == 0)
+        {
+            return false;
+        }
+
         // 例外
         // ID3DInclude
         if (name[0] == 'I' && this.fields.length == 0 && this.methods.length > 0)

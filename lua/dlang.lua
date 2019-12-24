@@ -100,12 +100,42 @@ local function DEnumDecl(f, decl, omitEnumPrefix)
     writeln(f, "}")
 end
 
+local function DFunctionDecl(f, decl, indent, isMethod)
+    indent = indent or ""
+
+    f:write(indent)
+    if decl.isExternC then
+        f:write("extern(C) ")
+    end
+
+    f:write(DType(decl.ret))
+    f:write(" ")
+    f:write(decl.name)
+    f:write("(")
+
+    local isFirst = true
+    for i, param in ipairs(decl.params) do
+        if isFirst then
+            isFirst = false
+        else
+            f:write(", ")
+        end
+
+        if param.ref.hasConstRecursive then
+            f:write("const ")
+        end
+
+        f:write(string.format("%s %s", DType(param.ref.type), DEscapeName(param.name)))
+    end
+    writeln(f, ");")
+end
+
 local SKIP_METHODS = {QueryInterface = true, AddRef = true, Release = true}
 
 local function DStructDecl(f, decl, typedefName)
     -- assert(!decl.m_forwardDecl);
     local name = typedefName or decl.name
-    if not name then
+    if not name or #name == 0 then
         writeln(f, "// struct nameless")
         return
     end
@@ -124,8 +154,8 @@ local function DStructDecl(f, decl, typedefName)
 
         writeln(f)
         writeln(f, "{")
-        if not decl.iid.empty then
-            writefln(f, '    static const iidof = parseGUID("%s");', decl.iid.toString())
+        if decl.iid then
+            writefln(f, '    static const iidof = parseGUID("%s");', decl.iid)
         end
 
         -- methods
@@ -166,43 +196,19 @@ local function DStructDecl(f, decl, typedefName)
                         error("unknown")
                     end
                 else
-                    writefln(f, "    %s%s %s;", field.ref.hasConstRecursive and "const " or "", typeName, DEscapeName(field.name))
+                    writefln(
+                        f,
+                        "    %s%s %s;",
+                        field.ref.hasConstRecursive and "const " or "",
+                        typeName,
+                        DEscapeName(field.name)
+                    )
                 end
             end
 
             writeln(f, "}")
         end
     end
-end
-
-local function DFunctionDecl(f, decl, indent, isMethod)
-    indent = indent or ""
-
-    f:write(indent)
-    if decl.isExternC then
-        f:write("extern(C) ")
-    end
-
-    f:write(DType(decl.ret))
-    f:write(" ")
-    f:write(decl.name)
-    f:write("(")
-
-    local isFirst = true
-    for i, param in ipairs(decl.params) do
-        if isFirst then
-            isFirst = false
-        else
-            f:write(", ")
-        end
-
-        if param.ref.hasConstRecursive then
-            f:write("const ")
-        end
-
-        f:write(string.format("%s %s", DType(param.ref.type), DEscapeName(param.name)))
-    end
-    writeln(f, ");")
 end
 
 local function DDecl(f, decl, omitEnumPrefix)
@@ -225,13 +231,19 @@ local function DImport(f, packageName, src, modules)
         writefln(f, "import %s.%s;", packageName, src.name)
     end
 
+    local useGuid = false
     for j, m in ipairs(src.modules) do
         -- core.sys.windows.windef etc...
         if not modules[m] then
             modules[m] = true
             writefln(f, "import %s;", m)
         end
+        if m == "core.sys.windows.unknwn" then
+            writefln(f, "import %s.guidutil;", packageName)
+            useGuid = true
+        end
     end
+    return useGuid
 end
 
 local function DConst(f, macroDefinition, macro_map)
@@ -250,9 +262,12 @@ local function DSource(f, packageName, source, macro_map, declFilter, omitEnumPr
     writefln(f, "module %s.%s;", packageName, source.name)
 
     -- imports
+    local useGuid = false
     local modules = {}
     for i, src in ipairs(source.imports) do
-        DImport(f, packageName, src, modules)
+        if DImport(f, packageName, src, modules) then
+            useGuid = true
+        end
     end
 
     -- const
@@ -266,6 +281,8 @@ local function DSource(f, packageName, source, macro_map, declFilter, omitEnumPr
             DDecl(f, decl, omitEnumPrefix)
         end
     end
+
+    return useGuid
 end
 
 local function DPackage(f, packageName, sourceMap)
@@ -284,10 +301,45 @@ local function DPackage(f, packageName, sourceMap)
     end
 end
 
+local function DGuidUtil(f, packageName)
+    writefln(f, "module %s.guidutil;", packageName)
+    writeln(
+        f,
+        [[
+import std.uuid;
+import core.sys.windows.basetyps;
+
+GUID parseGUID(string guid)
+{
+return toGUID(parseUUID(guid));
+}
+GUID toGUID(immutable std.uuid.UUID uuid)
+{
+ubyte[8] data=uuid.data[8..$];
+return GUID(
+            uuid.data[0] << 24
+            |uuid.data[1] << 16
+            |uuid.data[2] << 8
+            |uuid.data[3],
+
+            uuid.data[4] << 8
+            |uuid.data[5],
+
+            uuid.data[6] << 8
+            |uuid.data[7],
+
+            data
+            );
+}
+]]
+    )
+end
+
 return {
     Decl = DDecl,
     Import = DImport,
     Const = DConst,
     Package = DPackage,
-    Source = DSource
+    Source = DSource,
+    GuidUtil = DGuidUtil
 }

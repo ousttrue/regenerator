@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "liblua",
+            "name": "gen liblua",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/regenerator.exe",
@@ -23,7 +23,7 @@
             "visualizerFile": "${workspaceFolder}/.vscode/d.natvis"
         },
         {
-            "name": "libclang",
+            "name": "gen libclang",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/regenerator.exe",
@@ -44,54 +44,14 @@
             "visualizerFile": "${workspaceFolder}/.vscode/d.natvis"
         },
         {
-            "name": "dclangen lua",
+            "name": "gen d3d11",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/regenerator.exe",
             "args": [
-                "--lua",
-                "${workspaceFolder}/scripts/liblua.lua",
-                "--outdir",
-                "${workspaceFolder}/source/lua",
-                "-E",
-                "-C",
-                "-D",
-                "LUA_BUILD_AS_DLL=1",
-                "-H",
-                "${workspaceFolder}/submodules/lua/lua.h",
-                "-H",
-                "${workspaceFolder}/submodules/lua/lauxlib.h",
-                "-H",
-                "${workspaceFolder}/submodules/lua/lualib.h",
-            ],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [
-                {
-                    "name": "PATH",
-                    "value": "C:/Program Files/LLVM/bin"
-                }
-            ],
-            "externalConsole": false,
-            "visualizerFile": "${workspaceFolder}/.vscode/d.natvis"
-        },
-        {
-            "name": "dclangen d3d11",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/regenerator.exe",
-            "args": [
-                "--outdir",
+                "${workspaceFolder}/lua/d_d3d11.lua",
+                "C:/Program Files (x86)/Windows Kits/10/Include/10.0.17763.0",
                 "${workspaceFolder}/source/d3d11",
-                "-E",
-                "-H",
-                "C:/Program Files (x86)/Windows Kits/10/Include/10.0.17763.0/um/d3d11.h",
-                "-H",
-                "C:/Program Files (x86)/Windows Kits/10/Include/10.0.17763.0/um/d3dcompiler.h",
-                "-H",
-                "C:/Program Files (x86)/Windows Kits/10/Include/10.0.17763.0/um/d3d11shader.h",
-                "-H",
-                "C:/Program Files (x86)/Windows Kits/10/Include/10.0.17763.0/um/d3d10shader.h",
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
