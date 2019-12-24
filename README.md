@@ -31,7 +31,7 @@
 ### libclang
 
 ```
-$ regenerator.exe scripts/d_libclang.lua {clang_include_dir} {d_generate_dir}
+$ regenerator.exe lua/d_libclang.lua {clang_include_dir} {d_generate_dir}
 ```
 
 [generated](source/libclang)
@@ -39,7 +39,7 @@ $ regenerator.exe scripts/d_libclang.lua {clang_include_dir} {d_generate_dir}
 ### liblua
 
 ```
-$ regenerator.exe scripts/d_liblua.lua {lua_src_dir} {d_generate_dir}
+$ regenerator.exe lua/d_liblua.lua {lua_src_dir} {d_generate_dir}
 ```
 
 [generated](source/liblua)
@@ -47,5 +47,5 @@ $ regenerator.exe scripts/d_liblua.lua {lua_src_dir} {d_generate_dir}
 ### d3d11
 
 ```
-$ regenerator.exe scripts/d_d3d11.lua {windowskits_include_dir} {d_generate_dir}
+$ regenerator.exe lua/d_d3d11.lua {windowskits_include_dir} {d_generate_dir}
 ```
