@@ -1162,7 +1162,7 @@ struct CXIdxLoc
 struct CXIdxIncludedFileInfo
 {
     CXIdxLoc hashLoc;
-    char* filename;
+    const char* filename;
     CXFile file;
     int isImport;
     int isAngled;
@@ -1238,10 +1238,10 @@ struct CXIdxEntityInfo
     CXIdxEntityKind kind;
     CXIdxEntityCXXTemplateKind templateKind;
     CXIdxEntityLanguage lang;
-    char* name;
-    char* USR;
+    const char* name;
+    const char* USR;
     CXCursor cursor;
-    CXIdxAttrInfo** attributes;
+    const CXIdxAttrInfo** attributes;
     uint numAttributes;
 }
 struct CXIdxContainerInfo
@@ -1250,8 +1250,8 @@ struct CXIdxContainerInfo
 }
 struct CXIdxIBOutletCollectionAttrInfo
 {
-    CXIdxAttrInfo* attrInfo;
-    CXIdxEntityInfo* objcClass;
+    const CXIdxAttrInfo* attrInfo;
+    const CXIdxEntityInfo* objcClass;
     CXCursor classCursor;
     CXIdxLoc classLoc;
 }
@@ -1261,17 +1261,17 @@ enum CXIdxDeclInfoFlags
 }
 struct CXIdxDeclInfo
 {
-    CXIdxEntityInfo* entityInfo;
+    const CXIdxEntityInfo* entityInfo;
     CXCursor cursor;
     CXIdxLoc loc;
-    CXIdxContainerInfo* semanticContainer;
-    CXIdxContainerInfo* lexicalContainer;
+    const CXIdxContainerInfo* semanticContainer;
+    const CXIdxContainerInfo* lexicalContainer;
     int isRedeclaration;
     int isDefinition;
     int isContainer;
-    CXIdxContainerInfo* declAsContainer;
+    const CXIdxContainerInfo* declAsContainer;
     int isImplicit;
-    CXIdxAttrInfo** attributes;
+    const CXIdxAttrInfo** attributes;
     uint numAttributes;
     uint flags;
 }
@@ -1283,50 +1283,50 @@ enum CXIdxObjCContainerKind
 }
 struct CXIdxObjCContainerDeclInfo
 {
-    CXIdxDeclInfo* declInfo;
+    const CXIdxDeclInfo* declInfo;
     CXIdxObjCContainerKind kind;
 }
 struct CXIdxBaseClassInfo
 {
-    CXIdxEntityInfo* base;
+    const CXIdxEntityInfo* base;
     CXCursor cursor;
     CXIdxLoc loc;
 }
 struct CXIdxObjCProtocolRefInfo
 {
-    CXIdxEntityInfo* protocol;
+    const CXIdxEntityInfo* protocol;
     CXCursor cursor;
     CXIdxLoc loc;
 }
 struct CXIdxObjCProtocolRefListInfo
 {
-    CXIdxObjCProtocolRefInfo** protocols;
+    const CXIdxObjCProtocolRefInfo** protocols;
     uint numProtocols;
 }
 struct CXIdxObjCInterfaceDeclInfo
 {
-    CXIdxObjCContainerDeclInfo* containerInfo;
-    CXIdxBaseClassInfo* superInfo;
-    CXIdxObjCProtocolRefListInfo* protocols;
+    const CXIdxObjCContainerDeclInfo* containerInfo;
+    const CXIdxBaseClassInfo* superInfo;
+    const CXIdxObjCProtocolRefListInfo* protocols;
 }
 struct CXIdxObjCCategoryDeclInfo
 {
-    CXIdxObjCContainerDeclInfo* containerInfo;
-    CXIdxEntityInfo* objcClass;
+    const CXIdxObjCContainerDeclInfo* containerInfo;
+    const CXIdxEntityInfo* objcClass;
     CXCursor classCursor;
     CXIdxLoc classLoc;
-    CXIdxObjCProtocolRefListInfo* protocols;
+    const CXIdxObjCProtocolRefListInfo* protocols;
 }
 struct CXIdxObjCPropertyDeclInfo
 {
-    CXIdxDeclInfo* declInfo;
-    CXIdxEntityInfo* getter;
-    CXIdxEntityInfo* setter;
+    const CXIdxDeclInfo* declInfo;
+    const CXIdxEntityInfo* getter;
+    const CXIdxEntityInfo* setter;
 }
 struct CXIdxCXXClassDeclInfo
 {
-    CXIdxDeclInfo* declInfo;
-    CXIdxBaseClassInfo** bases;
+    const CXIdxDeclInfo* declInfo;
+    const CXIdxBaseClassInfo** bases;
     uint numBases;
 }
 enum CXIdxEntityRefKind
@@ -1352,9 +1352,9 @@ struct CXIdxEntityRefInfo
     CXIdxEntityRefKind kind;
     CXCursor cursor;
     CXIdxLoc loc;
-    CXIdxEntityInfo* referencedEntity;
-    CXIdxEntityInfo* parentEntity;
-    CXIdxContainerInfo* container;
+    const CXIdxEntityInfo* referencedEntity;
+    const CXIdxEntityInfo* parentEntity;
+    const CXIdxContainerInfo* container;
     CXSymbolRole role;
 }
 struct IndexerCallbacks

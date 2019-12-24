@@ -164,7 +164,7 @@ class Processor
             }
             foreach (field; structDecl.fields)
             {
-                addDecl(_decl ~ field.type, from);
+                addDecl(_decl ~ field.typeref.type, from);
             }
             foreach (method; structDecl.methods)
             {

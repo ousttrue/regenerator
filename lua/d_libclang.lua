@@ -24,7 +24,7 @@ for i, f in ipairs(LUA_HEADERS) do
     table.insert(headers, string.format("%s/%s", src, f))
 end
 local includes = {src}
-local externC = true
+local externC = false
 local sourceMap = parse(headers, includes, LUA_DEFINES, externC)
 if sourceMap.empty then
     error("empty")

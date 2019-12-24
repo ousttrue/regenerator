@@ -130,7 +130,7 @@ class UserDecl : Decl
 struct Field
 {
     string name;
-    Decl type;
+    TypeRef typeref;
 }
 
 class Struct : UserDecl

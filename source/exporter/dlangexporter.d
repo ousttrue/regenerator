@@ -196,10 +196,10 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
             f.writeln("{");
             foreach (field; decl.fields)
             {
-                auto typeName = DType(field.type);
+                auto typeName = DType(field.typeref.type);
                 if (!typeName)
                 {
-                    auto structDecl = cast(Struct) field.type;
+                    auto structDecl = cast(Struct) field.typeref.type;
                     if (structDecl)
                     {
                         if (structDecl.isUnion)
@@ -215,7 +215,7 @@ void DStructDecl(File* f, Struct decl, string typedefName = null)
                             f.writefln("    union {");
                             foreach (unionField; structDecl.fields)
                             {
-                                auto unionFieldTypeName = DType(unionField.type);
+                                auto unionFieldTypeName = DType(unionField.typeref.type);
                                 f.writefln("        %s %s;", unionFieldTypeName,
                                         DEscapeName(unionField.name));
                             }

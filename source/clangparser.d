@@ -548,7 +548,8 @@ class Parser
             case CXCursorKind._FieldDecl:
                 {
                     auto fieldDecl = typeToDecl(child, fieldType);
-                    decl.fields ~= Field(fieldName, fieldDecl);
+                    auto fieldConst = clang_isConstQualifiedType(fieldType);
+                    decl.fields ~= Field(fieldName, TypeRef(fieldDecl, fieldConst != 0));
                     break;
                 }
 
@@ -607,7 +608,8 @@ class Parser
                     {
                         // anonymous
                         auto fieldDecl = getDeclFromCursor(child);
-                        decl.fields ~= Field(fieldName, fieldDecl);
+                        auto fieldConst = clang_isConstQualifiedType(fieldType);
+                        decl.fields ~= Field(fieldName, TypeRef(fieldDecl, fieldConst != 0));
                     }
                 }
                 break;

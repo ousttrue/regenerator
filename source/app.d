@@ -276,9 +276,9 @@ int main(string[] args)
 
 	auto field = new UserType!Field;
 	field.instance.Getter("name", (Field* self) => self.name);
-	field.instance.Getter("type", (lua_State* L) {
+	field.instance.Getter("ref", (lua_State* L) {
 		auto self = lua_to!(Field*)(L, 1);
-		push_clangdecl(L, self.type);
+		lua_push(L, &self.typeref);
 		return 1;
 	});
 	field.push(lua.L);

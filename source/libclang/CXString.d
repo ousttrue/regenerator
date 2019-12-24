@@ -2,7 +2,7 @@
 module libclang.cxstring;
 struct CXString
 {
-    void* data;
+    const void* data;
     uint private_flags;
 }
 struct CXStringSet

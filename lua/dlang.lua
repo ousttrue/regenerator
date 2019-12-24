@@ -148,9 +148,9 @@ local function DStructDecl(f, decl, typedefName)
             writefln(f, "struct %s", name)
             writeln(f, "{")
             for i, field in ipairs(decl.fields) do
-                local typeName = DType(field.type)
+                local typeName = DType(field.ref.type)
                 if not typeName then
-                    local fieldType = field.type
+                    local fieldType = field.ref.type
                     if fieldType.class == "Struct" then
                         if fieldType.isUnion then
                             writefln(f, "    union {")
@@ -166,7 +166,7 @@ local function DStructDecl(f, decl, typedefName)
                         error("unknown")
                     end
                 else
-                    writefln(f, "    %s %s;", typeName, DEscapeName(field.name))
+                    writefln(f, "    %s%s %s;", field.ref.hasConstRecursive and "const " or "", typeName, DEscapeName(field.name))
                 end
             end
 
@@ -262,7 +262,7 @@ local function DSource(f, packageName, source, macro_map, declFilter, omitEnumPr
 
     -- types
     for j, decl in ipairs(source.types) do
-        if not declFilter or declFilter(decl) then 
+        if not declFilter or declFilter(decl) then
             DDecl(f, decl, omitEnumPrefix)
         end
     end
