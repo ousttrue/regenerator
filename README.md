@@ -28,19 +28,23 @@
 
 ## Usage
 
-libclang
+### libclang
 
 ```
 $ regenerator.exe scripts/d_libclang.lua {clang_include_dir} {d_generate_dir}
 ```
 
-liblua
+[generated](source/libclang)
+
+### liblua
 
 ```
 $ regenerator.exe scripts/d_liblua.lua {lua_src_dir} {d_generate_dir}
 ```
 
-d3d11
+[generated](source/liblua)
+
+### d3d11
 
 ```
 $ regenerator.exe scripts/d_d3d11.lua {windowskits_include_dir} {d_generate_dir}
