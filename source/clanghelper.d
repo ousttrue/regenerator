@@ -7,17 +7,17 @@ import libclang;
 
 CXTranslationUnitImpl* getTU(void* index, string[] headers, string[] params)
 {
-    byte*[] c_params;
+    immutable(char)*[] c_params;
     foreach (param; params)
     {
-        c_params ~= cast(byte*) param.toStringz();
+        c_params ~= param.toStringz();
     }
 
     auto options = CXTranslationUnit_Flags._DetailedPreprocessingRecord
         | CXTranslationUnit_Flags._SkipFunctionBodies;
     if (headers.length == 1)
     {
-        return clang_parseTranslationUnit(index, cast(byte*) headers[0].toStringz(),
+        return clang_parseTranslationUnit(index, headers[0].toStringz(),
                 c_params.ptr, cast(int) params.length, null, 0, options);
     }
     else
@@ -38,10 +38,10 @@ CXTranslationUnitImpl* getTU(void* index, string[] headers, string[] params)
 
         // use unsaved files
         CXUnsavedFile[] files;
-        files ~= CXUnsavedFile(cast(byte*) source.path.ptr,
-                cast(byte*) source.content.ptr, cast(uint) source.content.length);
+        files ~= CXUnsavedFile(source.path.ptr, source.content.ptr,
+                cast(uint) source.content.length);
 
-        return clang_parseTranslationUnit(index, cast(byte*) "__tmp__dclangen__.h".toStringz(),
+        return clang_parseTranslationUnit(index, "__tmp__dclangen__.h".toStringz(),
                 c_params.ptr, cast(int) params.length, files.ptr, cast(uint) files.length, options);
     }
 }
