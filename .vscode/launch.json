@@ -64,18 +64,14 @@
             "visualizerFile": "${workspaceFolder}/.vscode/d.natvis"
         },
         {
-            "name": "dclangen imgui",
+            "name": "gen imgui",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/regenerator.exe",
             "args": [
-                "--outdir",
+                "${workspaceFolder}/lua/d_imgui.lua",
+                "${workspaceFolder}/submodules/imgui",
                 "${workspaceFolder}/source/imgui",
-                "-E",
-                "-H",
-                "${workspaceFolder}/submodules/imgui/imgui.h",
-                "-D",
-                "IMGUI_API=__declspec(dllexport)",
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

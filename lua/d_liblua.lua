@@ -18,14 +18,14 @@ end
 -- libclang CIndex
 ------------------------------------------------------------------------------
 local LUA_HEADERS = {"lua.h", "lauxlib.h", "lualib.h"}
-local LUA_DEFINES = {"LUA_BUILD_AS_DLL=1"} -- public functions has __declspec(dllexport)
+local defines = {"LUA_BUILD_AS_DLL=1"} -- public functions has __declspec(dllexport)
 local headers = {}
 for i, f in ipairs(LUA_HEADERS) do
     table.insert(headers, string.format("%s/%s", src, f))
 end
 local includes = {}
 local externC = true
-local sourceMap = parse(headers, includes, LUA_DEFINES, externC)
+local sourceMap = parse(headers, includes, defines, externC)
 if sourceMap.empty then
     error("empty")
 end

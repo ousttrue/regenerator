@@ -7,7 +7,7 @@ local D = require "dlang"
 local args = {...}
 print_table(args)
 
-local USAGE = "regenerator.exe d_libclang.lua {lua_source_dir} {d_dst_dir}"
+local USAGE = "regenerator.exe d_imgui.lua {imgui_dir} {d_dst_dir}"
 local src = args[1]
 local dir = args[2]
 if not dir then
@@ -17,13 +17,16 @@ end
 ------------------------------------------------------------------------------
 -- libclang CIndex
 ------------------------------------------------------------------------------
-local LUA_HEADERS = {"clang-c/Index.h", "clang-c/CXString.h"}
-local defines = {}
-local headers = {}
-for i, f in ipairs(LUA_HEADERS) do
-    table.insert(headers, string.format("%s/%s", src, f))
+local defines = {"IMGUI_API=__declspec(dllexport)"}
+local headers = {
+    "imgui.h"
+}
+for i, f in ipairs(headers) do
+    local header = string.format("%s/%s", src, f)
+    print(header)
+    headers[i] = header
 end
-local includes = {src}
+local includes = {}
 local externC = false
 local sourceMap = parse(headers, includes, defines, externC)
 if sourceMap.empty then
@@ -38,12 +41,13 @@ end
 -- export to dlang
 ------------------------------------------------------------------------------
 local omitEnumPrefix = true
-local macro_map = { }
+local macro_map = {
+    D3D_COMPILE_STANDARD_FILE_INCLUDE = "enum D3D_COMPILE_STANDARD_FILE_INCLUDE = cast(void*)1;"
+}
 
 local function filter(decl)
     if decl.class == "Function" then
-        -- export functions only dllExport 
-        return decl.dllExport
+        return decl.isExternC
     else
         return true
     end
@@ -56,6 +60,7 @@ if file.exists(dir) then
 end
 
 local packageName = basename(dir)
+local hasComInterface = false
 for k, source in pairs(sourceMap) do
     -- write each source
     if not source.empty then
@@ -66,10 +71,20 @@ for k, source in pairs(sourceMap) do
         do
             -- open
             local f = io.open(path, "w")
-            D.Source(f, packageName, source, macro_map, filter, omitEnumPrefix)
+            if D.Source(f, packageName, source, macro_map, filter, omitEnumPrefix) then
+                hasComInterface = true
+            end
             io.close(f)
         end
     end
+end
+
+if hasComInterface then
+    -- write utility
+    local path = string.format("%s/guidutil.d", dir)
+    local f = io.open(path, "w")
+    D.GuidUtil(f, packageName)
+    io.close(f)
 end
 
 do

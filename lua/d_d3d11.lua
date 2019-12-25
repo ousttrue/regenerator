@@ -42,7 +42,7 @@ local LUA_HEADERS = {
     "um/d3d10shader.h",
     "shared/dxgi.h",
 }
-local LUA_DEFINES = {}
+local defines = {}
 local headers = {}
 for i, f in ipairs(LUA_HEADERS) do
     local header = string.format("%s/%s", src, f)
@@ -51,7 +51,7 @@ for i, f in ipairs(LUA_HEADERS) do
 end
 local includes = {}
 local externC = false
-local sourceMap = parse(headers, includes, LUA_DEFINES, externC)
+local sourceMap = parse(headers, includes, defines, externC)
 if sourceMap.empty then
     error("empty")
 end
