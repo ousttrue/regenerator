@@ -39,7 +39,8 @@ local LUA_HEADERS = {
     "um/d3d11.h",
     "um/d3dcompiler.h",
     "um/d3d11shader.h",
-    "um/d3d10shader.h"
+    "um/d3d10shader.h",
+    "shared/dxgi.h",
 }
 local LUA_DEFINES = {}
 local headers = {}
