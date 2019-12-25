@@ -651,16 +651,10 @@ class Parser
     {
         auto location = getCursorLocation(cursor);
         auto name = getCursorSpelling(cursor);
-        debug
-        {
-            if (name == "D3DDisassemble10Effect")
-            {
-                return null;
-            }
-        }
 
         auto retType = clang_getCursorResultType(cursor);
         auto ret = typeToDecl(cursor, retType);
+        auto tu = clang_Cursor_getTranslationUnit(cursor);
 
         bool dllExport = false;
         Param[] params;
@@ -677,10 +671,43 @@ class Parser
 
             case CXCursorKind._ParmDecl:
                 {
+                    debug
+                    {
+                        if (name == "ShowDemoWindow")
+                        {
+                        }
+                    }
                     auto paramCursorType = clang_getCursorType(child);
                     auto paramType = typeToDecl(child, paramCursorType);
                     auto paramConst = clang_isConstQualifiedType(paramCursorType);
+
                     auto param = Param(childName, TypeRef(paramType, paramConst != 0));
+
+                    foreach (x; getChildren(child))
+                    {
+                        auto xKind = cast(CXCursorKind) clang_getCursorKind(x);
+                        // if (xKind == CXCursorKind._FirstExpr)
+                        {
+                            // default value
+                            auto tokens = getTokens(child);
+                            scope (exit)
+                                clang_disposeTokens(tu, tokens.ptr, cast(uint) tokens.length);
+                            string[] tokenSpellings = tokens.map!(t => tokenToString(child,
+                                    t)).array();
+                            auto found = tokenSpellings.countUntil!(a => a == "=");
+                            if (found != -1)
+                            {
+                                param.values = tokenSpellings[found + 1 .. $];
+                                debug auto a = 0;
+                            }
+                            else
+                            {
+                                debug auto a = 0;
+                            }
+                        }
+                        break;
+                    }
+
                     params ~= param;
                 }
                 break;

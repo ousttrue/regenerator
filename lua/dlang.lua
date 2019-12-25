@@ -128,7 +128,20 @@ local function DFunctionDecl(f, decl, indent, isMethod)
             f:write("const ")
         end
 
-        f:write(string.format("%s %s", DType(param.ref.type), DEscapeName(param.name)))
+        local value = ""
+        local values = param.values
+        if #values > 0 then
+            if #values == 1 and values[1] == "NULL" then
+                value = "=null"
+            else
+                if values[1] == "sizeof" then
+                    values = {table.unpack(values, 2, #values)}
+                    table.insert(values, ".sizeof")
+                end
+                value = "=" .. table.concat(values, "")
+            end
+        end
+        f:write(string.format("%s %s%s", DType(param.ref.type), DEscapeName(param.name), value))
     end
     writeln(f, ");")
 end
@@ -200,16 +213,10 @@ local function DStructDecl(f, decl, typedefName)
                     end
                 else
                     local const = ""
-                    if typeName == 'char' and field.ref.hasConstRecursive then
+                    if typeName == "char" and field.ref.hasConstRecursive then
                         const = "const "
                     end
-                    writefln(
-                        f,
-                        "    %s%s %s;",
-                        const,
-                        typeName,
-                        DEscapeName(field.name)
-                    )
+                    writefln(f, "    %s%s %s;", const, typeName, DEscapeName(field.name))
                 end
             end
 

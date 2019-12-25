@@ -278,6 +278,7 @@ struct Param
 {
     string name;
     TypeRef typeref;
+    string[] values;
 }
 
 class Function : UserDecl

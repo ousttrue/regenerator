@@ -348,6 +348,7 @@ int main(string[] args)
 	auto param = new UserType!Param;
 	param.instance.Getter("name", (Param* self) => self.name);
 	param.instance.Getter("ref", (Param* self) => self.typeref);
+	param.instance.Getter("values", (Param* self) => self.values);
 	param.push(lua.L);
 	lua_setglobal(lua.L, "Param");
 
