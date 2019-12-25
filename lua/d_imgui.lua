@@ -40,18 +40,48 @@ end
 ------------------------------------------------------------------------------
 -- export to dlang
 ------------------------------------------------------------------------------
-local omitEnumPrefix = true
-local macro_map = {
-    ImDrawCallback_ResetRenderState = "enum ImDrawCallback_ResetRenderState = cast( ImDrawCallback ) ( - 1 );"
+local imgui_injection =
+    [[
+enum FLT_MAX = 3.402823466e+38F;
+immutable _ImVec2_0_0 = ImVec2(0, 0);
+immutable _ImVec2_1_1 = ImVec2(1, 1);
+immutable _ImVec2__1_0 = ImVec2(-1, 0);
+immutable _ImVec4_0_0_0_0 = ImVec4(0, 0, 0, 0);
+immutable _ImVec4_1_1_1_1 = ImVec4(1, 1, 1, 1);
+]]
+
+local param_map = {
+    ["=ImVec2(0,0)"] = "=&_ImVec2_0_0",
+    ["=ImVec2(1,1)"] = "=&_ImVec2_1_1",
+    ["=ImVec2(-1,0)"] = "=&_ImVec2__1_0",
+    ["=ImVec4(0,0,0,0)"] = "=&_ImVec4_0_0_0_0",
+    ["=ImVec4(1,1,1,1)"] = "=&_ImVec4_1_1_1_1"
 }
 
-local function filter(decl)
-    if decl.class == "Function" then
-        return decl.dllExport
-    else
-        return true
+local option = {
+    macro_map = {
+        ImDrawCallback_ResetRenderState = "enum ImDrawCallback_ResetRenderState = cast( ImDrawCallback ) ( - 1 );"
+    },
+    omitEnumPrefix = true,
+    filter = function(decl)
+        if decl.class == "Function" then
+            return decl.dllExport
+        else
+            return true
+        end
+    end,
+    injection = {
+        imgui = imgui_injection
+    },
+    param_map = function(param, value)
+        if param.ref.hasConstRecursive then
+            if param_map[value] then
+                value = param_map[value]
+            end
+        end
+        return value
     end
-end
+}
 
 -- clear dir
 if file.exists(dir) then
@@ -71,7 +101,7 @@ for k, source in pairs(sourceMap) do
         do
             -- open
             local f = io.open(path, "w")
-            if D.Source(f, packageName, source, macro_map, filter, omitEnumPrefix) then
+            if D.Source(f, packageName, source, option) then
                 hasComInterface = true
             end
             io.close(f)

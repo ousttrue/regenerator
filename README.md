@@ -22,9 +22,10 @@
 * [x] com interface uuid
 * [x] com interface inheritance
 * [x] macro definition value
-* [ ] function default parameter
+* [x] function default parameter
 * [x] lua interface
 * [x] `const char *` to `const char *`. not `byte *`
+* [ ] c++ namespace
 
 ## Usage
 

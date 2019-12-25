@@ -103,7 +103,30 @@ local function DEnumDecl(f, decl, omitEnumPrefix)
     writeln(f, "}")
 end
 
-local function DFunctionDecl(f, decl, indent, isMethod)
+local function getValue(param, param_map)
+    local value = ""
+    local values = param.values
+    if #values > 0 then
+        if #values == 1 and values[1] == "NULL" then
+            value = "=null"
+        else
+            if values[1] == "sizeof" then
+                values = {table.unpack(values, 2, #values)}
+                table.insert(values, ".sizeof")
+            end
+            value = "=" .. table.concat(values, "")
+        end
+    end
+    if param_map then
+        local newValue = param_map(param, value)
+        if newValue then
+            value = newValue
+        end
+    end
+    return value
+end
+
+local function DFunctionDecl(f, decl, indent, isMethod, option)
     indent = indent or ""
 
     f:write(indent)
@@ -128,19 +151,7 @@ local function DFunctionDecl(f, decl, indent, isMethod)
             f:write("const ")
         end
 
-        local value = ""
-        local values = param.values
-        if #values > 0 then
-            if #values == 1 and values[1] == "NULL" then
-                value = "=null"
-            else
-                if values[1] == "sizeof" then
-                    values = {table.unpack(values, 2, #values)}
-                    table.insert(values, ".sizeof")
-                end
-                value = "=" .. table.concat(values, "")
-            end
-        end
+        local value = getValue(param, option.param_map)
         f:write(string.format("%s %s%s", DType(param.ref.type), DEscapeName(param.name), value))
     end
     writeln(f, ");")
@@ -225,15 +236,15 @@ local function DStructDecl(f, decl, typedefName)
     end
 end
 
-local function DDecl(f, decl, omitEnumPrefix)
+local function DDecl(f, decl, option)
     if decl.class == "Typedef" then
         DTypedefDecl(f, decl)
     elseif decl.class == "Enum" then
-        DEnumDecl(f, decl, omitEnumPrefix)
+        DEnumDecl(f, decl, option.omitEnumPrefix)
     elseif decl.class == "Struct" then
         DStructDecl(f, decl)
     elseif decl.class == "Function" then
-        DFunctionDecl(f, decl)
+        DFunctionDecl(f, decl, "", false, option)
     else
         error("unknown", decl)
     end
@@ -271,7 +282,11 @@ local function DConst(f, macroDefinition, macro_map)
     end
 end
 
-local function DSource(f, packageName, source, macro_map, declFilter, omitEnumPrefix)
+local function DSource(f, packageName, source, option)
+    macro_map = option["macro_map"] or {}
+    declFilter = option["filter"]
+    omitEnumPrefix = option["omitEnumPrefix"]
+
     writeln(f, HEADLINE)
     writefln(f, "module %s.%s;", packageName, source.name)
 
@@ -284,6 +299,13 @@ local function DSource(f, packageName, source, macro_map, declFilter, omitEnumPr
         end
     end
 
+    if option.injection then
+        local inejection = option.injection[source.name]
+        if inejection then
+            writefln(f, inejection)
+        end
+    end
+
     -- const
     for j, macroDefinition in ipairs(source.macros) do
         DConst(f, macroDefinition, macro_map)
@@ -292,7 +314,7 @@ local function DSource(f, packageName, source, macro_map, declFilter, omitEnumPr
     -- types
     for j, decl in ipairs(source.types) do
         if not declFilter or declFilter(decl) then
-            DDecl(f, decl, omitEnumPrefix)
+            DDecl(f, decl, option)
         end
     end
 
