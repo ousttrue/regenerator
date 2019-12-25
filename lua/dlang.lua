@@ -59,6 +59,9 @@ local function DType(t)
         local a = t
         return string.format("%s[%d]", DType(a.ref.type), a.size)
     else
+        if #t.name==0 then
+            return nil
+        end
         return t.name
     end
 end
@@ -184,8 +187,8 @@ local function DStructDecl(f, decl, typedefName)
                     if fieldType.class == "Struct" then
                         if fieldType.isUnion then
                             writefln(f, "    union {")
-                            for i, unionField in ipairs(structDecl.fields) do
-                                local unionFieldTypeName = DType(unionField.type)
+                            for i, unionField in ipairs(fieldType.fields) do
+                                local unionFieldTypeName = DType(unionField.ref.type)
                                 writefln(f, "        %s %s;", unionFieldTypeName, DEscapeName(unionField.name))
                             end
                             writefln(f, "    }")
