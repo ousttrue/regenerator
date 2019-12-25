@@ -42,12 +42,12 @@ end
 ------------------------------------------------------------------------------
 local omitEnumPrefix = true
 local macro_map = {
-    D3D_COMPILE_STANDARD_FILE_INCLUDE = "enum D3D_COMPILE_STANDARD_FILE_INCLUDE = cast(void*)1;"
+    ImDrawCallback_ResetRenderState = "enum ImDrawCallback_ResetRenderState = cast( ImDrawCallback ) ( - 1 );"
 }
 
 local function filter(decl)
     if decl.class == "Function" then
-        return decl.isExternC
+        return decl.dllExport
     else
         return true
     end
