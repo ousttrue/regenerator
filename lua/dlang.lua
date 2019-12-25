@@ -132,6 +132,8 @@ local function DFunctionDecl(f, decl, indent, isMethod, option)
     f:write(indent)
     if decl.isExternC then
         f:write("extern(C) ")
+    else
+        f:write("extern(C++) ")
     end
 
     f:write(DType(decl.ret))
