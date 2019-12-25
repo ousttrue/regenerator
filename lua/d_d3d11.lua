@@ -83,7 +83,7 @@ if file.exists(dir) then
 end
 
 local packageName = basename(dir)
-local useGuid = false
+local hasComInterface = false
 for k, source in pairs(sourceMap) do
     -- write each source
     if not source.empty then
@@ -95,14 +95,14 @@ for k, source in pairs(sourceMap) do
             -- open
             local f = io.open(path, "w")
             if D.Source(f, packageName, source, macro_map, filter, omitEnumPrefix) then
-                useGuid = true
+                hasComInterface = true
             end
             io.close(f)
         end
     end
 end
 
-if useGuid then
+if hasComInterface then
     -- write utility
     local path = string.format("%s/guidutil.d", dir)
     local f = io.open(path, "w")

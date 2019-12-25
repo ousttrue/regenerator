@@ -234,7 +234,7 @@ local function DImport(f, packageName, src, modules)
         writefln(f, "import %s.%s;", packageName, src.name)
     end
 
-    local useGuid = false
+    local hasComInterface = false
     for j, m in ipairs(src.modules) do
         -- core.sys.windows.windef etc...
         if not modules[m] then
@@ -243,10 +243,10 @@ local function DImport(f, packageName, src, modules)
         end
         if m == "core.sys.windows.unknwn" then
             writefln(f, "import %s.guidutil;", packageName)
-            useGuid = true
+            hasComInterface = true
         end
     end
-    return useGuid
+    return hasComInterface
 end
 
 local function DConst(f, macroDefinition, macro_map)
@@ -265,11 +265,11 @@ local function DSource(f, packageName, source, macro_map, declFilter, omitEnumPr
     writefln(f, "module %s.%s;", packageName, source.name)
 
     -- imports
-    local useGuid = false
+    local hasComInterface = false
     local modules = {}
     for i, src in ipairs(source.imports) do
         if DImport(f, packageName, src, modules) then
-            useGuid = true
+            hasComInterface = true
         end
     end
 
@@ -285,7 +285,7 @@ local function DSource(f, packageName, source, macro_map, declFilter, omitEnumPr
         end
     end
 
-    return useGuid
+    return hasComInterface
 end
 
 local function DPackage(f, packageName, sourceMap)

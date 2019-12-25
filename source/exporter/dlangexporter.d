@@ -353,7 +353,7 @@ void dlangExport(Source[string] sourceMap, string dir, bool omitEnumPrefix)
 
     // write each source
     // auto sourcemap = makeView(m_sourceMap);
-    auto useGuid = false;
+    auto hasComInterface = false;
     foreach (k, source; sourceMap)
     {
         // source.writeTo(dir);
@@ -394,7 +394,7 @@ void dlangExport(Source[string] sourceMap, string dir, bool omitEnumPrefix)
                         if (m == moduleName!(core.sys.windows.unknwn))
                         {
                             f.writefln("import %s.guidutil;", packageName);
-                            useGuid = true;
+                            hasComInterface = true;
                         }
                     }
                 }
@@ -431,7 +431,7 @@ void dlangExport(Source[string] sourceMap, string dir, bool omitEnumPrefix)
         }
     }
 
-    if (useGuid)
+    if (hasComInterface)
     {
         // write utility
         auto packageName = dir.baseName.stripExtension;
