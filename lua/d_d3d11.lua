@@ -7,12 +7,30 @@ local D = require "dlang"
 local args = {...}
 print_table(args)
 
-local USAGE = "regenerator.exe d_d3d11.lua {windowskits_include} {d_dst_dir}"
-local src = args[1]
-local dir = args[2]
+local USAGE = "regenerator.exe d_d3d11.lua {d_dst_dir}"
+local dir = args[1]
 if not dir then
     error(USAGE)
 end
+
+local function getLatestKits()
+    local kits = "C:/Program Files (x86)/Windows Kits/10/Include"
+    local entries = file.ls(kits)
+    table.sort(
+        entries,
+        function(a, b)
+            return (a > b)
+        end
+    )
+    -- print_table(entries)
+    for i, e in ipairs(entries) do
+        if file.isDir(e) then
+            return e
+        end
+    end
+end
+
+local src = getLatestKits()
 
 ------------------------------------------------------------------------------
 -- libclang CIndex

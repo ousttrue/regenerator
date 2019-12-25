@@ -1,4 +1,5 @@
 import std.getopt;
+import std.array;
 import std.string;
 import std.experimental.logger;
 import std.conv;
@@ -91,6 +92,26 @@ extern (C) int luaFunc_mkdirRecurse(lua_State* L)
 	return 0;
 }
 
+extern (C) int luaFunc_ls(lua_State* L)
+{
+	auto path = lua_to!string(L, 1);
+	auto entries = dirEntries(path, SpanMode.shallow).array;
+	lua_createtable(L, cast(int) entries.length, 0);
+	foreach (i, e; entries)
+	{
+		lua_push(L, e.name);
+		lua_seti(L, -2, i + 1);
+	}
+	return 1;
+}
+
+extern (C) int luaFunc_isDir(lua_State *L)
+{
+	auto path = lua_to!string(L, 1);
+	lua_push(L, isDir(path));
+	return 1;
+}
+
 void open_file(lua_State* L)
 {
 	lua_createtable(L, 0, 0);
@@ -103,6 +124,12 @@ void open_file(lua_State* L)
 
 	lua_pushcclosure(L, &luaFunc_mkdirRecurse, 0);
 	lua_setfield(L, -2, "mkdirRecurse");
+
+	lua_pushcclosure(L, &luaFunc_ls, 0);
+	lua_setfield(L, -2, "ls");
+
+	lua_pushcclosure(L, &luaFunc_isDir, 0);
+	lua_setfield(L, -2, "isDir");
 
 	lua_setglobal(L, "file");
 }
@@ -290,7 +317,8 @@ int main(string[] args)
 	structType.instance.Getter("isUnion", (Struct* self) => self.isUnion);
 	structType.instance.Getter("base", (lua_State* L) {
 		auto self = lua_to!(Struct*)(L, 1);
-		if(!self.base){
+		if (!self.base)
+		{
 			return 0;
 		}
 		push_clangdecl(L, self.base);
@@ -298,7 +326,7 @@ int main(string[] args)
 	});
 	structType.instance.Getter("iid", (lua_State* L) {
 		auto self = lua_to!Struct(L, 1);
-		if(self.iid.empty)
+		if (self.iid.empty)
 		{
 			return 0;
 		}

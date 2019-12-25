@@ -47,5 +47,7 @@ $ regenerator.exe lua/d_liblua.lua {lua_src_dir} {d_generate_dir}
 ### d3d11
 
 ```
-$ regenerator.exe lua/d_d3d11.lua {windowskits_include_dir} {d_generate_dir}
+$ regenerator.exe lua/d_d3d11.lua {d_generate_dir}
 ```
+
+generate d3d11.d from latest `C:/Program Files (x86)/Windows Kits/10/Include`
