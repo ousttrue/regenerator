@@ -118,6 +118,7 @@ class UserDecl : Decl
     string path;
     int line;
     string name;
+    const(string)[] namespace;
 
     protected this(string path, int line, string name)
     {

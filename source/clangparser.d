@@ -173,6 +173,7 @@ class Parser
 
         case CXCursorKind._Namespace:
             {
+                context = context.enterNamespace(spelling);
                 foreach (child; cursor.getChildren())
                 {
                     traverse(child, context.getChild());
@@ -212,7 +213,7 @@ class Parser
                 auto a = 0;
             }
             {
-                auto decl = parseFunction(cursor, context.isExternC);
+                auto decl = parseFunction(cursor, &context);
                 if (decl)
                 {
                     auto header = getOrCreateHeader(cursor);
@@ -223,11 +224,11 @@ class Parser
 
         case CXCursorKind._StructDecl:
         case CXCursorKind._ClassDecl:
-            parseStruct(cursor, context.enterStruct(), false);
+            parseStruct(cursor, context.enterNamespace(spelling), false);
             break;
 
         case CXCursorKind._UnionDecl:
-            parseStruct(cursor, context.enterStruct(), true);
+            parseStruct(cursor, context.enterNamespace(spelling), true);
             break;
 
         case CXCursorKind._EnumDecl:
@@ -566,7 +567,7 @@ class Parser
 
             case CXCursorKind._CXXMethod:
                 {
-                    Function method = parseFunction(child, false);
+                    Function method = parseFunction(child, &context);
                     decl.methods ~= method;
                 }
                 break;
@@ -647,7 +648,7 @@ class Parser
         header.types ~= decl;
     }
 
-    Function parseFunction(CXCursor cursor, bool externC)
+    Function parseFunction(CXCursor cursor, const Context* context)
     {
         auto location = getCursorLocation(cursor);
         auto name = getCursorSpelling(cursor);
@@ -731,7 +732,8 @@ class Parser
         }
 
         auto decl = new Function(location.path, location.line, name, ret,
-                params, dllExport, externC);
+                params, dllExport, context.isExternC);
+        decl.namespace = context.namespace;
         return decl;
     }
 
@@ -805,7 +807,7 @@ class Parser
         auto children = rootCursor.getChildren();
         foreach (cursor; children)
         {
-            traverse(cursor, Context(0, externC, false));
+            traverse(cursor, Context(0, externC));
         }
         return true;
     }

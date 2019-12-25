@@ -25,7 +25,7 @@
 * [x] function default parameter
 * [x] lua interface
 * [x] `const char *` to `const char *`. not `byte *`
-* [ ] c++ namespace
+* [x] c++ namespace
 
 ## Usage
 

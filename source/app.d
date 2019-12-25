@@ -105,7 +105,7 @@ extern (C) int luaFunc_ls(lua_State* L)
 	return 1;
 }
 
-extern (C) int luaFunc_isDir(lua_State *L)
+extern (C) int luaFunc_isDir(lua_State* L)
 {
 	auto path = lua_to!string(L, 1);
 	lua_push(L, isDir(path));
@@ -356,6 +356,7 @@ int main(string[] args)
 	funcType.instance.Getter("dllExport", (Function* self) => self.dllExport);
 	funcType.instance.Getter("isExternC", (Function* self) => self.externC);
 	funcType.instance.Getter("params", (Function* self) => self.params);
+	funcType.instance.Getter("namespace", (Function* self) => self.namespace);
 	funcType.instance.Getter("ret", (lua_State* L) {
 		auto self = lua_to!Function(L, 1);
 		// if (!self.ret)

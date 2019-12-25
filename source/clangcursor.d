@@ -6,7 +6,7 @@ struct Context
 {
     int level;
     bool isExternC;
-    bool inStruct;
+    string[] namespace;
 
     string getIndent()
     {
@@ -20,12 +20,12 @@ struct Context
 
     Context getChild()
     {
-        return Context(level + 1, isExternC, inStruct);
+        return Context(level + 1, isExternC, namespace);
     }
 
-    Context enterStruct()
+    Context enterNamespace(string ns)
     {
-        return Context(level + 1, isExternC, true);
+        return Context(level, isExternC, namespace ~ ns);
     }
 }
 

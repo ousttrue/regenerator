@@ -133,7 +133,7 @@ local function DFunctionDecl(f, decl, indent, isMethod, option)
     if decl.isExternC then
         f:write("extern(C) ")
     else
-        f:write("extern(C++) ")
+        f:write(string.format("extern(C++) ", ns))
     end
 
     f:write(DType(decl.ret))
@@ -314,10 +314,34 @@ local function DSource(f, packageName, source, option)
     end
 
     -- types
+    local funcs = {}
     for j, decl in ipairs(source.types) do
         if not declFilter or declFilter(decl) then
-            DDecl(f, decl, option)
+            if decl.class =='Function' then
+                table.insert(funcs, decl)
+            else
+                DDecl(f, decl, option)
+            end
         end
+    end
+    local function pred(a, b)
+        return table.concat(a.namespace, ',') < table.concat(b.namespace, '.')
+    end
+    table.sort(funcs, pred)
+    local lastNS = nil
+    for i, decl in ipairs(funcs) do
+        local ns = table.concat(decl.namespace, '.')
+        if ns ~= lastNS then
+            if lastNS then
+                writefln(f, '} // %s', lastNS)
+            end
+            writefln(f, 'extern(C++, %s) {', ns)
+            lastNS = ns
+        end
+        DDecl(f, decl, option)
+    end
+    if lastNS then
+        writefln(f, '} // %s', lastNS)
     end
 
     return hasComInterface
