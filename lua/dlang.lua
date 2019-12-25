@@ -59,7 +59,7 @@ local function DType(t)
         local a = t
         return string.format("%s[%d]", DType(a.ref.type), a.size)
     else
-        if #t.name==0 then
+        if #t.name == 0 then
             return nil
         end
         return t.name
@@ -309,30 +309,31 @@ local function DGuidUtil(f, packageName)
     writeln(
         f,
         [[
+
 import std.uuid;
 import core.sys.windows.basetyps;
 
 GUID parseGUID(string guid)
 {
-return toGUID(parseUUID(guid));
+    return toGUID(parseUUID(guid));
 }
 GUID toGUID(immutable std.uuid.UUID uuid)
 {
-ubyte[8] data=uuid.data[8..$];
-return GUID(
-            uuid.data[0] << 24
-            |uuid.data[1] << 16
-            |uuid.data[2] << 8
-            |uuid.data[3],
+    ubyte[8] data=uuid.data[8..$];
+    return GUID(
+                uuid.data[0] << 24
+                |uuid.data[1] << 16
+                |uuid.data[2] << 8
+                |uuid.data[3],
 
-            uuid.data[4] << 8
-            |uuid.data[5],
+                uuid.data[4] << 8
+                |uuid.data[5],
 
-            uuid.data[6] << 8
-            |uuid.data[7],
+                uuid.data[6] << 8
+                |uuid.data[7],
 
-            data
-            );
+                data
+                );
 }
 ]]
     )
