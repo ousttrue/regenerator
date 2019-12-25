@@ -199,10 +199,14 @@ local function DStructDecl(f, decl, typedefName)
                         error("unknown")
                     end
                 else
+                    local const = ""
+                    if typeName == 'char' and field.ref.hasConstRecursive then
+                        const = "const "
+                    end
                     writefln(
                         f,
                         "    %s%s %s;",
-                        field.ref.hasConstRecursive and "const " or "",
+                        const,
                         typeName,
                         DEscapeName(field.name)
                     )
