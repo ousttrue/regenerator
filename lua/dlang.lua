@@ -159,13 +159,14 @@ local function DFunctionDecl(f, decl, indent, isMethod, option)
             f:write(", ")
         end
 
-        local dst = ""
-        if param.ref.hasConstRecursive then
-            dst = "const "
+        local dst = DType(param.ref.type)
+        if param.ref.isConst then
+            if string.sub(dst, 1, 4) == "ref " then
+                dst = "in" + string.sub(dst, 4)
+            else
+                dst = string.format("const(%s)", dst)
+            end
         end
-        dst = dst .. DType(param.ref.type)
-        dst = string.gsub(dst, "const ref", "in")
-
         f:write(string.format("%s %s%s", dst, DEscapeName(param.name), getValue(param, option.param_map)))
     end
     writeln(f, ");")
