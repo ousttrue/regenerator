@@ -45,10 +45,15 @@ class Processor
         while (true)
         {
             Pointer pointer = cast(Pointer) decl;
+            Reference reference = cast(Reference) decl;
             Array array = cast(Array) decl;
             if (pointer)
             {
                 decl = pointer.typeref.type;
+            }
+            else if (reference)
+            {
+                decl = reference.typeref.type;
             }
             else if (array)
             {

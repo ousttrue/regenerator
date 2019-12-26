@@ -40,7 +40,7 @@ local LUA_HEADERS = {
     "um/d3dcompiler.h",
     "um/d3d11shader.h",
     "um/d3d10shader.h",
-    "shared/dxgi.h",
+    "shared/dxgi.h"
 }
 local defines = {}
 local headers = {}
@@ -63,11 +63,6 @@ end
 ------------------------------------------------------------------------------
 -- export to dlang
 ------------------------------------------------------------------------------
-local omitEnumPrefix = true
-local macro_map = {
-    D3D_COMPILE_STANDARD_FILE_INCLUDE = "enum D3D_COMPILE_STANDARD_FILE_INCLUDE = cast(void*)1;"
-}
-
 local function filter(decl)
     if decl.class == "Function" then
         return decl.isExternC
@@ -75,6 +70,14 @@ local function filter(decl)
         return true
     end
 end
+
+local option = {
+    filter = filter,
+    omitEnumPrefix = true,
+    macro_map = {
+        D3D_COMPILE_STANDARD_FILE_INCLUDE = "enum D3D_COMPILE_STANDARD_FILE_INCLUDE = cast(void*)1;"
+    }
+}
 
 -- clear dir
 if file.exists(dir) then
@@ -94,7 +97,7 @@ for k, source in pairs(sourceMap) do
         do
             -- open
             local f = io.open(path, "w")
-            if D.Source(f, packageName, source, macro_map, filter, omitEnumPrefix) then
+            if D.Source(f, packageName, source, option) then
                 hasComInterface = true
             end
             io.close(f)

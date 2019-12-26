@@ -52,7 +52,11 @@ local function DType(t)
         elseif isInterface(p.ref.type) then
             return string.format("%s", DType(p.ref.type))
         else
-            return string.format("%s*", DType(p.ref.type))
+            local typeName = DType(p.ref.type)
+            if p.ref.isConst then
+                typeName = string.format("const(%s)", typeName)
+            end
+            return string.format("%s*", typeName)
         end
     elseif t.class == "Reference" then
         -- return DPointer(t)
@@ -134,10 +138,12 @@ local function DFunctionDecl(f, decl, indent, isMethod, option)
     indent = indent or ""
 
     f:write(indent)
-    if decl.isExternC then
-        f:write("extern(C) ")
-    else
-        f:write(string.format("extern(C++) ", ns))
+    if not isMethod then
+        if decl.isExternC then
+            f:write("extern(C) ")
+        else
+            f:write(string.format("extern(C++) ", ns))
+        end
     end
 
     f:write(DType(decl.ret))
@@ -167,9 +173,9 @@ end
 
 local SKIP_METHODS = {QueryInterface = true, AddRef = true, Release = true}
 
-local function DStructDecl(f, decl, typedefName)
+local function DStructDecl(f, decl, option)
     -- assert(!decl.m_forwardDecl);
-    local name = typedefName or decl.name
+    local name = decl.name
     if not name or #name == 0 then
         writeln(f, "// struct nameless")
         return
@@ -198,7 +204,7 @@ local function DStructDecl(f, decl, typedefName)
             if SKIP_METHODS[method.name] then
                 writefln(f, "    // skip %s", method.name)
             else
-                DFunctionDecl(f, method, "    ", true)
+                DFunctionDecl(f, method, "    ", true, option)
             end
         end
         writeln(f, "}")
@@ -231,11 +237,11 @@ local function DStructDecl(f, decl, typedefName)
                         error("unknown")
                     end
                 else
-                    local const = ""
-                    if field.ref.hasConstRecursive then
-                        const = "const "
+                    if field.ref.isConst then
+                        typeName = "const(" .. typeName .. ")"
                     end
-                    writefln(f, "    %s%s %s;", const, typeName, DEscapeName(field.name))
+
+                    writefln(f, "    %s %s;", typeName, DEscapeName(field.name))
                 end
             end
 
@@ -250,7 +256,7 @@ local function DDecl(f, decl, option)
     elseif decl.class == "Enum" then
         DEnumDecl(f, decl, option.omitEnumPrefix)
     elseif decl.class == "Struct" then
-        DStructDecl(f, decl)
+        DStructDecl(f, decl, option)
     elseif decl.class == "Function" then
         DFunctionDecl(f, decl, "", false, option)
     else
@@ -279,7 +285,7 @@ local function DImport(f, packageName, src, modules)
     return hasComInterface
 end
 
-local function DConst(f, macroDefinition, macro_map)
+local function DConstant(f, macroDefinition, macro_map)
     if not isFirstAlpha(macroDefinition.tokens[1]) then
         local p = macro_map[macroDefinition.name]
         if p then
@@ -316,7 +322,7 @@ local function DSource(f, packageName, source, option)
 
     -- const
     for j, macroDefinition in ipairs(source.macros) do
-        DConst(f, macroDefinition, macro_map)
+        DConstant(f, macroDefinition, option.macro_map)
     end
 
     -- types
@@ -413,7 +419,7 @@ end
 return {
     Decl = DDecl,
     Import = DImport,
-    Const = DConst,
+    Const = DConstant,
     Package = DPackage,
     Source = DSource,
     GuidUtil = DGuidUtil

@@ -261,6 +261,7 @@ int main(string[] args)
 
 	// export class UserDecl
 	auto typeRef = new UserType!TypeRef;
+	typeRef.instance.Getter("isConst", (TypeRef* self) => self.isConst);
 	typeRef.instance.Getter("hasConstRecursive", (TypeRef* self) => self.hasConstRecursive);
 	typeRef.instance.Getter("type", (lua_State* L) {
 		auto self = lua_to!(TypeRef*)(L, 1);
