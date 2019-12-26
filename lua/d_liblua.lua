@@ -37,13 +37,6 @@ end
 ------------------------------------------------------------------------------
 -- export to dlang
 ------------------------------------------------------------------------------
-local macro_map = {
-    LUA_VERSION = 'enum LUA_VERSION = "Lua " ~ LUA_VERSION_MAJOR ~ "." ~ LUA_VERSION_MINOR;',
-    LUA_REGISTRYINDEX = "enum LUA_REGISTRYINDEX = ( - 1000000 - 1000 );",
-    LUAL_NUMSIZES = "enum LUAL_NUMSIZES = ( ( lua_Integer ).sizeof  * 16 + ( lua_Number ).sizeof  );",
-    LUA_VERSUFFIX = 'enum LUA_VERSUFFIX = "_" ~ LUA_VERSION_MAJOR ~ "_" ~ LUA_VERSION_MINOR;'
-}
-
 local function filter(decl)
     if decl.class == "Function" then
         -- export functions only dllExport
@@ -53,6 +46,17 @@ local function filter(decl)
         return true
     end
 end
+
+local option = {
+    macro_map = {
+        LUA_VERSION = 'enum LUA_VERSION = "Lua " ~ LUA_VERSION_MAJOR ~ "." ~ LUA_VERSION_MINOR;',
+        LUA_REGISTRYINDEX = "enum LUA_REGISTRYINDEX = ( - 1000000 - 1000 );",
+        LUAL_NUMSIZES = "enum LUAL_NUMSIZES = ( ( lua_Integer ).sizeof  * 16 + ( lua_Number ).sizeof  );",
+        LUA_VERSUFFIX = 'enum LUA_VERSUFFIX = "_" ~ LUA_VERSION_MAJOR ~ "_" ~ LUA_VERSION_MINOR;'
+    },
+    filter = filter,
+    externC = externC,
+}
 
 -- clear dir
 if file.exists(dir) then
@@ -71,7 +75,7 @@ for k, source in pairs(sourceMap) do
         do
             -- open
             local f = io.open(path, "w")
-            D.Source(f, packageName, source, macro_map, filter)
+            D.Source(f, packageName, source, option)
             io.close(f)
         end
     end

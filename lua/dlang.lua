@@ -232,7 +232,7 @@ local function DStructDecl(f, decl, typedefName)
                     end
                 else
                     local const = ""
-                    if typeName == "char" and field.ref.hasConstRecursive then
+                    if field.ref.hasConstRecursive then
                         const = "const "
                     end
                     writefln(f, "    %s%s %s;", const, typeName, DEscapeName(field.name))
@@ -336,13 +336,19 @@ local function DSource(f, packageName, source, option)
     table.sort(funcs, pred)
     local lastNS = nil
     for i, decl in ipairs(funcs) do
-        local ns = table.concat(decl.namespace, ".")
-        if ns ~= lastNS then
-            if lastNS then
-                writefln(f, "} // %s", lastNS)
+        if not option.externC then
+            local ns = table.concat(decl.namespace, ".")
+            if ns ~= lastNS then
+                if lastNS then
+                    writefln(f, "} // %s", lastNS)
+                end
+                if string.match(ns, "^%s*$") then
+                    writefln(f, "extern(C++) {", ns)
+                else
+                    writefln(f, "extern(C++, %s) {", ns)
+                end
+                lastNS = ns
             end
-            writefln(f, "extern(C++, %s) {", ns)
-            lastNS = ns
         end
         DDecl(f, decl, option)
     end
