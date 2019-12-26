@@ -39,33 +39,37 @@ local function isInterface(decl)
     return decl.isInterface
 end
 
-local function DType(t)
+local function DType(t, isParam)
     local name = DTYPE_MAP[t.class]
     if name then
         return name
     end
     if t.class == "Pointer" then
         -- return DPointer(t)
-        local p = t
-        if p.ref.type.name == "ID3DInclude" then
+        if t.ref.type.name == "ID3DInclude" then
             return "void*   "
-        elseif isInterface(p.ref.type) then
-            return string.format("%s", DType(p.ref.type))
+        elseif isInterface(t.ref.type) then
+            return string.format("%s", DType(t.ref.type, isParam))
         else
-            local typeName = DType(p.ref.type)
-            if p.ref.isConst then
+            local typeName = DType(t.ref.type, isParam)
+            if t.ref.isConst then
                 typeName = string.format("const(%s)", typeName)
             end
             return string.format("%s*", typeName)
         end
     elseif t.class == "Reference" then
         -- return DPointer(t)
-        local p = t
-        return string.format("ref %s", DType(p.ref.type))
+        local typeName = DType(t.ref.type, isParam)
+        if t.ref.isConst and isParam then
+            typeName = string.format("in %s", typeName)
+        else
+            typeName = string.format("ref %s", typeName)
+        end
+        return typeName
     elseif t.class == "Array" then
         -- return DArray(t)
         local a = t
-        return string.format("%s[%d]", DType(a.ref.type), a.size)
+        return string.format("%s[%d]", DType(a.ref.type, isParam), a.size)
     else
         if #t.name == 0 then
             return nil
@@ -159,13 +163,9 @@ local function DFunctionDecl(f, decl, indent, isMethod, option)
             f:write(", ")
         end
 
-        local dst = DType(param.ref.type)
+        local dst = DType(param.ref.type, true)
         if param.ref.isConst then
-            if string.sub(dst, 1, 4) == "ref " then
-                dst = "in" + string.sub(dst, 4)
-            else
-                dst = string.format("const(%s)", dst)
-            end
+            dst = string.format("const(%s)", dst)
         end
         f:write(string.format("%s %s%s", dst, DEscapeName(param.name), getValue(param, option.param_map)))
     end
