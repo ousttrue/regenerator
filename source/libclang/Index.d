@@ -44,8 +44,6 @@ enum CXCursor_ExceptionSpecificationKind
     _Unparsed = 0x8,
     _NoThrow = 0x9,
 }
-extern(C) CXIndex clang_createIndex(int excludeDeclarationsFromPCH, int displayDiagnostics);
-extern(C) void clang_disposeIndex(CXIndex index);
 enum CXGlobalOptFlags
 {
     _None = 0x0,
@@ -53,22 +51,11 @@ enum CXGlobalOptFlags
     _ThreadBackgroundPriorityForEditing = 0x2,
     _ThreadBackgroundPriorityForAll = 0x3,
 }
-extern(C) void clang_CXIndex_setGlobalOptions(CXIndex , uint options);
-extern(C) uint clang_CXIndex_getGlobalOptions(CXIndex );
-extern(C) void clang_CXIndex_setInvocationEmissionPathOption(CXIndex , const char* Path);
 alias CXFile = void*;
-extern(C) CXString clang_getFileName(CXFile SFile);
-extern(C) time_t clang_getFileTime(CXFile SFile);
 struct CXFileUniqueID
 {
     ulong[3] data;
 }
-extern(C) int clang_getFileUniqueID(CXFile file, CXFileUniqueID* outID);
-extern(C) uint clang_isFileMultipleIncludeGuarded(CXTranslationUnit tu, CXFile file);
-extern(C) CXFile clang_getFile(CXTranslationUnit tu, const char* file_name);
-extern(C) char* clang_getFileContents(CXTranslationUnit tu, CXFile file, size_t* size);
-extern(C) int clang_File_isEqual(CXFile file1, CXFile file2);
-extern(C) CXString clang_File_tryGetRealPathName(CXFile file);
 struct CXSourceLocation
 {
     void*[2] ptr_data;
@@ -80,31 +67,11 @@ struct CXSourceRange
     uint begin_int_data;
     uint end_int_data;
 }
-extern(C) CXSourceLocation clang_getNullLocation();
-extern(C) uint clang_equalLocations(CXSourceLocation loc1, CXSourceLocation loc2);
-extern(C) CXSourceLocation clang_getLocation(CXTranslationUnit tu, CXFile file, uint line, uint column);
-extern(C) CXSourceLocation clang_getLocationForOffset(CXTranslationUnit tu, CXFile file, uint offset);
-extern(C) int clang_Location_isInSystemHeader(CXSourceLocation location);
-extern(C) int clang_Location_isFromMainFile(CXSourceLocation location);
-extern(C) CXSourceRange clang_getNullRange();
-extern(C) CXSourceRange clang_getRange(CXSourceLocation begin, CXSourceLocation end);
-extern(C) uint clang_equalRanges(CXSourceRange range1, CXSourceRange range2);
-extern(C) int clang_Range_isNull(CXSourceRange range);
-extern(C) void clang_getExpansionLocation(CXSourceLocation location, CXFile* file, uint* line, uint* column, uint* offset);
-extern(C) void clang_getPresumedLocation(CXSourceLocation location, CXString* filename, uint* line, uint* column);
-extern(C) void clang_getInstantiationLocation(CXSourceLocation location, CXFile* file, uint* line, uint* column, uint* offset);
-extern(C) void clang_getSpellingLocation(CXSourceLocation location, CXFile* file, uint* line, uint* column, uint* offset);
-extern(C) void clang_getFileLocation(CXSourceLocation location, CXFile* file, uint* line, uint* column, uint* offset);
-extern(C) CXSourceLocation clang_getRangeStart(CXSourceRange range);
-extern(C) CXSourceLocation clang_getRangeEnd(CXSourceRange range);
 struct CXSourceRangeList
 {
     uint count;
     CXSourceRange* ranges;
 }
-extern(C) CXSourceRangeList* clang_getSkippedRanges(CXTranslationUnit tu, CXFile file);
-extern(C) CXSourceRangeList* clang_getAllSkippedRanges(CXTranslationUnit tu);
-extern(C) void clang_disposeSourceRangeList(CXSourceRangeList* ranges);
 enum CXDiagnosticSeverity
 {
     _Ignored = 0x0,
@@ -115,8 +82,6 @@ enum CXDiagnosticSeverity
 }
 alias CXDiagnostic = void*;
 alias CXDiagnosticSet = void*;
-extern(C) uint clang_getNumDiagnosticsInSet(CXDiagnosticSet Diags);
-extern(C) CXDiagnostic clang_getDiagnosticInSet(CXDiagnosticSet Diags, uint Index);
 enum CXLoadDiag_Error
 {
     _None = 0x0,
@@ -124,13 +89,6 @@ enum CXLoadDiag_Error
     _CannotLoad = 0x2,
     _InvalidFile = 0x3,
 }
-extern(C) CXDiagnosticSet clang_loadDiagnostics(const char* file, CXLoadDiag_Error* error, CXString* errorString);
-extern(C) void clang_disposeDiagnosticSet(CXDiagnosticSet Diags);
-extern(C) CXDiagnosticSet clang_getChildDiagnostics(CXDiagnostic D);
-extern(C) uint clang_getNumDiagnostics(CXTranslationUnit Unit);
-extern(C) CXDiagnostic clang_getDiagnostic(CXTranslationUnit Unit, uint Index);
-extern(C) CXDiagnosticSet clang_getDiagnosticSetFromTU(CXTranslationUnit Unit);
-extern(C) void clang_disposeDiagnostic(CXDiagnostic Diagnostic);
 enum CXDiagnosticDisplayOptions
 {
     _DisplaySourceLocation = 0x1,
@@ -140,23 +98,6 @@ enum CXDiagnosticDisplayOptions
     _DisplayCategoryId = 0x10,
     _DisplayCategoryName = 0x20,
 }
-extern(C) CXString clang_formatDiagnostic(CXDiagnostic Diagnostic, uint Options);
-extern(C) uint clang_defaultDiagnosticDisplayOptions();
-extern(C) CXDiagnosticSeverity clang_getDiagnosticSeverity(CXDiagnostic );
-extern(C) CXSourceLocation clang_getDiagnosticLocation(CXDiagnostic );
-extern(C) CXString clang_getDiagnosticSpelling(CXDiagnostic );
-extern(C) CXString clang_getDiagnosticOption(CXDiagnostic Diag, CXString* Disable);
-extern(C) uint clang_getDiagnosticCategory(CXDiagnostic );
-extern(C) CXString clang_getDiagnosticCategoryName(uint Category);
-extern(C) CXString clang_getDiagnosticCategoryText(CXDiagnostic );
-extern(C) uint clang_getDiagnosticNumRanges(CXDiagnostic );
-extern(C) CXSourceRange clang_getDiagnosticRange(CXDiagnostic Diagnostic, uint Range);
-extern(C) uint clang_getDiagnosticNumFixIts(CXDiagnostic Diagnostic);
-extern(C) CXString clang_getDiagnosticFixIt(CXDiagnostic Diagnostic, uint FixIt, CXSourceRange* ReplacementRange);
-extern(C) CXString clang_getTranslationUnitSpelling(CXTranslationUnit CTUnit);
-extern(C) CXTranslationUnit clang_createTranslationUnitFromSourceFile(CXIndex CIdx, const char* source_filename, int num_clang_command_line_args, const char** clang_command_line_args, uint num_unsaved_files, CXUnsavedFile* unsaved_files);
-extern(C) CXTranslationUnit clang_createTranslationUnit(CXIndex CIdx, const char* ast_filename);
-extern(C) CXErrorCode clang_createTranslationUnit2(CXIndex CIdx, const char* ast_filename, CXTranslationUnit* out_TU);
 enum CXTranslationUnit_Flags
 {
     _None = 0x0,
@@ -176,15 +117,10 @@ enum CXTranslationUnit_Flags
     _VisitImplicitAttributes = 0x2000,
     _IgnoreNonErrorsFromIncludedFiles = 0x4000,
 }
-extern(C) uint clang_defaultEditingTranslationUnitOptions();
-extern(C) CXTranslationUnit clang_parseTranslationUnit(CXIndex CIdx, const char* source_filename, const char** command_line_args, int num_command_line_args, CXUnsavedFile* unsaved_files, uint num_unsaved_files, uint options);
-extern(C) CXErrorCode clang_parseTranslationUnit2(CXIndex CIdx, const char* source_filename, const char** command_line_args, int num_command_line_args, CXUnsavedFile* unsaved_files, uint num_unsaved_files, uint options, CXTranslationUnit* out_TU);
-extern(C) CXErrorCode clang_parseTranslationUnit2FullArgv(CXIndex CIdx, const char* source_filename, const char** command_line_args, int num_command_line_args, CXUnsavedFile* unsaved_files, uint num_unsaved_files, uint options, CXTranslationUnit* out_TU);
 enum CXSaveTranslationUnit_Flags
 {
     CXSaveTranslationUnit_None = 0x0,
 }
-extern(C) uint clang_defaultSaveOptions(CXTranslationUnit TU);
 enum CXSaveError
 {
     _None = 0x0,
@@ -192,15 +128,10 @@ enum CXSaveError
     _TranslationErrors = 0x2,
     _InvalidTU = 0x3,
 }
-extern(C) int clang_saveTranslationUnit(CXTranslationUnit TU, const char* FileName, uint options);
-extern(C) uint clang_suspendTranslationUnit(CXTranslationUnit );
-extern(C) void clang_disposeTranslationUnit(CXTranslationUnit );
 enum CXReparse_Flags
 {
     CXReparse_None = 0x0,
 }
-extern(C) uint clang_defaultReparseOptions(CXTranslationUnit TU);
-extern(C) int clang_reparseTranslationUnit(CXTranslationUnit TU, uint num_unsaved_files, CXUnsavedFile* unsaved_files, uint options);
 enum CXTUResourceUsageKind
 {
     _AST = 0x1,
@@ -222,7 +153,6 @@ enum CXTUResourceUsageKind
     _First = 0x1,
     _Last = 0xe,
 }
-extern(C) char* clang_getTUResourceUsageName(CXTUResourceUsageKind kind);
 struct CXTUResourceUsageEntry
 {
     CXTUResourceUsageKind kind;
@@ -234,12 +164,6 @@ struct CXTUResourceUsage
     uint numEntries;
     CXTUResourceUsageEntry* entries;
 }
-extern(C) CXTUResourceUsage clang_getCXTUResourceUsage(CXTranslationUnit TU);
-extern(C) void clang_disposeCXTUResourceUsage(CXTUResourceUsage usage);
-extern(C) CXTargetInfo clang_getTranslationUnitTargetInfo(CXTranslationUnit CTUnit);
-extern(C) void clang_TargetInfo_dispose(CXTargetInfo Info);
-extern(C) CXString clang_TargetInfo_getTriple(CXTargetInfo Info);
-extern(C) int clang_TargetInfo_getPointerWidth(CXTargetInfo Info);
 enum CXCursorKind
 {
     _UnexposedDecl = 0x1,
@@ -504,23 +428,6 @@ struct CXCursor
     int xdata;
     void*[3] data;
 }
-extern(C) CXCursor clang_getNullCursor();
-extern(C) CXCursor clang_getTranslationUnitCursor(CXTranslationUnit );
-extern(C) uint clang_equalCursors(CXCursor , CXCursor );
-extern(C) int clang_Cursor_isNull(CXCursor cursor);
-extern(C) uint clang_hashCursor(CXCursor );
-extern(C) CXCursorKind clang_getCursorKind(CXCursor );
-extern(C) uint clang_isDeclaration(CXCursorKind );
-extern(C) uint clang_isInvalidDeclaration(CXCursor );
-extern(C) uint clang_isReference(CXCursorKind );
-extern(C) uint clang_isExpression(CXCursorKind );
-extern(C) uint clang_isStatement(CXCursorKind );
-extern(C) uint clang_isAttribute(CXCursorKind );
-extern(C) uint clang_Cursor_hasAttrs(CXCursor C);
-extern(C) uint clang_isInvalid(CXCursorKind );
-extern(C) uint clang_isTranslationUnit(CXCursorKind );
-extern(C) uint clang_isPreprocessing(CXCursorKind );
-extern(C) uint clang_isUnexposed(CXCursorKind );
 enum CXLinkageKind
 {
     _Invalid = 0x0,
@@ -529,7 +436,6 @@ enum CXLinkageKind
     _UniqueExternal = 0x3,
     _External = 0x4,
 }
-extern(C) CXLinkageKind clang_getCursorLinkage(CXCursor cursor);
 enum CXVisibilityKind
 {
     _Invalid = 0x0,
@@ -537,8 +443,6 @@ enum CXVisibilityKind
     _Protected = 0x2,
     _Default = 0x3,
 }
-extern(C) CXVisibilityKind clang_getCursorVisibility(CXCursor cursor);
-extern(C) CXAvailabilityKind clang_getCursorAvailability(CXCursor cursor);
 struct CXPlatformAvailability
 {
     CXString Platform;
@@ -548,8 +452,6 @@ struct CXPlatformAvailability
     int Unavailable;
     CXString Message;
 }
-extern(C) int clang_getCursorPlatformAvailability(CXCursor cursor, int* always_deprecated, CXString* deprecated_message, int* always_unavailable, CXString* unavailable_message, CXPlatformAvailability* availability, int availability_size);
-extern(C) void clang_disposeCXPlatformAvailability(CXPlatformAvailability* availability);
 enum CXLanguageKind
 {
     _Invalid = 0x0,
@@ -557,29 +459,14 @@ enum CXLanguageKind
     _ObjC = 0x2,
     _CPlusPlus = 0x3,
 }
-extern(C) CXLanguageKind clang_getCursorLanguage(CXCursor cursor);
 enum CXTLSKind
 {
     _None = 0x0,
     _Dynamic = 0x1,
     _Static = 0x2,
 }
-extern(C) CXTLSKind clang_getCursorTLSKind(CXCursor cursor);
-extern(C) CXTranslationUnit clang_Cursor_getTranslationUnit(CXCursor );
 struct CXCursorSetImpl;
 alias CXCursorSet = CXCursorSetImpl*;
-extern(C) CXCursorSet clang_createCXCursorSet();
-extern(C) void clang_disposeCXCursorSet(CXCursorSet cset);
-extern(C) uint clang_CXCursorSet_contains(CXCursorSet cset, CXCursor cursor);
-extern(C) uint clang_CXCursorSet_insert(CXCursorSet cset, CXCursor cursor);
-extern(C) CXCursor clang_getCursorSemanticParent(CXCursor cursor);
-extern(C) CXCursor clang_getCursorLexicalParent(CXCursor cursor);
-extern(C) void clang_getOverriddenCursors(CXCursor cursor, CXCursor** overridden, uint* num_overridden);
-extern(C) void clang_disposeOverriddenCursors(CXCursor* overridden);
-extern(C) CXFile clang_getIncludedFile(CXCursor cursor);
-extern(C) CXCursor clang_getCursor(CXTranslationUnit , CXSourceLocation );
-extern(C) CXSourceLocation clang_getCursorLocation(CXCursor );
-extern(C) CXSourceRange clang_getCursorExtent(CXCursor );
 enum CXTypeKind
 {
     _Invalid = 0x0,
@@ -729,15 +616,6 @@ struct CXType
     CXTypeKind kind;
     void*[2] data;
 }
-extern(C) CXType clang_getCursorType(CXCursor C);
-extern(C) CXString clang_getTypeSpelling(CXType CT);
-extern(C) CXType clang_getTypedefDeclUnderlyingType(CXCursor C);
-extern(C) CXType clang_getEnumDeclIntegerType(CXCursor C);
-extern(C) long clang_getEnumConstantDeclValue(CXCursor C);
-extern(C) ulong clang_getEnumConstantDeclUnsignedValue(CXCursor C);
-extern(C) int clang_getFieldDeclBitWidth(CXCursor C);
-extern(C) int clang_Cursor_getNumArguments(CXCursor C);
-extern(C) CXCursor clang_Cursor_getArgument(CXCursor C, uint i);
 enum CXTemplateArgumentKind
 {
     _Null = 0x0,
@@ -751,46 +629,6 @@ enum CXTemplateArgumentKind
     _Pack = 0x8,
     _Invalid = 0x9,
 }
-extern(C) int clang_Cursor_getNumTemplateArguments(CXCursor C);
-extern(C) CXTemplateArgumentKind clang_Cursor_getTemplateArgumentKind(CXCursor C, uint I);
-extern(C) CXType clang_Cursor_getTemplateArgumentType(CXCursor C, uint I);
-extern(C) long clang_Cursor_getTemplateArgumentValue(CXCursor C, uint I);
-extern(C) ulong clang_Cursor_getTemplateArgumentUnsignedValue(CXCursor C, uint I);
-extern(C) uint clang_equalTypes(CXType A, CXType B);
-extern(C) CXType clang_getCanonicalType(CXType T);
-extern(C) uint clang_isConstQualifiedType(CXType T);
-extern(C) uint clang_Cursor_isMacroFunctionLike(CXCursor C);
-extern(C) uint clang_Cursor_isMacroBuiltin(CXCursor C);
-extern(C) uint clang_Cursor_isFunctionInlined(CXCursor C);
-extern(C) uint clang_isVolatileQualifiedType(CXType T);
-extern(C) uint clang_isRestrictQualifiedType(CXType T);
-extern(C) uint clang_getAddressSpace(CXType T);
-extern(C) CXString clang_getTypedefName(CXType CT);
-extern(C) CXType clang_getPointeeType(CXType T);
-extern(C) CXCursor clang_getTypeDeclaration(CXType T);
-extern(C) CXString clang_getDeclObjCTypeEncoding(CXCursor C);
-extern(C) CXString clang_Type_getObjCEncoding(CXType type);
-extern(C) CXString clang_getTypeKindSpelling(CXTypeKind K);
-extern(C) CXCallingConv clang_getFunctionTypeCallingConv(CXType T);
-extern(C) CXType clang_getResultType(CXType T);
-extern(C) int clang_getExceptionSpecificationType(CXType T);
-extern(C) int clang_getNumArgTypes(CXType T);
-extern(C) CXType clang_getArgType(CXType T, uint i);
-extern(C) CXType clang_Type_getObjCObjectBaseType(CXType T);
-extern(C) uint clang_Type_getNumObjCProtocolRefs(CXType T);
-extern(C) CXCursor clang_Type_getObjCProtocolDecl(CXType T, uint i);
-extern(C) uint clang_Type_getNumObjCTypeArgs(CXType T);
-extern(C) CXType clang_Type_getObjCTypeArg(CXType T, uint i);
-extern(C) uint clang_isFunctionTypeVariadic(CXType T);
-extern(C) CXType clang_getCursorResultType(CXCursor C);
-extern(C) int clang_getCursorExceptionSpecificationType(CXCursor C);
-extern(C) uint clang_isPODType(CXType T);
-extern(C) CXType clang_getElementType(CXType T);
-extern(C) long clang_getNumElements(CXType T);
-extern(C) CXType clang_getArrayElementType(CXType T);
-extern(C) long clang_getArraySize(CXType T);
-extern(C) CXType clang_Type_getNamedType(CXType T);
-extern(C) uint clang_Type_isTransparentTagTypedef(CXType T);
 enum CXTypeNullabilityKind
 {
     _NonNull = 0x0,
@@ -798,7 +636,6 @@ enum CXTypeNullabilityKind
     _Unspecified = 0x2,
     _Invalid = 0x3,
 }
-extern(C) CXTypeNullabilityKind clang_Type_getNullability(CXType T);
 enum CXTypeLayoutError
 {
     _Invalid = 0xffffffff,
@@ -808,26 +645,12 @@ enum CXTypeLayoutError
     _InvalidFieldName = 0xfffffffb,
     _Undeduced = 0xfffffffa,
 }
-extern(C) long clang_Type_getAlignOf(CXType T);
-extern(C) CXType clang_Type_getClassType(CXType T);
-extern(C) long clang_Type_getSizeOf(CXType T);
-extern(C) long clang_Type_getOffsetOf(CXType T, const char* S);
-extern(C) CXType clang_Type_getModifiedType(CXType T);
-extern(C) long clang_Cursor_getOffsetOfField(CXCursor C);
-extern(C) uint clang_Cursor_isAnonymous(CXCursor C);
-extern(C) uint clang_Cursor_isAnonymousRecordDecl(CXCursor C);
-extern(C) uint clang_Cursor_isInlineNamespace(CXCursor C);
 enum CXRefQualifierKind
 {
     _None = 0x0,
     _LValue = 0x1,
     _RValue = 0x2,
 }
-extern(C) int clang_Type_getNumTemplateArguments(CXType T);
-extern(C) CXType clang_Type_getTemplateArgumentAsType(CXType T, uint i);
-extern(C) CXRefQualifierKind clang_Type_getCXXRefQualifier(CXType T);
-extern(C) uint clang_Cursor_isBitField(CXCursor C);
-extern(C) uint clang_isVirtualBase(CXCursor );
 enum CX_CXXAccessSpecifier
 {
     _CXXInvalidAccessSpecifier = 0x0,
@@ -835,7 +658,6 @@ enum CX_CXXAccessSpecifier
     _CXXProtected = 0x2,
     _CXXPrivate = 0x3,
 }
-extern(C) CX_CXXAccessSpecifier clang_getCXXAccessSpecifier(CXCursor );
 enum CX_StorageClass
 {
     _Invalid = 0x0,
@@ -847,10 +669,6 @@ enum CX_StorageClass
     _Auto = 0x6,
     _Register = 0x7,
 }
-extern(C) CX_StorageClass clang_Cursor_getStorageClass(CXCursor );
-extern(C) uint clang_getNumOverloadedDecls(CXCursor cursor);
-extern(C) CXCursor clang_getOverloadedDecl(CXCursor cursor, uint index);
-extern(C) CXType clang_getIBOutletCollectionType(CXCursor );
 enum CXChildVisitResult
 {
     _Break = 0x0,
@@ -858,16 +676,6 @@ enum CXChildVisitResult
     _Recurse = 0x2,
 }
 alias CXCursorVisitor = void*;
-extern(C) uint clang_visitChildren(CXCursor parent, CXCursorVisitor visitor, CXClientData client_data);
-extern(C) CXString clang_getCursorUSR(CXCursor );
-extern(C) CXString clang_constructUSR_ObjCClass(const char* class_name);
-extern(C) CXString clang_constructUSR_ObjCCategory(const char* class_name, const char* category_name);
-extern(C) CXString clang_constructUSR_ObjCProtocol(const char* protocol_name);
-extern(C) CXString clang_constructUSR_ObjCIvar(const char* name, CXString classUSR);
-extern(C) CXString clang_constructUSR_ObjCMethod(const char* name, uint isInstanceMethod, CXString classUSR);
-extern(C) CXString clang_constructUSR_ObjCProperty(const char* property, CXString classUSR);
-extern(C) CXString clang_getCursorSpelling(CXCursor );
-extern(C) CXSourceRange clang_Cursor_getSpellingNameRange(CXCursor , uint pieceIndex, uint options);
 alias CXPrintingPolicy = void*;
 enum CXPrintingPolicyProperty
 {
@@ -899,19 +707,6 @@ enum CXPrintingPolicyProperty
     _FullyQualifiedName = 0x19,
     _LastProperty = 0x19,
 }
-extern(C) uint clang_PrintingPolicy_getProperty(CXPrintingPolicy Policy, CXPrintingPolicyProperty Property);
-extern(C) void clang_PrintingPolicy_setProperty(CXPrintingPolicy Policy, CXPrintingPolicyProperty Property, uint Value);
-extern(C) CXPrintingPolicy clang_getCursorPrintingPolicy(CXCursor );
-extern(C) void clang_PrintingPolicy_dispose(CXPrintingPolicy Policy);
-extern(C) CXString clang_getCursorPrettyPrinted(CXCursor Cursor, CXPrintingPolicy Policy);
-extern(C) CXString clang_getCursorDisplayName(CXCursor );
-extern(C) CXCursor clang_getCursorReferenced(CXCursor );
-extern(C) CXCursor clang_getCursorDefinition(CXCursor );
-extern(C) uint clang_isCursorDefinition(CXCursor );
-extern(C) CXCursor clang_getCanonicalCursor(CXCursor );
-extern(C) int clang_Cursor_getObjCSelectorIndex(CXCursor );
-extern(C) int clang_Cursor_isDynamicCall(CXCursor C);
-extern(C) CXType clang_Cursor_getReceiverType(CXCursor C);
 enum CXObjCPropertyAttrKind
 {
     _noattr = 0x0,
@@ -929,9 +724,6 @@ enum CXObjCPropertyAttrKind
     _unsafe_unretained = 0x800,
     _class = 0x1000,
 }
-extern(C) uint clang_Cursor_getObjCPropertyAttributes(CXCursor C, uint reserved);
-extern(C) CXString clang_Cursor_getObjCPropertyGetterName(CXCursor C);
-extern(C) CXString clang_Cursor_getObjCPropertySetterName(CXCursor C);
 enum CXObjCDeclQualifierKind
 {
     _None = 0x0,
@@ -942,41 +734,7 @@ enum CXObjCDeclQualifierKind
     _Byref = 0x10,
     _Oneway = 0x20,
 }
-extern(C) uint clang_Cursor_getObjCDeclQualifiers(CXCursor C);
-extern(C) uint clang_Cursor_isObjCOptional(CXCursor C);
-extern(C) uint clang_Cursor_isVariadic(CXCursor C);
-extern(C) uint clang_Cursor_isExternalSymbol(CXCursor C, CXString* language, CXString* definedIn, uint* isGenerated);
-extern(C) CXSourceRange clang_Cursor_getCommentRange(CXCursor C);
-extern(C) CXString clang_Cursor_getRawCommentText(CXCursor C);
-extern(C) CXString clang_Cursor_getBriefCommentText(CXCursor C);
-extern(C) CXString clang_Cursor_getMangling(CXCursor );
-extern(C) CXStringSet* clang_Cursor_getCXXManglings(CXCursor );
-extern(C) CXStringSet* clang_Cursor_getObjCManglings(CXCursor );
 alias CXModule = void*;
-extern(C) CXModule clang_Cursor_getModule(CXCursor C);
-extern(C) CXModule clang_getModuleForFile(CXTranslationUnit , CXFile );
-extern(C) CXFile clang_Module_getASTFile(CXModule Module);
-extern(C) CXModule clang_Module_getParent(CXModule Module);
-extern(C) CXString clang_Module_getName(CXModule Module);
-extern(C) CXString clang_Module_getFullName(CXModule Module);
-extern(C) int clang_Module_isSystem(CXModule Module);
-extern(C) uint clang_Module_getNumTopLevelHeaders(CXTranslationUnit , CXModule Module);
-extern(C) CXFile clang_Module_getTopLevelHeader(CXTranslationUnit , CXModule Module, uint Index);
-extern(C) uint clang_CXXConstructor_isConvertingConstructor(CXCursor C);
-extern(C) uint clang_CXXConstructor_isCopyConstructor(CXCursor C);
-extern(C) uint clang_CXXConstructor_isDefaultConstructor(CXCursor C);
-extern(C) uint clang_CXXConstructor_isMoveConstructor(CXCursor C);
-extern(C) uint clang_CXXField_isMutable(CXCursor C);
-extern(C) uint clang_CXXMethod_isDefaulted(CXCursor C);
-extern(C) uint clang_CXXMethod_isPureVirtual(CXCursor C);
-extern(C) uint clang_CXXMethod_isStatic(CXCursor C);
-extern(C) uint clang_CXXMethod_isVirtual(CXCursor C);
-extern(C) uint clang_CXXRecord_isAbstract(CXCursor C);
-extern(C) uint clang_EnumDecl_isScoped(CXCursor C);
-extern(C) uint clang_CXXMethod_isConst(CXCursor C);
-extern(C) CXCursorKind clang_getTemplateCursorKind(CXCursor C);
-extern(C) CXCursor clang_getSpecializedCursorTemplate(CXCursor C);
-extern(C) CXSourceRange clang_getCursorReferenceNameRange(CXCursor C, uint NameFlags, uint PieceIndex);
 enum CXNameRefFlags
 {
     _WantQualifier = 0x1,
@@ -996,18 +754,6 @@ struct CXToken
     uint[4] int_data;
     void* ptr_data;
 }
-extern(C) CXToken* clang_getToken(CXTranslationUnit TU, CXSourceLocation Location);
-extern(C) CXTokenKind clang_getTokenKind(CXToken );
-extern(C) CXString clang_getTokenSpelling(CXTranslationUnit , CXToken );
-extern(C) CXSourceLocation clang_getTokenLocation(CXTranslationUnit , CXToken );
-extern(C) CXSourceRange clang_getTokenExtent(CXTranslationUnit , CXToken );
-extern(C) void clang_tokenize(CXTranslationUnit TU, CXSourceRange Range, CXToken** Tokens, uint* NumTokens);
-extern(C) void clang_annotateTokens(CXTranslationUnit TU, CXToken* Tokens, uint NumTokens, CXCursor* Cursors);
-extern(C) void clang_disposeTokens(CXTranslationUnit TU, CXToken* Tokens, uint NumTokens);
-extern(C) CXString clang_getCursorKindSpelling(CXCursorKind Kind);
-extern(C) void clang_getDefinitionSpellingAndExtent(CXCursor , const char** startBuf, const char** endBuf, uint* startLine, uint* startColumn, uint* endLine, uint* endColumn);
-extern(C) void clang_enableStackTraces();
-extern(C) void clang_executeOnThread(void* fn, void* user_data, uint stack_size);
 alias CXCompletionString = void*;
 struct CXCompletionResult
 {
@@ -1038,24 +784,11 @@ enum CXCompletionChunkKind
     _HorizontalSpace = 0x13,
     _VerticalSpace = 0x14,
 }
-extern(C) CXCompletionChunkKind clang_getCompletionChunkKind(CXCompletionString completion_string, uint chunk_number);
-extern(C) CXString clang_getCompletionChunkText(CXCompletionString completion_string, uint chunk_number);
-extern(C) CXCompletionString clang_getCompletionChunkCompletionString(CXCompletionString completion_string, uint chunk_number);
-extern(C) uint clang_getNumCompletionChunks(CXCompletionString completion_string);
-extern(C) uint clang_getCompletionPriority(CXCompletionString completion_string);
-extern(C) CXAvailabilityKind clang_getCompletionAvailability(CXCompletionString completion_string);
-extern(C) uint clang_getCompletionNumAnnotations(CXCompletionString completion_string);
-extern(C) CXString clang_getCompletionAnnotation(CXCompletionString completion_string, uint annotation_number);
-extern(C) CXString clang_getCompletionParent(CXCompletionString completion_string, CXCursorKind* kind);
-extern(C) CXString clang_getCompletionBriefComment(CXCompletionString completion_string);
-extern(C) CXCompletionString clang_getCursorCompletionString(CXCursor cursor);
 struct CXCodeCompleteResults
 {
     CXCompletionResult* Results;
     uint NumResults;
 }
-extern(C) uint clang_getCompletionNumFixIts(CXCodeCompleteResults* results, uint completion_index);
-extern(C) CXString clang_getCompletionFixIt(CXCodeCompleteResults* results, uint completion_index, uint fixit_index, CXSourceRange* replacement_range);
 enum CXCodeComplete_Flags
 {
     _IncludeMacros = 0x1,
@@ -1092,20 +825,7 @@ enum CXCompletionContext
     _IncludedFile = 0x400000,
     _Unknown = 0x7fffff,
 }
-extern(C) uint clang_defaultCodeCompleteOptions();
-extern(C) CXCodeCompleteResults* clang_codeCompleteAt(CXTranslationUnit TU, const char* complete_filename, uint complete_line, uint complete_column, CXUnsavedFile* unsaved_files, uint num_unsaved_files, uint options);
-extern(C) void clang_sortCodeCompletionResults(CXCompletionResult* Results, uint NumResults);
-extern(C) void clang_disposeCodeCompleteResults(CXCodeCompleteResults* Results);
-extern(C) uint clang_codeCompleteGetNumDiagnostics(CXCodeCompleteResults* Results);
-extern(C) CXDiagnostic clang_codeCompleteGetDiagnostic(CXCodeCompleteResults* Results, uint Index);
-extern(C) ulong clang_codeCompleteGetContexts(CXCodeCompleteResults* Results);
-extern(C) CXCursorKind clang_codeCompleteGetContainerKind(CXCodeCompleteResults* Results, uint* IsIncomplete);
-extern(C) CXString clang_codeCompleteGetContainerUSR(CXCodeCompleteResults* Results);
-extern(C) CXString clang_codeCompleteGetObjCSelector(CXCodeCompleteResults* Results);
-extern(C) CXString clang_getClangVersion();
-extern(C) void clang_toggleCrashRecovery(uint isEnabled);
 alias CXInclusionVisitor = void*;
-extern(C) void clang_getInclusions(CXTranslationUnit tu, CXInclusionVisitor visitor, CXClientData client_data);
 enum CXEvalResultKind
 {
     _Int = 0x1,
@@ -1117,21 +837,7 @@ enum CXEvalResultKind
     _UnExposed = 0x0,
 }
 alias CXEvalResult = void*;
-extern(C) CXEvalResult clang_Cursor_Evaluate(CXCursor C);
-extern(C) CXEvalResultKind clang_EvalResult_getKind(CXEvalResult E);
-extern(C) int clang_EvalResult_getAsInt(CXEvalResult E);
-extern(C) long clang_EvalResult_getAsLongLong(CXEvalResult E);
-extern(C) uint clang_EvalResult_isUnsignedInt(CXEvalResult E);
-extern(C) ulong clang_EvalResult_getAsUnsigned(CXEvalResult E);
-extern(C) double clang_EvalResult_getAsDouble(CXEvalResult E);
-extern(C) char* clang_EvalResult_getAsStr(CXEvalResult E);
-extern(C) void clang_EvalResult_dispose(CXEvalResult E);
 alias CXRemapping = void*;
-extern(C) CXRemapping clang_getRemappings(const char* path);
-extern(C) CXRemapping clang_getRemappingsFromFileList(const char** filePaths, uint numFiles);
-extern(C) uint clang_remap_getNumFiles(CXRemapping );
-extern(C) void clang_remap_getFilenames(CXRemapping , uint index, CXString* original, CXString* transformed);
-extern(C) void clang_remap_dispose(CXRemapping );
 enum CXVisitorResult
 {
     _Break = 0x0,
@@ -1148,8 +854,6 @@ enum CXResult
     _Invalid = 0x1,
     _VisitBreak = 0x2,
 }
-extern(C) CXResult clang_findReferencesInFile(CXCursor cursor, CXFile file, CXCursorAndRangeVisitor visitor);
-extern(C) CXResult clang_findIncludesInFile(CXTranslationUnit TU, CXFile file, CXCursorAndRangeVisitor visitor);
 alias CXIdxClientFile = void*;
 alias CXIdxClientEntity = void*;
 alias CXIdxClientContainer = void*;
@@ -1368,21 +1072,7 @@ struct IndexerCallbacks
     void* indexDeclaration;
     void* indexEntityReference;
 }
-extern(C) int clang_index_isEntityObjCContainerKind(CXIdxEntityKind );
-extern(C) CXIdxObjCContainerDeclInfo* clang_index_getObjCContainerDeclInfo(const CXIdxDeclInfo* );
-extern(C) CXIdxObjCInterfaceDeclInfo* clang_index_getObjCInterfaceDeclInfo(const CXIdxDeclInfo* );
-extern(C) CXIdxObjCCategoryDeclInfo* clang_index_getObjCCategoryDeclInfo(const CXIdxDeclInfo* );
-extern(C) CXIdxObjCProtocolRefListInfo* clang_index_getObjCProtocolRefListInfo(const CXIdxDeclInfo* );
-extern(C) CXIdxObjCPropertyDeclInfo* clang_index_getObjCPropertyDeclInfo(const CXIdxDeclInfo* );
-extern(C) CXIdxIBOutletCollectionAttrInfo* clang_index_getIBOutletCollectionAttrInfo(const CXIdxAttrInfo* );
-extern(C) CXIdxCXXClassDeclInfo* clang_index_getCXXClassDeclInfo(const CXIdxDeclInfo* );
-extern(C) CXIdxClientContainer clang_index_getClientContainer(const CXIdxContainerInfo* );
-extern(C) void clang_index_setClientContainer(const CXIdxContainerInfo* , CXIdxClientContainer );
-extern(C) CXIdxClientEntity clang_index_getClientEntity(const CXIdxEntityInfo* );
-extern(C) void clang_index_setClientEntity(const CXIdxEntityInfo* , CXIdxClientEntity );
 alias CXIndexAction = void*;
-extern(C) CXIndexAction clang_IndexAction_create(CXIndex CIdx);
-extern(C) void clang_IndexAction_dispose(CXIndexAction );
 enum CXIndexOptFlags
 {
     _None = 0x0,
@@ -1392,10 +1082,322 @@ enum CXIndexOptFlags
     _SuppressWarnings = 0x8,
     _SkipParsedBodiesInSession = 0x10,
 }
-extern(C) int clang_indexSourceFile(CXIndexAction , CXClientData client_data, IndexerCallbacks* index_callbacks, uint index_callbacks_size, uint index_options, const char* source_filename, const char** command_line_args, int num_command_line_args, CXUnsavedFile* unsaved_files, uint num_unsaved_files, CXTranslationUnit* out_TU, uint TU_options);
-extern(C) int clang_indexSourceFileFullArgv(CXIndexAction , CXClientData client_data, IndexerCallbacks* index_callbacks, uint index_callbacks_size, uint index_options, const char* source_filename, const char** command_line_args, int num_command_line_args, CXUnsavedFile* unsaved_files, uint num_unsaved_files, CXTranslationUnit* out_TU, uint TU_options);
-extern(C) int clang_indexTranslationUnit(CXIndexAction , CXClientData client_data, IndexerCallbacks* index_callbacks, uint index_callbacks_size, uint index_options, CXTranslationUnit );
-extern(C) void clang_indexLoc_getFileLocation(CXIdxLoc loc, CXIdxClientFile* indexFile, CXFile* file, uint* line, uint* column, uint* offset);
-extern(C) CXSourceLocation clang_indexLoc_getCXSourceLocation(CXIdxLoc loc);
 alias CXFieldVisitor = void*;
+extern(C++) {
+extern(C) CXIndex clang_createIndex(int excludeDeclarationsFromPCH, int displayDiagnostics);
+extern(C) uint clang_Cursor_isVariadic(CXCursor C);
+extern(C) uint clang_Cursor_isObjCOptional(CXCursor C);
+extern(C) uint clang_Cursor_getObjCDeclQualifiers(CXCursor C);
+extern(C) uint clang_Cursor_isExternalSymbol(CXCursor C, CXString* language, CXString* definedIn, uint* isGenerated);
+extern(C) CXString clang_Cursor_getRawCommentText(CXCursor C);
+extern(C) CXSourceRange clang_Cursor_getCommentRange(CXCursor C);
+extern(C) CXString clang_Cursor_getBriefCommentText(CXCursor C);
+extern(C) CXString clang_Cursor_getMangling(CXCursor );
+extern(C) CXString clang_Cursor_getObjCPropertySetterName(CXCursor C);
+extern(C) uint clang_Cursor_getObjCPropertyAttributes(CXCursor C, uint reserved);
+extern(C) uint clang_isCursorDefinition(CXCursor );
+extern(C) CXCursor clang_getCursorDefinition(CXCursor );
+extern(C) CXString clang_Cursor_getObjCPropertyGetterName(CXCursor C);
+extern(C) CXCursor clang_getCanonicalCursor(CXCursor );
+extern(C) int clang_Cursor_isDynamicCall(CXCursor C);
+extern(C) int clang_Cursor_getObjCSelectorIndex(CXCursor );
+extern(C) CXType clang_Cursor_getReceiverType(CXCursor C);
+extern(C) CXCursor clang_getCursorReferenced(CXCursor );
+extern(C) CXStringSet* clang_Cursor_getCXXManglings(CXCursor );
+extern(C) CXModule clang_Cursor_getModule(CXCursor C);
+extern(C) uint clang_CXXConstructor_isMoveConstructor(CXCursor C);
+extern(C) uint clang_CXXConstructor_isDefaultConstructor(CXCursor C);
+extern(C) uint clang_CXXConstructor_isCopyConstructor(CXCursor C);
+extern(C) uint clang_CXXField_isMutable(CXCursor C);
+extern(C) uint clang_CXXMethod_isPureVirtual(CXCursor C);
+extern(C) uint clang_CXXMethod_isDefaulted(CXCursor C);
+extern(C) uint clang_CXXMethod_isStatic(CXCursor C);
+extern(C) CXStringSet* clang_Cursor_getObjCManglings(CXCursor );
+extern(C) uint clang_CXXConstructor_isConvertingConstructor(CXCursor C);
+extern(C) uint clang_Module_getNumTopLevelHeaders(CXTranslationUnit , CXModule Module);
+extern(C) CXFile clang_Module_getASTFile(CXModule Module);
+extern(C) CXModule clang_getModuleForFile(CXTranslationUnit , CXFile );
+extern(C) CXFile clang_Module_getTopLevelHeader(CXTranslationUnit , CXModule Module, uint Index);
+extern(C) CXModule clang_Module_getParent(CXModule Module);
+extern(C) CXString clang_Module_getFullName(CXModule Module);
+extern(C) CXString clang_Module_getName(CXModule Module);
+extern(C) int clang_Module_isSystem(CXModule Module);
+extern(C) uint clang_CXXMethod_isVirtual(CXCursor C);
+extern(C) CXString clang_getCursorDisplayName(CXCursor );
+extern(C) void clang_PrintingPolicy_dispose(CXPrintingPolicy Policy);
+extern(C) uint clang_Cursor_isAnonymousRecordDecl(CXCursor C);
+extern(C) uint clang_Cursor_isAnonymous(CXCursor C);
+extern(C) long clang_Cursor_getOffsetOfField(CXCursor C);
+extern(C) uint clang_Cursor_isInlineNamespace(CXCursor C);
+extern(C) CXType clang_Type_getTemplateArgumentAsType(CXType T, uint i);
+extern(C) int clang_Type_getNumTemplateArguments(CXType T);
+extern(C) CXRefQualifierKind clang_Type_getCXXRefQualifier(CXType T);
+extern(C) uint clang_Cursor_isBitField(CXCursor C);
+extern(C) CXType clang_Type_getModifiedType(CXType T);
+extern(C) long clang_Type_getSizeOf(CXType T);
+extern(C) CXType clang_Type_getNamedType(CXType T);
+extern(C) long clang_getArraySize(CXType T);
+extern(C) long clang_Type_getOffsetOf(CXType T, const char* S);
+extern(C) uint clang_Type_isTransparentTagTypedef(CXType T);
+extern(C) long clang_Type_getAlignOf(CXType T);
+extern(C) CXTypeNullabilityKind clang_Type_getNullability(CXType T);
+extern(C) CXType clang_Type_getClassType(CXType T);
+extern(C) CXString clang_getCursorPrettyPrinted(CXCursor Cursor, CXPrintingPolicy Policy);
+extern(C) uint clang_isVirtualBase(CXCursor );
+extern(C) CX_StorageClass clang_Cursor_getStorageClass(CXCursor );
+extern(C) CXString clang_getCursorSpelling(CXCursor );
+extern(C) CXString clang_constructUSR_ObjCProperty(const char* property, CXString classUSR);
+extern(C) CXString clang_constructUSR_ObjCMethod(const char* name, uint isInstanceMethod, CXString classUSR);
+extern(C) CXSourceRange clang_Cursor_getSpellingNameRange(CXCursor , uint pieceIndex, uint options);
+extern(C) void clang_PrintingPolicy_setProperty(CXPrintingPolicy Policy, CXPrintingPolicyProperty Property, uint Value);
+extern(C) uint clang_PrintingPolicy_getProperty(CXPrintingPolicy Policy, CXPrintingPolicyProperty Property);
+extern(C) CXPrintingPolicy clang_getCursorPrintingPolicy(CXCursor );
+extern(C) CX_CXXAccessSpecifier clang_getCXXAccessSpecifier(CXCursor );
+extern(C) CXString clang_constructUSR_ObjCIvar(const char* name, CXString classUSR);
+extern(C) CXString clang_constructUSR_ObjCCategory(const char* class_name, const char* category_name);
+extern(C) CXCursor clang_getOverloadedDecl(CXCursor cursor, uint index);
+extern(C) uint clang_getNumOverloadedDecls(CXCursor cursor);
+extern(C) CXString clang_constructUSR_ObjCProtocol(const char* protocol_name);
+extern(C) CXType clang_getIBOutletCollectionType(CXCursor );
+extern(C) CXString clang_getCursorUSR(CXCursor );
+extern(C) uint clang_visitChildren(CXCursor parent, CXCursorVisitor visitor, CXClientData client_data);
+extern(C) CXString clang_constructUSR_ObjCClass(const char* class_name);
+extern(C) CXType clang_getArrayElementType(CXType T);
+extern(C) uint clang_CXXRecord_isAbstract(CXCursor C);
+extern(C) uint clang_CXXMethod_isConst(CXCursor C);
+extern(C) CXRemapping clang_getRemappings(const char* path);
+extern(C) void clang_EvalResult_dispose(CXEvalResult E);
+extern(C) char* clang_EvalResult_getAsStr(CXEvalResult E);
+extern(C) CXRemapping clang_getRemappingsFromFileList(const char** filePaths, uint numFiles);
+extern(C) void clang_remap_getFilenames(CXRemapping , uint index, CXString* original, CXString* transformed);
+extern(C) uint clang_remap_getNumFiles(CXRemapping );
+extern(C) void clang_remap_dispose(CXRemapping );
+extern(C) CXResult clang_findReferencesInFile(CXCursor cursor, CXFile file, CXCursorAndRangeVisitor visitor);
+extern(C) double clang_EvalResult_getAsDouble(CXEvalResult E);
+extern(C) uint clang_EvalResult_isUnsignedInt(CXEvalResult E);
+extern(C) void clang_getInclusions(CXTranslationUnit tu, CXInclusionVisitor visitor, CXClientData client_data);
+extern(C) void clang_toggleCrashRecovery(uint isEnabled);
+extern(C) ulong clang_EvalResult_getAsUnsigned(CXEvalResult E);
+extern(C) CXEvalResult clang_Cursor_Evaluate(CXCursor C);
+extern(C) int clang_EvalResult_getAsInt(CXEvalResult E);
+extern(C) CXEvalResultKind clang_EvalResult_getKind(CXEvalResult E);
+extern(C) long clang_EvalResult_getAsLongLong(CXEvalResult E);
+extern(C) CXString clang_getClangVersion();
+extern(C) CXResult clang_findIncludesInFile(CXTranslationUnit TU, CXFile file, CXCursorAndRangeVisitor visitor);
+extern(C) CXIdxObjCContainerDeclInfo* clang_index_getObjCContainerDeclInfo(const CXIdxDeclInfo* );
+extern(C) void clang_IndexAction_dispose(CXIndexAction );
+extern(C) CXIndexAction clang_IndexAction_create(CXIndex CIdx);
+extern(C) void clang_index_setClientEntity(const CXIdxEntityInfo* , CXIdxClientEntity );
+extern(C) int clang_indexSourceFile(CXIndexAction , CXClientData client_data, IndexerCallbacks* index_callbacks, uint index_callbacks_size, uint index_options, const char* source_filename, const char** command_line_args, int num_command_line_args, CXUnsavedFile* unsaved_files, uint num_unsaved_files, CXTranslationUnit* out_TU, uint TU_options);
+extern(C) int clang_indexTranslationUnit(CXIndexAction , CXClientData client_data, IndexerCallbacks* index_callbacks, uint index_callbacks_size, uint index_options, CXTranslationUnit );
+extern(C) int clang_indexSourceFileFullArgv(CXIndexAction , CXClientData client_data, IndexerCallbacks* index_callbacks, uint index_callbacks_size, uint index_options, const char* source_filename, const char** command_line_args, int num_command_line_args, CXUnsavedFile* unsaved_files, uint num_unsaved_files, CXTranslationUnit* out_TU, uint TU_options);
+extern(C) void clang_indexLoc_getFileLocation(CXIdxLoc loc, CXIdxClientFile* indexFile, CXFile* file, uint* line, uint* column, uint* offset);
+extern(C) int clang_index_isEntityObjCContainerKind(CXIdxEntityKind );
+extern(C) CXIdxClientEntity clang_index_getClientEntity(const CXIdxEntityInfo* );
+extern(C) CXIdxClientContainer clang_index_getClientContainer(const CXIdxContainerInfo* );
+extern(C) CXIdxObjCCategoryDeclInfo* clang_index_getObjCCategoryDeclInfo(const CXIdxDeclInfo* );
+extern(C) CXIdxObjCInterfaceDeclInfo* clang_index_getObjCInterfaceDeclInfo(const CXIdxDeclInfo* );
+extern(C) void clang_index_setClientContainer(const CXIdxContainerInfo* , CXIdxClientContainer );
+extern(C) CXIdxObjCProtocolRefListInfo* clang_index_getObjCProtocolRefListInfo(const CXIdxDeclInfo* );
+extern(C) CXIdxIBOutletCollectionAttrInfo* clang_index_getIBOutletCollectionAttrInfo(const CXIdxAttrInfo* );
+extern(C) CXIdxObjCPropertyDeclInfo* clang_index_getObjCPropertyDeclInfo(const CXIdxDeclInfo* );
+extern(C) CXIdxCXXClassDeclInfo* clang_index_getCXXClassDeclInfo(const CXIdxDeclInfo* );
+extern(C) uint clang_EnumDecl_isScoped(CXCursor C);
+extern(C) CXString clang_codeCompleteGetObjCSelector(CXCodeCompleteResults* Results);
+extern(C) CXCursorKind clang_codeCompleteGetContainerKind(CXCodeCompleteResults* Results, uint* IsIncomplete);
+extern(C) CXString clang_getCursorKindSpelling(CXCursorKind Kind);
+extern(C) void clang_disposeTokens(CXTranslationUnit TU, CXToken* Tokens, uint NumTokens);
+extern(C) void clang_annotateTokens(CXTranslationUnit TU, CXToken* Tokens, uint NumTokens, CXCursor* Cursors);
+extern(C) void clang_getDefinitionSpellingAndExtent(CXCursor , const char** startBuf, const char** endBuf, uint* startLine, uint* startColumn, uint* endLine, uint* endColumn);
+extern(C) void clang_executeOnThread(void* fn, void* user_data, uint stack_size);
+extern(C) void clang_enableStackTraces();
+extern(C) CXCompletionChunkKind clang_getCompletionChunkKind(CXCompletionString completion_string, uint chunk_number);
+extern(C) CXString clang_getCompletionChunkText(CXCompletionString completion_string, uint chunk_number);
+extern(C) void clang_tokenize(CXTranslationUnit TU, CXSourceRange Range, CXToken** Tokens, uint* NumTokens);
+extern(C) CXSourceLocation clang_getTokenLocation(CXTranslationUnit , CXToken );
+extern(C) CXCursor clang_getSpecializedCursorTemplate(CXCursor C);
+extern(C) CXCursorKind clang_getTemplateCursorKind(CXCursor C);
+extern(C) CXSourceRange clang_getTokenExtent(CXTranslationUnit , CXToken );
+extern(C) CXSourceRange clang_getCursorReferenceNameRange(CXCursor C, uint NameFlags, uint PieceIndex);
+extern(C) CXTokenKind clang_getTokenKind(CXToken );
+extern(C) CXToken* clang_getToken(CXTranslationUnit TU, CXSourceLocation Location);
+extern(C) CXString clang_getTokenSpelling(CXTranslationUnit , CXToken );
+extern(C) CXString clang_codeCompleteGetContainerUSR(CXCodeCompleteResults* Results);
+extern(C) CXCompletionString clang_getCompletionChunkCompletionString(CXCompletionString completion_string, uint chunk_number);
+extern(C) uint clang_getCompletionPriority(CXCompletionString completion_string);
+extern(C) void clang_sortCodeCompletionResults(CXCompletionResult* Results, uint NumResults);
+extern(C) CXCodeCompleteResults* clang_codeCompleteAt(CXTranslationUnit TU, const char* complete_filename, uint complete_line, uint complete_column, CXUnsavedFile* unsaved_files, uint num_unsaved_files, uint options);
+extern(C) uint clang_defaultCodeCompleteOptions();
+extern(C) void clang_disposeCodeCompleteResults(CXCodeCompleteResults* Results);
+extern(C) CXDiagnostic clang_codeCompleteGetDiagnostic(CXCodeCompleteResults* Results, uint Index);
+extern(C) uint clang_codeCompleteGetNumDiagnostics(CXCodeCompleteResults* Results);
+extern(C) ulong clang_codeCompleteGetContexts(CXCodeCompleteResults* Results);
+extern(C) uint clang_getNumCompletionChunks(CXCompletionString completion_string);
+extern(C) CXString clang_getCompletionFixIt(CXCodeCompleteResults* results, uint completion_index, uint fixit_index, CXSourceRange* replacement_range);
+extern(C) CXCompletionString clang_getCursorCompletionString(CXCursor cursor);
+extern(C) uint clang_getCompletionNumAnnotations(CXCompletionString completion_string);
+extern(C) CXAvailabilityKind clang_getCompletionAvailability(CXCompletionString completion_string);
+extern(C) uint clang_getCompletionNumFixIts(CXCodeCompleteResults* results, uint completion_index);
+extern(C) CXString clang_getCompletionAnnotation(CXCompletionString completion_string, uint annotation_number);
+extern(C) CXString clang_getCompletionBriefComment(CXCompletionString completion_string);
+extern(C) CXString clang_getCompletionParent(CXCompletionString completion_string, CXCursorKind* kind);
+extern(C) CXSourceLocation clang_indexLoc_getCXSourceLocation(CXIdxLoc loc);
+extern(C) long clang_getNumElements(CXType T);
+extern(C) uint clang_isPODType(CXType T);
+extern(C) uint clang_getDiagnosticNumRanges(CXDiagnostic );
+extern(C) CXString clang_getDiagnosticCategoryText(CXDiagnostic );
+extern(C) CXString clang_getDiagnosticCategoryName(uint Category);
+extern(C) CXSourceRange clang_getDiagnosticRange(CXDiagnostic Diagnostic, uint Range);
+extern(C) CXString clang_getDiagnosticFixIt(CXDiagnostic Diagnostic, uint FixIt, CXSourceRange* ReplacementRange);
+extern(C) uint clang_getDiagnosticNumFixIts(CXDiagnostic Diagnostic);
+extern(C) CXString clang_getTranslationUnitSpelling(CXTranslationUnit CTUnit);
+extern(C) CXTranslationUnit clang_createTranslationUnitFromSourceFile(CXIndex CIdx, const char* source_filename, int num_clang_command_line_args, const char** clang_command_line_args, uint num_unsaved_files, CXUnsavedFile* unsaved_files);
+extern(C) uint clang_getDiagnosticCategory(CXDiagnostic );
+extern(C) CXString clang_getDiagnosticSpelling(CXDiagnostic );
+extern(C) void clang_disposeDiagnostic(CXDiagnostic Diagnostic);
+extern(C) CXDiagnosticSet clang_getDiagnosticSetFromTU(CXTranslationUnit Unit);
+extern(C) CXString clang_getDiagnosticOption(CXDiagnostic Diag, CXString* Disable);
+extern(C) CXString clang_formatDiagnostic(CXDiagnostic Diagnostic, uint Options);
+extern(C) CXDiagnosticSeverity clang_getDiagnosticSeverity(CXDiagnostic );
+extern(C) uint clang_defaultDiagnosticDisplayOptions();
+extern(C) CXSourceLocation clang_getDiagnosticLocation(CXDiagnostic );
+extern(C) CXDiagnostic clang_getDiagnostic(CXTranslationUnit Unit, uint Index);
+extern(C) CXTranslationUnit clang_createTranslationUnit(CXIndex CIdx, const char* ast_filename);
+extern(C) uint clang_defaultEditingTranslationUnitOptions();
+extern(C) void clang_disposeCXTUResourceUsage(CXTUResourceUsage usage);
+extern(C) CXTUResourceUsage clang_getCXTUResourceUsage(CXTranslationUnit TU);
+extern(C) char* clang_getTUResourceUsageName(CXTUResourceUsageKind kind);
+extern(C) CXTargetInfo clang_getTranslationUnitTargetInfo(CXTranslationUnit CTUnit);
+extern(C) CXString clang_TargetInfo_getTriple(CXTargetInfo Info);
+extern(C) void clang_TargetInfo_dispose(CXTargetInfo Info);
+extern(C) int clang_TargetInfo_getPointerWidth(CXTargetInfo Info);
+extern(C) CXErrorCode clang_createTranslationUnit2(CXIndex CIdx, const char* ast_filename, CXTranslationUnit* out_TU);
+extern(C) int clang_reparseTranslationUnit(CXTranslationUnit TU, uint num_unsaved_files, CXUnsavedFile* unsaved_files, uint options);
+extern(C) void clang_disposeTranslationUnit(CXTranslationUnit );
+extern(C) CXErrorCode clang_parseTranslationUnit2(CXIndex CIdx, const char* source_filename, const char** command_line_args, int num_command_line_args, CXUnsavedFile* unsaved_files, uint num_unsaved_files, uint options, CXTranslationUnit* out_TU);
+extern(C) CXTranslationUnit clang_parseTranslationUnit(CXIndex CIdx, const char* source_filename, const char** command_line_args, int num_command_line_args, CXUnsavedFile* unsaved_files, uint num_unsaved_files, uint options);
+extern(C) uint clang_defaultReparseOptions(CXTranslationUnit TU);
+extern(C) CXErrorCode clang_parseTranslationUnit2FullArgv(CXIndex CIdx, const char* source_filename, const char** command_line_args, int num_command_line_args, CXUnsavedFile* unsaved_files, uint num_unsaved_files, uint options, CXTranslationUnit* out_TU);
+extern(C) int clang_saveTranslationUnit(CXTranslationUnit TU, const char* FileName, uint options);
+extern(C) uint clang_defaultSaveOptions(CXTranslationUnit TU);
+extern(C) uint clang_suspendTranslationUnit(CXTranslationUnit );
+extern(C) CXCursor clang_getNullCursor();
+extern(C) uint clang_getNumDiagnostics(CXTranslationUnit Unit);
+extern(C) void clang_disposeDiagnosticSet(CXDiagnosticSet Diags);
+extern(C) CXString clang_File_tryGetRealPathName(CXFile file);
+extern(C) int clang_File_isEqual(CXFile file1, CXFile file2);
+extern(C) char* clang_getFileContents(CXTranslationUnit tu, CXFile file, size_t* size);
+extern(C) CXSourceLocation clang_getNullLocation();
+extern(C) CXSourceLocation clang_getLocation(CXTranslationUnit tu, CXFile file, uint line, uint column);
+extern(C) uint clang_equalLocations(CXSourceLocation loc1, CXSourceLocation loc2);
+extern(C) CXSourceLocation clang_getLocationForOffset(CXTranslationUnit tu, CXFile file, uint offset);
+extern(C) int clang_Location_isInSystemHeader(CXSourceLocation location);
+extern(C) CXFile clang_getFile(CXTranslationUnit tu, const char* file_name);
+extern(C) int clang_getFileUniqueID(CXFile file, CXFileUniqueID* outID);
+extern(C) void clang_CXIndex_setGlobalOptions(CXIndex , uint options);
+extern(C) void clang_disposeIndex(CXIndex index);
+extern(C) uint clang_isFileMultipleIncludeGuarded(CXTranslationUnit tu, CXFile file);
+extern(C) uint clang_CXIndex_getGlobalOptions(CXIndex );
+extern(C) CXString clang_getFileName(CXFile SFile);
+extern(C) void clang_CXIndex_setInvocationEmissionPathOption(CXIndex , const char* Path);
+extern(C) time_t clang_getFileTime(CXFile SFile);
+extern(C) CXDiagnosticSet clang_getChildDiagnostics(CXDiagnostic D);
+extern(C) int clang_Location_isFromMainFile(CXSourceLocation location);
+extern(C) CXSourceRange clang_getRange(CXSourceLocation begin, CXSourceLocation end);
+extern(C) CXSourceRangeList* clang_getAllSkippedRanges(CXTranslationUnit tu);
+extern(C) CXSourceRangeList* clang_getSkippedRanges(CXTranslationUnit tu, CXFile file);
+extern(C) CXSourceLocation clang_getRangeEnd(CXSourceRange range);
+extern(C) void clang_disposeSourceRangeList(CXSourceRangeList* ranges);
+extern(C) CXDiagnostic clang_getDiagnosticInSet(CXDiagnosticSet Diags, uint Index);
+extern(C) uint clang_getNumDiagnosticsInSet(CXDiagnosticSet Diags);
+extern(C) CXDiagnosticSet clang_loadDiagnostics(const char* file, CXLoadDiag_Error* error, CXString* errorString);
+extern(C) CXSourceRange clang_getNullRange();
+extern(C) CXSourceLocation clang_getRangeStart(CXSourceRange range);
+extern(C) void clang_getSpellingLocation(CXSourceLocation location, CXFile* file, uint* line, uint* column, uint* offset);
+extern(C) int clang_Range_isNull(CXSourceRange range);
+extern(C) uint clang_equalRanges(CXSourceRange range1, CXSourceRange range2);
+extern(C) void clang_getFileLocation(CXSourceLocation location, CXFile* file, uint* line, uint* column, uint* offset);
+extern(C) void clang_getExpansionLocation(CXSourceLocation location, CXFile* file, uint* line, uint* column, uint* offset);
+extern(C) void clang_getInstantiationLocation(CXSourceLocation location, CXFile* file, uint* line, uint* column, uint* offset);
+extern(C) void clang_getPresumedLocation(CXSourceLocation location, CXString* filename, uint* line, uint* column);
+extern(C) CXType clang_getElementType(CXType T);
+extern(C) CXCursor clang_getTranslationUnitCursor(CXTranslationUnit );
+extern(C) int clang_Cursor_isNull(CXCursor cursor);
+extern(C) uint clang_Cursor_isMacroFunctionLike(CXCursor C);
+extern(C) uint clang_isConstQualifiedType(CXType T);
+extern(C) CXType clang_getCanonicalType(CXType T);
+extern(C) uint clang_Cursor_isMacroBuiltin(CXCursor C);
+extern(C) uint clang_isVolatileQualifiedType(CXType T);
+extern(C) uint clang_Cursor_isFunctionInlined(CXCursor C);
+extern(C) uint clang_isRestrictQualifiedType(CXType T);
+extern(C) uint clang_getAddressSpace(CXType T);
+extern(C) uint clang_equalTypes(CXType A, CXType B);
+extern(C) long clang_Cursor_getTemplateArgumentValue(CXCursor C, uint I);
+extern(C) int clang_Cursor_getNumArguments(CXCursor C);
+extern(C) int clang_getFieldDeclBitWidth(CXCursor C);
+extern(C) ulong clang_Cursor_getTemplateArgumentUnsignedValue(CXCursor C, uint I);
+extern(C) CXCursor clang_Cursor_getArgument(CXCursor C, uint i);
+extern(C) CXTemplateArgumentKind clang_Cursor_getTemplateArgumentKind(CXCursor C, uint I);
+extern(C) int clang_Cursor_getNumTemplateArguments(CXCursor C);
+extern(C) CXType clang_Cursor_getTemplateArgumentType(CXCursor C, uint I);
+extern(C) ulong clang_getEnumConstantDeclUnsignedValue(CXCursor C);
+extern(C) CXString clang_getTypedefName(CXType CT);
+extern(C) CXCursor clang_getTypeDeclaration(CXType T);
+extern(C) uint clang_Type_getNumObjCTypeArgs(CXType T);
+extern(C) CXCursor clang_Type_getObjCProtocolDecl(CXType T, uint i);
+extern(C) uint clang_Type_getNumObjCProtocolRefs(CXType T);
+extern(C) CXType clang_Type_getObjCTypeArg(CXType T, uint i);
+extern(C) CXType clang_getCursorResultType(CXCursor C);
+extern(C) uint clang_isFunctionTypeVariadic(CXType T);
+extern(C) int clang_getCursorExceptionSpecificationType(CXCursor C);
+extern(C) CXType clang_getPointeeType(CXType T);
+extern(C) CXType clang_Type_getObjCObjectBaseType(CXType T);
+extern(C) int clang_getNumArgTypes(CXType T);
+extern(C) CXString clang_Type_getObjCEncoding(CXType type);
+extern(C) CXString clang_getDeclObjCTypeEncoding(CXCursor C);
+extern(C) CXType clang_getArgType(CXType T, uint i);
+extern(C) CXString clang_getTypeKindSpelling(CXTypeKind K);
+extern(C) CXType clang_getResultType(CXType T);
+extern(C) CXCallingConv clang_getFunctionTypeCallingConv(CXType T);
+extern(C) int clang_getExceptionSpecificationType(CXType T);
+extern(C) uint clang_equalCursors(CXCursor , CXCursor );
+extern(C) long clang_getEnumConstantDeclValue(CXCursor C);
+extern(C) CXType clang_getTypedefDeclUnderlyingType(CXCursor C);
+extern(C) uint clang_isPreprocessing(CXCursorKind );
+extern(C) uint clang_isTranslationUnit(CXCursorKind );
+extern(C) uint clang_isInvalid(CXCursorKind );
+extern(C) uint clang_isUnexposed(CXCursorKind );
+extern(C) CXVisibilityKind clang_getCursorVisibility(CXCursor cursor);
+extern(C) CXLinkageKind clang_getCursorLinkage(CXCursor cursor);
+extern(C) CXAvailabilityKind clang_getCursorAvailability(CXCursor cursor);
+extern(C) int clang_getCursorPlatformAvailability(CXCursor cursor, int* always_deprecated, CXString* deprecated_message, int* always_unavailable, CXString* unavailable_message, CXPlatformAvailability* availability, int availability_size);
+extern(C) uint clang_Cursor_hasAttrs(CXCursor C);
+extern(C) uint clang_isStatement(CXCursorKind );
+extern(C) CXCursorKind clang_getCursorKind(CXCursor );
+extern(C) uint clang_hashCursor(CXCursor );
+extern(C) uint clang_isAttribute(CXCursorKind );
+extern(C) uint clang_isDeclaration(CXCursorKind );
+extern(C) uint clang_isReference(CXCursorKind );
+extern(C) uint clang_isInvalidDeclaration(CXCursor );
+extern(C) uint clang_isExpression(CXCursorKind );
+extern(C) CXType clang_getEnumDeclIntegerType(CXCursor C);
+extern(C) void clang_disposeCXPlatformAvailability(CXPlatformAvailability* availability);
+extern(C) CXTLSKind clang_getCursorTLSKind(CXCursor cursor);
+extern(C) CXCursor clang_getCursor(CXTranslationUnit , CXSourceLocation );
+extern(C) CXFile clang_getIncludedFile(CXCursor cursor);
+extern(C) void clang_disposeOverriddenCursors(CXCursor* overridden);
+extern(C) CXSourceLocation clang_getCursorLocation(CXCursor );
+extern(C) CXType clang_getCursorType(CXCursor C);
+extern(C) CXSourceRange clang_getCursorExtent(CXCursor );
+extern(C) CXString clang_getTypeSpelling(CXType CT);
+extern(C) CXLanguageKind clang_getCursorLanguage(CXCursor cursor);
+extern(C) void clang_getOverriddenCursors(CXCursor cursor, CXCursor** overridden, uint* num_overridden);
+extern(C) CXCursor clang_getCursorSemanticParent(CXCursor cursor);
+extern(C) CXCursorSet clang_createCXCursorSet();
+extern(C) CXTranslationUnit clang_Cursor_getTranslationUnit(CXCursor );
+extern(C) CXCursor clang_getCursorLexicalParent(CXCursor cursor);
+extern(C) void clang_disposeCXCursorSet(CXCursorSet cset);
+extern(C) uint clang_CXCursorSet_insert(CXCursorSet cset, CXCursor cursor);
+extern(C) uint clang_CXCursorSet_contains(CXCursorSet cset, CXCursor cursor);
 extern(C) uint clang_Type_visitFields(CXType T, CXFieldVisitor visitor, CXClientData client_data);
+} // 

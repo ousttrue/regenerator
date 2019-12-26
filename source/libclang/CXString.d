@@ -10,6 +10,8 @@ struct CXStringSet
     CXString* Strings;
     uint Count;
 }
+extern(C++) {
 extern(C) char* clang_getCString(CXString string);
 extern(C) void clang_disposeString(CXString string);
 extern(C) void clang_disposeStringSet(CXStringSet* set);
+} // 

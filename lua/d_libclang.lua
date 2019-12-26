@@ -17,11 +17,10 @@ end
 ------------------------------------------------------------------------------
 -- libclang CIndex
 ------------------------------------------------------------------------------
-local LUA_HEADERS = {"clang-c/Index.h", "clang-c/CXString.h"}
+local headers = {"clang-c/Index.h", "clang-c/CXString.h"}
 local defines = {}
-local headers = {}
-for i, f in ipairs(LUA_HEADERS) do
-    table.insert(headers, string.format("%s/%s", src, f))
+for i, f in ipairs(headers) do
+    headers[i] = string.format("%s/%s", src, f)
 end
 local includes = {src}
 local externC = false
@@ -37,17 +36,19 @@ end
 ------------------------------------------------------------------------------
 -- export to dlang
 ------------------------------------------------------------------------------
-local omitEnumPrefix = true
-local macro_map = { }
-
 local function filter(decl)
     if decl.class == "Function" then
-        -- export functions only dllExport 
+        -- export functions only dllExport
         return decl.dllExport
     else
         return true
     end
 end
+
+local option = {
+    omitEnumPrefix = true,
+    filter = filter
+}
 
 -- clear dir
 if file.exists(dir) then
@@ -66,7 +67,7 @@ for k, source in pairs(sourceMap) do
         do
             -- open
             local f = io.open(path, "w")
-            D.Source(f, packageName, source, macro_map, filter, omitEnumPrefix)
+            D.Source(f, packageName, source, option)
             io.close(f)
         end
     end
