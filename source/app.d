@@ -152,11 +152,13 @@ void push_clangdecl(lua_State* L, Decl decl)
 			(Double decl) => lua_push(L, decl), //
 			(Pointer decl) => lua_push(L,
 				decl), //
+			(Reference decl) => lua_push(L, decl), //
 			(Array decl) => lua_push(L, decl), //
-			(clangdecl.Typedef decl) => lua_push(L, decl), //
-			(Enum decl) => lua_push(L,
+			(clangdecl.Typedef decl) => lua_push(L,
 				decl), //
-			(Struct decl) => lua_push(L, decl), //
+			(Enum decl) => lua_push(L, decl), //
+			(Struct decl) => lua_push(L,
+				decl), //
 			(Function decl) => lua_push(L, decl) //
 			)(decl);
 }
@@ -283,6 +285,9 @@ int main(string[] args)
 
 	auto pt = register_type!Pointer(lua.L);
 	pt.instance.Getter("ref", (Pointer* self) => self.typeref);
+
+	auto rf = register_type!Reference(lua.L);
+	rf.instance.Getter("ref", (Reference* self) => self.typeref);
 
 	auto ar = register_type!Array(lua.L);
 	ar.instance.Getter("ref", (Array* self) => self.typeref);

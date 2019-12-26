@@ -303,7 +303,7 @@ class Parser
             return primitive;
         }
 
-        if (type.kind == CXTypeKind._Pointer || type.kind == CXTypeKind._LValueReference)
+        if (type.kind == CXTypeKind._Pointer)
         {
             // pointer
             auto pointeeType = clang_getPointeeType(type);
@@ -317,6 +317,22 @@ class Parser
             }
             // auto typeName = pointeeDecl.toString();
             return new Pointer(pointeeDecl, isConst != 0);
+        }
+
+        if (type.kind == CXTypeKind._LValueReference)
+        {
+            // reference
+            auto pointeeType = clang_getPointeeType(type);
+            auto isConst = clang_isConstQualifiedType(pointeeType);
+            auto pointeeDecl = typeToDecl(cursor, pointeeType);
+            if (!pointeeDecl)
+            {
+                auto location = getCursorLocation(cursor);
+                auto spelling = getCursorSpelling(cursor);
+                throw new Exception("no pointee");
+            }
+            // auto typeName = pointeeDecl.toString();
+            return new Reference(pointeeDecl, isConst != 0);
         }
 
         if (type.kind == CXTypeKind._IncompleteArray)

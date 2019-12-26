@@ -54,6 +54,10 @@ local function DType(t)
         else
             return string.format("%s*", DType(p.ref.type))
         end
+    elseif t.class == "Reference" then
+        -- return DPointer(t)
+        local p = t
+        return string.format("ref %s", DType(p.ref.type))
     elseif t.class == "Array" then
         -- return DArray(t)
         local a = t
@@ -149,12 +153,14 @@ local function DFunctionDecl(f, decl, indent, isMethod, option)
             f:write(", ")
         end
 
+        local dst = ""
         if param.ref.hasConstRecursive then
-            f:write("const ")
+            dst = "const "
         end
+        dst = dst .. DType(param.ref.type)
+        dst = string.gsub(dst, "const ref", "in")
 
-        local value = getValue(param, option.param_map)
-        f:write(string.format("%s %s%s", DType(param.ref.type), DEscapeName(param.name), value))
+        f:write(string.format("%s %s%s", dst, DEscapeName(param.name), getValue(param, option.param_map)))
     end
     writeln(f, ");")
 end
@@ -317,7 +323,7 @@ local function DSource(f, packageName, source, option)
     local funcs = {}
     for j, decl in ipairs(source.types) do
         if not declFilter or declFilter(decl) then
-            if decl.class =='Function' then
+            if decl.class == "Function" then
                 table.insert(funcs, decl)
             else
                 DDecl(f, decl, option)
@@ -325,23 +331,23 @@ local function DSource(f, packageName, source, option)
         end
     end
     local function pred(a, b)
-        return table.concat(a.namespace, ',') < table.concat(b.namespace, '.')
+        return table.concat(a.namespace, ",") < table.concat(b.namespace, ".")
     end
     table.sort(funcs, pred)
     local lastNS = nil
     for i, decl in ipairs(funcs) do
-        local ns = table.concat(decl.namespace, '.')
+        local ns = table.concat(decl.namespace, ".")
         if ns ~= lastNS then
             if lastNS then
-                writefln(f, '} // %s', lastNS)
+                writefln(f, "} // %s", lastNS)
             end
-            writefln(f, 'extern(C++, %s) {', ns)
+            writefln(f, "extern(C++, %s) {", ns)
             lastNS = ns
         end
         DDecl(f, decl, option)
     end
     if lastNS then
-        writefln(f, '} // %s', lastNS)
+        writefln(f, "} // %s", lastNS)
     end
 
     return hasComInterface

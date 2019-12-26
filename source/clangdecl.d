@@ -31,11 +31,30 @@ struct TypeRef
             }
         }
 
+        auto reference = cast(Reference) this.type;
+        if (reference)
+        {
+            if (reference.typeref.hasConstRecursive)
+            {
+                return true;
+            }
+        }
+
         return false;
     }
 }
 
 class Pointer : Decl
+{
+    TypeRef typeref;
+
+    this(Decl type, bool isConst = false)
+    {
+        this.typeref = TypeRef(type, isConst);
+    }
+}
+
+class Reference : Decl
 {
     TypeRef typeref;
 

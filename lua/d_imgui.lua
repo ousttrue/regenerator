@@ -51,11 +51,6 @@ immutable _ImVec4_1_1_1_1 = ImVec4(1, 1, 1, 1);
 ]]
 
 local param_map = {
-    ["=ImVec2(0,0)"] = "=&_ImVec2_0_0",
-    ["=ImVec2(1,1)"] = "=&_ImVec2_1_1",
-    ["=ImVec2(-1,0)"] = "=&_ImVec2__1_0",
-    ["=ImVec4(0,0,0,0)"] = "=&_ImVec4_0_0_0_0",
-    ["=ImVec4(1,1,1,1)"] = "=&_ImVec4_1_1_1_1"
 }
 
 local option = {

@@ -26,8 +26,8 @@
 * [x] lua interface
 * [x] `const char *` to `const char *`. not `byte *`
 * [x] c++ namespace
-* [ ] use `in` const reference param
-* [ ] use `ref` for reference
+* [x] use `in` for const reference param
+* [x] use `ref` for reference
 
 ## Usage
 
