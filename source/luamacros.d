@@ -67,7 +67,7 @@ void lua_pushglobaltable(lua_State* L)
     lua_rawgeti(L, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS);
 }
 
-char* lua_tostring(lua_State* L, int i)
+const(char)* lua_tostring(lua_State* L, int i)
 {
     return lua_tolstring(L, (i), null);
 }

@@ -35,7 +35,7 @@ local src = getLatestKits()
 ------------------------------------------------------------------------------
 -- libclang CIndex
 ------------------------------------------------------------------------------
-local LUA_HEADERS = {
+local headers = {
     "um/d3d11.h",
     "um/d3dcompiler.h",
     "um/d3d11shader.h",
@@ -43,11 +43,10 @@ local LUA_HEADERS = {
     "shared/dxgi.h"
 }
 local defines = {}
-local headers = {}
-for i, f in ipairs(LUA_HEADERS) do
+for i, f in ipairs(headers) do
     local header = string.format("%s/%s", src, f)
     print(header)
-    table.insert(headers, header)
+    headers[i] = header
 end
 local includes = {}
 local externC = false
@@ -79,50 +78,4 @@ local option = {
     }
 }
 
--- clear dir
-if file.exists(dir) then
-    printf("rmdir %s", dir)
-    file.rmdirRecurse(dir)
-end
-
-local packageName = basename(dir)
-local hasComInterface = false
-for k, source in pairs(sourceMap) do
-    -- write each source
-    if not source.empty then
-        local path = string.format("%s/%s.d", dir, source.name)
-        printf("writeTo: %s", path)
-        file.mkdirRecurse(dir)
-
-        do
-            -- open
-            local f = io.open(path, "w")
-            if D.Source(f, packageName, source, option) then
-                hasComInterface = true
-            end
-            io.close(f)
-        end
-    end
-end
-
-if hasComInterface then
-    -- write utility
-    local path = string.format("%s/guidutil.d", dir)
-    local f = io.open(path, "w")
-    D.GuidUtil(f, packageName)
-    io.close(f)
-end
-
-do
-    -- write package.d
-    local path = string.format("%s/package.d", dir)
-    printf("writeTo: %s", path)
-    file.mkdirRecurse(dir)
-
-    do
-        -- open
-        local f = io.open(path, "w")
-        D.Package(f, packageName, sourceMap)
-        io.close(f)
-    end
-end
+D.Generate(sourceMap, dir, option)

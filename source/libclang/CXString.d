@@ -2,7 +2,7 @@
 module libclang.cxstring;
 struct CXString
 {
-    const void* data;
+    const(void)* data;
     uint private_flags;
 }
 struct CXStringSet
@@ -11,7 +11,7 @@ struct CXStringSet
     uint Count;
 }
 extern(C++) {
-extern(C) char* clang_getCString(CXString string);
+extern(C) const(char)* clang_getCString(CXString string);
 extern(C) void clang_disposeString(CXString string);
 extern(C) void clang_disposeStringSet(CXStringSet* set);
 } // 

@@ -58,39 +58,4 @@ local option = {
     externC = externC,
 }
 
--- clear dir
-if file.exists(dir) then
-    printf("rmdir %s", dir)
-    file.rmdirRecurse(dir)
-end
-
-local packageName = basename(dir)
-for k, source in pairs(sourceMap) do
-    -- write each source
-    if not source.empty then
-        local path = string.format("%s/%s.d", dir, source.name)
-        printf("writeTo: %s", path)
-        file.mkdirRecurse(dir)
-
-        do
-            -- open
-            local f = io.open(path, "w")
-            D.Source(f, packageName, source, option)
-            io.close(f)
-        end
-    end
-end
-
-do
-    -- write package.d
-    local path = string.format("%s/package.d", dir)
-    printf("writeTo: %s", path)
-    file.mkdirRecurse(dir)
-
-    do
-        -- open
-        local f = io.open(path, "w")
-        D.Package(f, packageName, sourceMap)
-        io.close(f)
-    end
-end
+D.Generate(sourceMap, dir, option)

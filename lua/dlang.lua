@@ -323,7 +323,7 @@ local function DSource(f, packageName, source, option)
 
     -- const
     for j, macroDefinition in ipairs(source.macros) do
-        DConstant(f, macroDefinition, option.macro_map)
+        DConstant(f, macroDefinition, macro_map)
     end
 
     -- types

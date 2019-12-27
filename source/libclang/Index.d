@@ -14,8 +14,8 @@ alias CXTranslationUnit = CXTranslationUnitImpl*;
 alias CXClientData = void*;
 struct CXUnsavedFile
 {
-    const char* Filename;
-    const char* Contents;
+    const(char)* Filename;
+    const(char)* Contents;
     uint Length;
 }
 enum CXAvailabilityKind
@@ -58,12 +58,12 @@ struct CXFileUniqueID
 }
 struct CXSourceLocation
 {
-    void*[2] ptr_data;
+    const(void)*[2] ptr_data;
     uint int_data;
 }
 struct CXSourceRange
 {
-    void*[2] ptr_data;
+    const(void)*[2] ptr_data;
     uint begin_int_data;
     uint end_int_data;
 }
@@ -426,7 +426,7 @@ struct CXCursor
 {
     CXCursorKind kind;
     int xdata;
-    void*[3] data;
+    const(void)*[3] data;
 }
 enum CXLinkageKind
 {
@@ -866,7 +866,7 @@ struct CXIdxLoc
 struct CXIdxIncludedFileInfo
 {
     CXIdxLoc hashLoc;
-    const char* filename;
+    const(char)* filename;
     CXFile file;
     int isImport;
     int isAngled;
@@ -942,10 +942,10 @@ struct CXIdxEntityInfo
     CXIdxEntityKind kind;
     CXIdxEntityCXXTemplateKind templateKind;
     CXIdxEntityLanguage lang;
-    const char* name;
-    const char* USR;
+    const(char)* name;
+    const(char)* USR;
     CXCursor cursor;
-    const CXIdxAttrInfo** attributes;
+    const(const(CXIdxAttrInfo)*)* attributes;
     uint numAttributes;
 }
 struct CXIdxContainerInfo
@@ -954,8 +954,8 @@ struct CXIdxContainerInfo
 }
 struct CXIdxIBOutletCollectionAttrInfo
 {
-    const CXIdxAttrInfo* attrInfo;
-    const CXIdxEntityInfo* objcClass;
+    const(CXIdxAttrInfo)* attrInfo;
+    const(CXIdxEntityInfo)* objcClass;
     CXCursor classCursor;
     CXIdxLoc classLoc;
 }
@@ -965,17 +965,17 @@ enum CXIdxDeclInfoFlags
 }
 struct CXIdxDeclInfo
 {
-    const CXIdxEntityInfo* entityInfo;
+    const(CXIdxEntityInfo)* entityInfo;
     CXCursor cursor;
     CXIdxLoc loc;
-    const CXIdxContainerInfo* semanticContainer;
-    const CXIdxContainerInfo* lexicalContainer;
+    const(CXIdxContainerInfo)* semanticContainer;
+    const(CXIdxContainerInfo)* lexicalContainer;
     int isRedeclaration;
     int isDefinition;
     int isContainer;
-    const CXIdxContainerInfo* declAsContainer;
+    const(CXIdxContainerInfo)* declAsContainer;
     int isImplicit;
-    const CXIdxAttrInfo** attributes;
+    const(const(CXIdxAttrInfo)*)* attributes;
     uint numAttributes;
     uint flags;
 }
@@ -987,50 +987,50 @@ enum CXIdxObjCContainerKind
 }
 struct CXIdxObjCContainerDeclInfo
 {
-    const CXIdxDeclInfo* declInfo;
+    const(CXIdxDeclInfo)* declInfo;
     CXIdxObjCContainerKind kind;
 }
 struct CXIdxBaseClassInfo
 {
-    const CXIdxEntityInfo* base;
+    const(CXIdxEntityInfo)* base;
     CXCursor cursor;
     CXIdxLoc loc;
 }
 struct CXIdxObjCProtocolRefInfo
 {
-    const CXIdxEntityInfo* protocol;
+    const(CXIdxEntityInfo)* protocol;
     CXCursor cursor;
     CXIdxLoc loc;
 }
 struct CXIdxObjCProtocolRefListInfo
 {
-    const CXIdxObjCProtocolRefInfo** protocols;
+    const(const(CXIdxObjCProtocolRefInfo)*)* protocols;
     uint numProtocols;
 }
 struct CXIdxObjCInterfaceDeclInfo
 {
-    const CXIdxObjCContainerDeclInfo* containerInfo;
-    const CXIdxBaseClassInfo* superInfo;
-    const CXIdxObjCProtocolRefListInfo* protocols;
+    const(CXIdxObjCContainerDeclInfo)* containerInfo;
+    const(CXIdxBaseClassInfo)* superInfo;
+    const(CXIdxObjCProtocolRefListInfo)* protocols;
 }
 struct CXIdxObjCCategoryDeclInfo
 {
-    const CXIdxObjCContainerDeclInfo* containerInfo;
-    const CXIdxEntityInfo* objcClass;
+    const(CXIdxObjCContainerDeclInfo)* containerInfo;
+    const(CXIdxEntityInfo)* objcClass;
     CXCursor classCursor;
     CXIdxLoc classLoc;
-    const CXIdxObjCProtocolRefListInfo* protocols;
+    const(CXIdxObjCProtocolRefListInfo)* protocols;
 }
 struct CXIdxObjCPropertyDeclInfo
 {
-    const CXIdxDeclInfo* declInfo;
-    const CXIdxEntityInfo* getter;
-    const CXIdxEntityInfo* setter;
+    const(CXIdxDeclInfo)* declInfo;
+    const(CXIdxEntityInfo)* getter;
+    const(CXIdxEntityInfo)* setter;
 }
 struct CXIdxCXXClassDeclInfo
 {
-    const CXIdxDeclInfo* declInfo;
-    const CXIdxBaseClassInfo** bases;
+    const(CXIdxDeclInfo)* declInfo;
+    const(const(CXIdxBaseClassInfo)*)* bases;
     uint numBases;
 }
 enum CXIdxEntityRefKind
@@ -1056,9 +1056,9 @@ struct CXIdxEntityRefInfo
     CXIdxEntityRefKind kind;
     CXCursor cursor;
     CXIdxLoc loc;
-    const CXIdxEntityInfo* referencedEntity;
-    const CXIdxEntityInfo* parentEntity;
-    const CXIdxContainerInfo* container;
+    const(CXIdxEntityInfo)* referencedEntity;
+    const(CXIdxEntityInfo)* parentEntity;
+    const(CXIdxContainerInfo)* container;
     CXSymbolRole role;
 }
 struct IndexerCallbacks
@@ -1137,7 +1137,7 @@ extern(C) CXType clang_Type_getModifiedType(CXType T);
 extern(C) long clang_Type_getSizeOf(CXType T);
 extern(C) CXType clang_Type_getNamedType(CXType T);
 extern(C) long clang_getArraySize(CXType T);
-extern(C) long clang_Type_getOffsetOf(CXType T, const char* S);
+extern(C) long clang_Type_getOffsetOf(CXType T, const(char)* S);
 extern(C) uint clang_Type_isTransparentTagTypedef(CXType T);
 extern(C) long clang_Type_getAlignOf(CXType T);
 extern(C) CXTypeNullabilityKind clang_Type_getNullability(CXType T);
@@ -1146,29 +1146,29 @@ extern(C) CXString clang_getCursorPrettyPrinted(CXCursor Cursor, CXPrintingPolic
 extern(C) uint clang_isVirtualBase(CXCursor );
 extern(C) CX_StorageClass clang_Cursor_getStorageClass(CXCursor );
 extern(C) CXString clang_getCursorSpelling(CXCursor );
-extern(C) CXString clang_constructUSR_ObjCProperty(const char* property, CXString classUSR);
-extern(C) CXString clang_constructUSR_ObjCMethod(const char* name, uint isInstanceMethod, CXString classUSR);
+extern(C) CXString clang_constructUSR_ObjCProperty(const(char)* property, CXString classUSR);
+extern(C) CXString clang_constructUSR_ObjCMethod(const(char)* name, uint isInstanceMethod, CXString classUSR);
 extern(C) CXSourceRange clang_Cursor_getSpellingNameRange(CXCursor , uint pieceIndex, uint options);
 extern(C) void clang_PrintingPolicy_setProperty(CXPrintingPolicy Policy, CXPrintingPolicyProperty Property, uint Value);
 extern(C) uint clang_PrintingPolicy_getProperty(CXPrintingPolicy Policy, CXPrintingPolicyProperty Property);
 extern(C) CXPrintingPolicy clang_getCursorPrintingPolicy(CXCursor );
 extern(C) CX_CXXAccessSpecifier clang_getCXXAccessSpecifier(CXCursor );
-extern(C) CXString clang_constructUSR_ObjCIvar(const char* name, CXString classUSR);
-extern(C) CXString clang_constructUSR_ObjCCategory(const char* class_name, const char* category_name);
+extern(C) CXString clang_constructUSR_ObjCIvar(const(char)* name, CXString classUSR);
+extern(C) CXString clang_constructUSR_ObjCCategory(const(char)* class_name, const(char)* category_name);
 extern(C) CXCursor clang_getOverloadedDecl(CXCursor cursor, uint index);
 extern(C) uint clang_getNumOverloadedDecls(CXCursor cursor);
-extern(C) CXString clang_constructUSR_ObjCProtocol(const char* protocol_name);
+extern(C) CXString clang_constructUSR_ObjCProtocol(const(char)* protocol_name);
 extern(C) CXType clang_getIBOutletCollectionType(CXCursor );
 extern(C) CXString clang_getCursorUSR(CXCursor );
 extern(C) uint clang_visitChildren(CXCursor parent, CXCursorVisitor visitor, CXClientData client_data);
-extern(C) CXString clang_constructUSR_ObjCClass(const char* class_name);
+extern(C) CXString clang_constructUSR_ObjCClass(const(char)* class_name);
 extern(C) CXType clang_getArrayElementType(CXType T);
 extern(C) uint clang_CXXRecord_isAbstract(CXCursor C);
 extern(C) uint clang_CXXMethod_isConst(CXCursor C);
-extern(C) CXRemapping clang_getRemappings(const char* path);
+extern(C) CXRemapping clang_getRemappings(const(char)* path);
 extern(C) void clang_EvalResult_dispose(CXEvalResult E);
-extern(C) char* clang_EvalResult_getAsStr(CXEvalResult E);
-extern(C) CXRemapping clang_getRemappingsFromFileList(const char** filePaths, uint numFiles);
+extern(C) const(char)* clang_EvalResult_getAsStr(CXEvalResult E);
+extern(C) CXRemapping clang_getRemappingsFromFileList(const(char)** filePaths, uint numFiles);
 extern(C) void clang_remap_getFilenames(CXRemapping , uint index, CXString* original, CXString* transformed);
 extern(C) uint clang_remap_getNumFiles(CXRemapping );
 extern(C) void clang_remap_dispose(CXRemapping );
@@ -1184,31 +1184,31 @@ extern(C) CXEvalResultKind clang_EvalResult_getKind(CXEvalResult E);
 extern(C) long clang_EvalResult_getAsLongLong(CXEvalResult E);
 extern(C) CXString clang_getClangVersion();
 extern(C) CXResult clang_findIncludesInFile(CXTranslationUnit TU, CXFile file, CXCursorAndRangeVisitor visitor);
-extern(C) CXIdxObjCContainerDeclInfo* clang_index_getObjCContainerDeclInfo(const CXIdxDeclInfo* );
+extern(C) const(CXIdxObjCContainerDeclInfo)* clang_index_getObjCContainerDeclInfo(const(CXIdxDeclInfo)* );
 extern(C) void clang_IndexAction_dispose(CXIndexAction );
 extern(C) CXIndexAction clang_IndexAction_create(CXIndex CIdx);
-extern(C) void clang_index_setClientEntity(const CXIdxEntityInfo* , CXIdxClientEntity );
-extern(C) int clang_indexSourceFile(CXIndexAction , CXClientData client_data, IndexerCallbacks* index_callbacks, uint index_callbacks_size, uint index_options, const char* source_filename, const char** command_line_args, int num_command_line_args, CXUnsavedFile* unsaved_files, uint num_unsaved_files, CXTranslationUnit* out_TU, uint TU_options);
+extern(C) void clang_index_setClientEntity(const(CXIdxEntityInfo)* , CXIdxClientEntity );
+extern(C) int clang_indexSourceFile(CXIndexAction , CXClientData client_data, IndexerCallbacks* index_callbacks, uint index_callbacks_size, uint index_options, const(char)* source_filename, const(const(char)*)* command_line_args, int num_command_line_args, CXUnsavedFile* unsaved_files, uint num_unsaved_files, CXTranslationUnit* out_TU, uint TU_options);
 extern(C) int clang_indexTranslationUnit(CXIndexAction , CXClientData client_data, IndexerCallbacks* index_callbacks, uint index_callbacks_size, uint index_options, CXTranslationUnit );
-extern(C) int clang_indexSourceFileFullArgv(CXIndexAction , CXClientData client_data, IndexerCallbacks* index_callbacks, uint index_callbacks_size, uint index_options, const char* source_filename, const char** command_line_args, int num_command_line_args, CXUnsavedFile* unsaved_files, uint num_unsaved_files, CXTranslationUnit* out_TU, uint TU_options);
+extern(C) int clang_indexSourceFileFullArgv(CXIndexAction , CXClientData client_data, IndexerCallbacks* index_callbacks, uint index_callbacks_size, uint index_options, const(char)* source_filename, const(const(char)*)* command_line_args, int num_command_line_args, CXUnsavedFile* unsaved_files, uint num_unsaved_files, CXTranslationUnit* out_TU, uint TU_options);
 extern(C) void clang_indexLoc_getFileLocation(CXIdxLoc loc, CXIdxClientFile* indexFile, CXFile* file, uint* line, uint* column, uint* offset);
 extern(C) int clang_index_isEntityObjCContainerKind(CXIdxEntityKind );
-extern(C) CXIdxClientEntity clang_index_getClientEntity(const CXIdxEntityInfo* );
-extern(C) CXIdxClientContainer clang_index_getClientContainer(const CXIdxContainerInfo* );
-extern(C) CXIdxObjCCategoryDeclInfo* clang_index_getObjCCategoryDeclInfo(const CXIdxDeclInfo* );
-extern(C) CXIdxObjCInterfaceDeclInfo* clang_index_getObjCInterfaceDeclInfo(const CXIdxDeclInfo* );
-extern(C) void clang_index_setClientContainer(const CXIdxContainerInfo* , CXIdxClientContainer );
-extern(C) CXIdxObjCProtocolRefListInfo* clang_index_getObjCProtocolRefListInfo(const CXIdxDeclInfo* );
-extern(C) CXIdxIBOutletCollectionAttrInfo* clang_index_getIBOutletCollectionAttrInfo(const CXIdxAttrInfo* );
-extern(C) CXIdxObjCPropertyDeclInfo* clang_index_getObjCPropertyDeclInfo(const CXIdxDeclInfo* );
-extern(C) CXIdxCXXClassDeclInfo* clang_index_getCXXClassDeclInfo(const CXIdxDeclInfo* );
+extern(C) CXIdxClientEntity clang_index_getClientEntity(const(CXIdxEntityInfo)* );
+extern(C) CXIdxClientContainer clang_index_getClientContainer(const(CXIdxContainerInfo)* );
+extern(C) const(CXIdxObjCCategoryDeclInfo)* clang_index_getObjCCategoryDeclInfo(const(CXIdxDeclInfo)* );
+extern(C) const(CXIdxObjCInterfaceDeclInfo)* clang_index_getObjCInterfaceDeclInfo(const(CXIdxDeclInfo)* );
+extern(C) void clang_index_setClientContainer(const(CXIdxContainerInfo)* , CXIdxClientContainer );
+extern(C) const(CXIdxObjCProtocolRefListInfo)* clang_index_getObjCProtocolRefListInfo(const(CXIdxDeclInfo)* );
+extern(C) const(CXIdxIBOutletCollectionAttrInfo)* clang_index_getIBOutletCollectionAttrInfo(const(CXIdxAttrInfo)* );
+extern(C) const(CXIdxObjCPropertyDeclInfo)* clang_index_getObjCPropertyDeclInfo(const(CXIdxDeclInfo)* );
+extern(C) const(CXIdxCXXClassDeclInfo)* clang_index_getCXXClassDeclInfo(const(CXIdxDeclInfo)* );
 extern(C) uint clang_EnumDecl_isScoped(CXCursor C);
 extern(C) CXString clang_codeCompleteGetObjCSelector(CXCodeCompleteResults* Results);
 extern(C) CXCursorKind clang_codeCompleteGetContainerKind(CXCodeCompleteResults* Results, uint* IsIncomplete);
 extern(C) CXString clang_getCursorKindSpelling(CXCursorKind Kind);
 extern(C) void clang_disposeTokens(CXTranslationUnit TU, CXToken* Tokens, uint NumTokens);
 extern(C) void clang_annotateTokens(CXTranslationUnit TU, CXToken* Tokens, uint NumTokens, CXCursor* Cursors);
-extern(C) void clang_getDefinitionSpellingAndExtent(CXCursor , const char** startBuf, const char** endBuf, uint* startLine, uint* startColumn, uint* endLine, uint* endColumn);
+extern(C) void clang_getDefinitionSpellingAndExtent(CXCursor , const(char)** startBuf, const(char)** endBuf, uint* startLine, uint* startColumn, uint* endLine, uint* endColumn);
 extern(C) void clang_executeOnThread(void* fn, void* user_data, uint stack_size);
 extern(C) void clang_enableStackTraces();
 extern(C) CXCompletionChunkKind clang_getCompletionChunkKind(CXCompletionString completion_string, uint chunk_number);
@@ -1226,7 +1226,7 @@ extern(C) CXString clang_codeCompleteGetContainerUSR(CXCodeCompleteResults* Resu
 extern(C) CXCompletionString clang_getCompletionChunkCompletionString(CXCompletionString completion_string, uint chunk_number);
 extern(C) uint clang_getCompletionPriority(CXCompletionString completion_string);
 extern(C) void clang_sortCodeCompletionResults(CXCompletionResult* Results, uint NumResults);
-extern(C) CXCodeCompleteResults* clang_codeCompleteAt(CXTranslationUnit TU, const char* complete_filename, uint complete_line, uint complete_column, CXUnsavedFile* unsaved_files, uint num_unsaved_files, uint options);
+extern(C) CXCodeCompleteResults* clang_codeCompleteAt(CXTranslationUnit TU, const(char)* complete_filename, uint complete_line, uint complete_column, CXUnsavedFile* unsaved_files, uint num_unsaved_files, uint options);
 extern(C) uint clang_defaultCodeCompleteOptions();
 extern(C) void clang_disposeCodeCompleteResults(CXCodeCompleteResults* Results);
 extern(C) CXDiagnostic clang_codeCompleteGetDiagnostic(CXCodeCompleteResults* Results, uint Index);
@@ -1251,7 +1251,7 @@ extern(C) CXSourceRange clang_getDiagnosticRange(CXDiagnostic Diagnostic, uint R
 extern(C) CXString clang_getDiagnosticFixIt(CXDiagnostic Diagnostic, uint FixIt, CXSourceRange* ReplacementRange);
 extern(C) uint clang_getDiagnosticNumFixIts(CXDiagnostic Diagnostic);
 extern(C) CXString clang_getTranslationUnitSpelling(CXTranslationUnit CTUnit);
-extern(C) CXTranslationUnit clang_createTranslationUnitFromSourceFile(CXIndex CIdx, const char* source_filename, int num_clang_command_line_args, const char** clang_command_line_args, uint num_unsaved_files, CXUnsavedFile* unsaved_files);
+extern(C) CXTranslationUnit clang_createTranslationUnitFromSourceFile(CXIndex CIdx, const(char)* source_filename, int num_clang_command_line_args, const(const(char)*)* clang_command_line_args, uint num_unsaved_files, CXUnsavedFile* unsaved_files);
 extern(C) uint clang_getDiagnosticCategory(CXDiagnostic );
 extern(C) CXString clang_getDiagnosticSpelling(CXDiagnostic );
 extern(C) void clang_disposeDiagnostic(CXDiagnostic Diagnostic);
@@ -1262,23 +1262,23 @@ extern(C) CXDiagnosticSeverity clang_getDiagnosticSeverity(CXDiagnostic );
 extern(C) uint clang_defaultDiagnosticDisplayOptions();
 extern(C) CXSourceLocation clang_getDiagnosticLocation(CXDiagnostic );
 extern(C) CXDiagnostic clang_getDiagnostic(CXTranslationUnit Unit, uint Index);
-extern(C) CXTranslationUnit clang_createTranslationUnit(CXIndex CIdx, const char* ast_filename);
+extern(C) CXTranslationUnit clang_createTranslationUnit(CXIndex CIdx, const(char)* ast_filename);
 extern(C) uint clang_defaultEditingTranslationUnitOptions();
 extern(C) void clang_disposeCXTUResourceUsage(CXTUResourceUsage usage);
 extern(C) CXTUResourceUsage clang_getCXTUResourceUsage(CXTranslationUnit TU);
-extern(C) char* clang_getTUResourceUsageName(CXTUResourceUsageKind kind);
+extern(C) const(char)* clang_getTUResourceUsageName(CXTUResourceUsageKind kind);
 extern(C) CXTargetInfo clang_getTranslationUnitTargetInfo(CXTranslationUnit CTUnit);
 extern(C) CXString clang_TargetInfo_getTriple(CXTargetInfo Info);
 extern(C) void clang_TargetInfo_dispose(CXTargetInfo Info);
 extern(C) int clang_TargetInfo_getPointerWidth(CXTargetInfo Info);
-extern(C) CXErrorCode clang_createTranslationUnit2(CXIndex CIdx, const char* ast_filename, CXTranslationUnit* out_TU);
+extern(C) CXErrorCode clang_createTranslationUnit2(CXIndex CIdx, const(char)* ast_filename, CXTranslationUnit* out_TU);
 extern(C) int clang_reparseTranslationUnit(CXTranslationUnit TU, uint num_unsaved_files, CXUnsavedFile* unsaved_files, uint options);
 extern(C) void clang_disposeTranslationUnit(CXTranslationUnit );
-extern(C) CXErrorCode clang_parseTranslationUnit2(CXIndex CIdx, const char* source_filename, const char** command_line_args, int num_command_line_args, CXUnsavedFile* unsaved_files, uint num_unsaved_files, uint options, CXTranslationUnit* out_TU);
-extern(C) CXTranslationUnit clang_parseTranslationUnit(CXIndex CIdx, const char* source_filename, const char** command_line_args, int num_command_line_args, CXUnsavedFile* unsaved_files, uint num_unsaved_files, uint options);
+extern(C) CXErrorCode clang_parseTranslationUnit2(CXIndex CIdx, const(char)* source_filename, const(const(char)*)* command_line_args, int num_command_line_args, CXUnsavedFile* unsaved_files, uint num_unsaved_files, uint options, CXTranslationUnit* out_TU);
+extern(C) CXTranslationUnit clang_parseTranslationUnit(CXIndex CIdx, const(char)* source_filename, const(const(char)*)* command_line_args, int num_command_line_args, CXUnsavedFile* unsaved_files, uint num_unsaved_files, uint options);
 extern(C) uint clang_defaultReparseOptions(CXTranslationUnit TU);
-extern(C) CXErrorCode clang_parseTranslationUnit2FullArgv(CXIndex CIdx, const char* source_filename, const char** command_line_args, int num_command_line_args, CXUnsavedFile* unsaved_files, uint num_unsaved_files, uint options, CXTranslationUnit* out_TU);
-extern(C) int clang_saveTranslationUnit(CXTranslationUnit TU, const char* FileName, uint options);
+extern(C) CXErrorCode clang_parseTranslationUnit2FullArgv(CXIndex CIdx, const(char)* source_filename, const(const(char)*)* command_line_args, int num_command_line_args, CXUnsavedFile* unsaved_files, uint num_unsaved_files, uint options, CXTranslationUnit* out_TU);
+extern(C) int clang_saveTranslationUnit(CXTranslationUnit TU, const(char)* FileName, uint options);
 extern(C) uint clang_defaultSaveOptions(CXTranslationUnit TU);
 extern(C) uint clang_suspendTranslationUnit(CXTranslationUnit );
 extern(C) CXCursor clang_getNullCursor();
@@ -1286,20 +1286,20 @@ extern(C) uint clang_getNumDiagnostics(CXTranslationUnit Unit);
 extern(C) void clang_disposeDiagnosticSet(CXDiagnosticSet Diags);
 extern(C) CXString clang_File_tryGetRealPathName(CXFile file);
 extern(C) int clang_File_isEqual(CXFile file1, CXFile file2);
-extern(C) char* clang_getFileContents(CXTranslationUnit tu, CXFile file, size_t* size);
+extern(C) const(char)* clang_getFileContents(CXTranslationUnit tu, CXFile file, size_t* size);
 extern(C) CXSourceLocation clang_getNullLocation();
 extern(C) CXSourceLocation clang_getLocation(CXTranslationUnit tu, CXFile file, uint line, uint column);
 extern(C) uint clang_equalLocations(CXSourceLocation loc1, CXSourceLocation loc2);
 extern(C) CXSourceLocation clang_getLocationForOffset(CXTranslationUnit tu, CXFile file, uint offset);
 extern(C) int clang_Location_isInSystemHeader(CXSourceLocation location);
-extern(C) CXFile clang_getFile(CXTranslationUnit tu, const char* file_name);
+extern(C) CXFile clang_getFile(CXTranslationUnit tu, const(char)* file_name);
 extern(C) int clang_getFileUniqueID(CXFile file, CXFileUniqueID* outID);
 extern(C) void clang_CXIndex_setGlobalOptions(CXIndex , uint options);
 extern(C) void clang_disposeIndex(CXIndex index);
 extern(C) uint clang_isFileMultipleIncludeGuarded(CXTranslationUnit tu, CXFile file);
 extern(C) uint clang_CXIndex_getGlobalOptions(CXIndex );
 extern(C) CXString clang_getFileName(CXFile SFile);
-extern(C) void clang_CXIndex_setInvocationEmissionPathOption(CXIndex , const char* Path);
+extern(C) void clang_CXIndex_setInvocationEmissionPathOption(CXIndex , const(char)* Path);
 extern(C) time_t clang_getFileTime(CXFile SFile);
 extern(C) CXDiagnosticSet clang_getChildDiagnostics(CXDiagnostic D);
 extern(C) int clang_Location_isFromMainFile(CXSourceLocation location);
@@ -1310,7 +1310,7 @@ extern(C) CXSourceLocation clang_getRangeEnd(CXSourceRange range);
 extern(C) void clang_disposeSourceRangeList(CXSourceRangeList* ranges);
 extern(C) CXDiagnostic clang_getDiagnosticInSet(CXDiagnosticSet Diags, uint Index);
 extern(C) uint clang_getNumDiagnosticsInSet(CXDiagnosticSet Diags);
-extern(C) CXDiagnosticSet clang_loadDiagnostics(const char* file, CXLoadDiag_Error* error, CXString* errorString);
+extern(C) CXDiagnosticSet clang_loadDiagnostics(const(char)* file, CXLoadDiag_Error* error, CXString* errorString);
 extern(C) CXSourceRange clang_getNullRange();
 extern(C) CXSourceLocation clang_getRangeStart(CXSourceRange range);
 extern(C) void clang_getSpellingLocation(CXSourceLocation location, CXFile* file, uint* line, uint* column, uint* offset);
