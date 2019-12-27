@@ -101,13 +101,11 @@ local function DEnumDecl(f, decl, omitEnumPrefix)
         return
     end
 
-    writef(f, "enum %s", decl.name)
-    writeln(f)
-
     if omitEnumPrefix then
         decl.omit()
     end
 
+    writefln(f, "enum %s", decl.name)
     writeln(f, "{")
     for i, value in ipairs(decl.values) do
         writefln(f, "    %s = 0x%x,", value.name, value.value)

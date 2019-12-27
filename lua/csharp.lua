@@ -1,4 +1,41 @@
 local INT_MAX = 2147483647
+local INDENT = "       "
+
+local function CSEnumDecl(f, decl, omitEnumPrefix)
+    if not decl.name then
+        writefln(f, "// enum nameless", INDENT)
+        return
+    end
+
+    if omitEnumPrefix then
+        decl.omit()
+    end
+
+    writefln(f, "%spublic enum %s", INDENT, decl.name)
+    writefln(f, "%s{", INDENT)
+    for i, value in ipairs(decl.values) do
+        if value.value > INT_MAX then
+            writefln(f, "%s    %s = unchecked((int)0x%x),", INDENT, value.name, value.value)
+        else
+            writefln(f, "%s    %s = 0x%x,", INDENT, value.name, value.value)
+        end
+    end
+    writefln(f, "%s}", INDENT)
+end
+
+local function CSDecl(f, decl, option)
+    if decl.class == "Typedef" then
+        -- DTypedefDecl(f, decl)
+    elseif decl.class == "Enum" then
+        CSEnumDecl(f, decl, option.omitEnumPrefix)
+    elseif decl.class == "Function" then
+        -- DFunctionDecl(f, decl, "", false, option)
+    elseif decl.class == "Struct" then
+        -- DStructDecl(f, decl, option)
+    else
+        error("unknown", decl)
+    end
+end
 
 local function CSConstant(f, macroDefinition, macro_map)
     if not isFirstAlpha(macroDefinition.tokens[1]) then
@@ -55,16 +92,16 @@ local function CSSource(f, packageName, source, option)
     end
 
     -- types
-    -- local funcs = {}
-    -- for j, decl in ipairs(source.types) do
-    --     if not declFilter or declFilter(decl) then
-    --         if decl.class == "Function" then
-    --             table.insert(funcs, decl)
-    --         else
-    --             DDecl(f, decl, option)
-    --         end
-    --     end
-    -- end
+    local funcs = {}
+    for j, decl in ipairs(source.types) do
+        if not declFilter or declFilter(decl) then
+            if decl.class == "Function" then
+                table.insert(funcs, decl)
+            else
+                CSDecl(f, decl, option)
+            end
+        end
+    end
     -- local function pred(a, b)
     --     return table.concat(a.namespace, ",") < table.concat(b.namespace, ".")
     -- end
