@@ -417,11 +417,62 @@ GUID toGUID(immutable std.uuid.UUID uuid)
     )
 end
 
+function DGenerate(sourceMap, dir, option)
+    -- clear dir
+    if file.exists(dir) then
+        printf("rmdir %s", dir)
+        file.rmdirRecurse(dir)
+    end
+
+    local packageName = basename(dir)
+    local hasComInterface = false
+    for k, source in pairs(sourceMap) do
+        -- write each source
+        if not source.empty then
+            local path = string.format("%s/%s.d", dir, source.name)
+            printf("writeTo: %s", path)
+            file.mkdirRecurse(dir)
+
+            do
+                -- open
+                local f = io.open(path, "w")
+                if DSource(f, packageName, source, option) then
+                    hasComInterface = true
+                end
+                io.close(f)
+            end
+        end
+    end
+
+    if hasComInterface then
+        -- write utility
+        local path = string.format("%s/guidutil.d", dir)
+        local f = io.open(path, "w")
+        DGuidUtil(f, packageName)
+        io.close(f)
+    end
+
+    do
+        -- write package.d
+        local path = string.format("%s/package.d", dir)
+        printf("writeTo: %s", path)
+        file.mkdirRecurse(dir)
+
+        do
+            -- open
+            local f = io.open(path, "w")
+            DPackage(f, packageName, sourceMap)
+            io.close(f)
+        end
+    end
+end
+
 return {
     Decl = DDecl,
     Import = DImport,
     Const = DConstant,
     Package = DPackage,
     Source = DSource,
-    GuidUtil = DGuidUtil
+    GuidUtil = DGuidUtil,
+    Generate = DGenerate,
 }
