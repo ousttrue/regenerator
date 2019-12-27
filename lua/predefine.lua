@@ -114,5 +114,14 @@ function isFirstAlpha(src)
     return string.match(src, "^%a")
 end
 
-
-return _G
+function ClangParse(option)
+    local headers = option.headers or {}
+    local includes = option.includes or {}
+    local defines = option.defines or {}
+    local externC = option.externC or false
+    local sourceMap = parse(headers, includes, defines, externC)
+    if sourceMap.empty then
+        return nil
+    end
+    return sourceMap
+end

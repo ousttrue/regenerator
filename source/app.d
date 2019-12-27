@@ -40,7 +40,7 @@ struct Vector3
 // parse(headers, includes, defines, externC);
 extern (C) int luaFunc_parse(lua_State* L)
 {
-	log("call");
+	// log("call");
 
 	auto headers = lua_to!(string[])(L, 1);
 	auto includes = lua_to!(string[])(L, 2);
@@ -53,11 +53,11 @@ extern (C) int luaFunc_parse(lua_State* L)
 	auto parser = new Parser();
 
 	// 型情報を集める
-	log("parse...");
+	// log("parse...");
 	parser.parse(headers, includes, defines, externC);
 
 	// // 出力する情報を整理する
-	log("process...");
+	// log("process...");
 	auto sourceMap = process(parser, headers);
 
 	lua_createtable(L, 0, cast(int) sourceMap.length);
