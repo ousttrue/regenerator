@@ -19,8 +19,13 @@ local function CSConstant(f, macroDefinition, macro_map)
             end
             if valueType == "int" then
                 local num = tonumber(value)
-                if num > INT_MAX then
-                    valueType = "uint"
+                if num then
+                    if num > INT_MAX then
+                        valueType = "uint"
+                    end
+                else
+                    -- fail tonumber
+                    -- ex. "( 1 << 0 )"
                 end
             end
             writefln(f, "        public const %s %s = %s;", valueType, macroDefinition.name, value)
