@@ -67,7 +67,7 @@ local option = {
     filter = filter,
     omitEnumPrefix = true,
     macro_map = {
-        D3D_COMPILE_STANDARD_FILE_INCLUDE = "public static System.IntPtr D3D_COMPILE_STANDARD_FILE_INCLUDE = new System.IntPtr(1);",
+        D3D_COMPILE_STANDARD_FILE_INCLUDE = "public static IntPtr D3D_COMPILE_STANDARD_FILE_INCLUDE = new IntPtr(1);",
         DXGI_RESOURCE_PRIORITY_HIGH = "public const int DXGI_RESOURCE_PRIORITY_HIGH = unchecked ((int) 0xa0000000 );",
         DXGI_RESOURCE_PRIORITY_MAXIMUM = "public const int DXGI_RESOURCE_PRIORITY_MAXIMUM = unchecked ((int) 0xc8000000 );"
     }
