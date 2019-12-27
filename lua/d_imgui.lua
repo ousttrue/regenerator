@@ -19,7 +19,9 @@ end
 ------------------------------------------------------------------------------
 local defines = {"IMGUI_API=__declspec(dllexport)"}
 local headers = {
-    "imgui.h"
+    "imgui.h",
+    "examples/imgui_impl_win32.h",
+    "examples/imgui_impl_dx11.h",
 }
 for i, f in ipairs(headers) do
     local header = string.format("%s/%s", src, f)
