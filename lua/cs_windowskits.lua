@@ -44,11 +44,12 @@ for i, f in ipairs(headers) do
     print(header)
     headers[i] = header
 end
-local sourceMap = ClangParse{
-    headers = headers,
+local sourceMap =
+    ClangParse {
+    headers = headers
 }
 if not sourceMap then
-    error('no sourceMap')
+    error("no sourceMap")
 end
 
 ------------------------------------------------------------------------------
@@ -66,7 +67,7 @@ local option = {
     filter = filter,
     omitEnumPrefix = true,
     macro_map = {
-        -- D3D_COMPILE_STANDARD_FILE_INCLUDE = "enum D3D_COMPILE_STANDARD_FILE_INCLUDE = cast(void*)1;"
+        D3D_COMPILE_STANDARD_FILE_INCLUDE = "public static System.IntPtr D3D_COMPILE_STANDARD_FILE_INCLUDE = new System.IntPtr(1);"
     }
 }
 

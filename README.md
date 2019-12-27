@@ -66,9 +66,9 @@ $ regenerator.exe lua/d_d3d11.lua {d_generate_dir}
 
 ### imgui
 
+* c++ static library
 * c++ namespace
 * c++ default parameter
-* c++ static library
 * const reference to `in`
 
 ```
@@ -76,3 +76,11 @@ $ regenerator.exe lua/d_imgui.lua {d_generate_dir}
 ```
 
 [generated](https://github.com/ousttrue/dlang-d3d/tree/master/source/imgui)
+
+### d3d11(.NETStandard-2.0)
+
+* cs DllImport
+
+```
+$ regenerator.exe lua/cs_windowskits.lua {cs_generate_dir}
+```
