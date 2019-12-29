@@ -61,66 +61,72 @@ end
 local function CSType(t, isParam)
     local name = TYPE_MAP[t.class]
     if name then
-        return {name, ""}
+        return {name, {}}
     end
     if t.class == "Typedef" then
         local name = TYPE_MAP[t.name]
         if name then
-            return {name, ""}
+            return {name, {}}
         end
     end
 
     if t.class == "Pointer" then
-        -- return DPointer(t)
+        local option = {isConst = t.ref.isConst, isRef = true}
         if t.ref.type.name == "ID3DInclude" then
-            return {"IntPtr", ""}
+            return {"IntPtr", option}
         elseif t.ref.type.class == "Void" then
-            return {"IntPtr", ""}
+            return {"IntPtr", option}
         elseif isInterface(t.ref.type) then
+            option.isCom = true
             local typeName = CSType(t.ref.type, isParam)[1]
             if typeName == "ID3DBlob" then
                 typeName = "ID3D10Blob"
             end
-            return {typeName, "", "isCom"}
+            return {typeName, option}
         else
-            local typeName, attr, isCom = table.unpack(CSType(t.ref.type, isParam))
+            local typeName, refOption = table.unpack(CSType(t.ref.type, isParam))
+            for k, v in pairs(refOption) do
+                option[k] = option[k] or v
+            end
             if isParam then
-                local attr =
-                    string.format(
-                    "[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(CustomMarshaler<%s>))]",
-                    typeName
-                )
-                if isCom then
-                    return {"ref " .. typeName, attr, t.ref.isConst and "in" or "out"}
-                else
-                    return {string.format("ref %s", typeName), ""}
+                if option.isCom then
+                    option.attr =
+                        string.format(
+                        "[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(CustomMarshaler<%s>))]",
+                        typeName
+                    )
                 end
+                local inout = option.isConst and "ref" or "out"
+                return {string.format("%s %s", inout, typeName), option}
             else
-                return {"IntPtr", ""}
+                return {"IntPtr", option}
             end
         end
     elseif t.class == "Reference" then
-        -- return DPointer(t)
-        local typeName = CSType(t.ref.type, isParam)[1]
-        typeName = string.format("ref %s", typeName)
-        return {typeName, ""}
+        local option = {isConst = t.ref.isConst, isRef = true}
+        local typeName, refOption = table.unpack(CSType(t.ref.type, isParam))
+        for k, v in pairs(refOption) do
+            option[k] = option[k] or v
+        end
+        local inout = option.isConst and "ref" or "out"
+        return {string.format("%s %s", inout, typeName), option}
     elseif t.class == "Array" then
         -- return DArray(t)
         local a = t
-        local typeName = CSType(a.ref.type, isParam)[1]
+        local typeName, option = table.unpack(CSType(a.ref.type, isParam))
+        option.isConst = option.isConst or t.ref.isConst
         if isParam then
-            return {string.format("ref %s", typeName), ""}
+            option.isRef = true
+            return {string.format("ref %s", typeName), option}
         else
-            return {
-                string.format("%s[]", typeName),
-                string.format("[MarshalAs(UnmanagedType.ByValArray, SizeConst=%d)]", a.size)
-            }
+            option.attr = string.format("[MarshalAs(UnmanagedType.ByValArray, SizeConst=%d)]", a.size)
+            return {string.format("%s[]", typeName), option}
         end
     else
         if #t.name == 0 then
-            return {nil, ""}
+            return {nil, {}}
         end
-        return {t.name, ""}
+        return {t.name, {}}
     end
 end
 
@@ -177,8 +183,8 @@ local function CSGlobalFunction(f, decl, indent, option, sourceName)
     local params = decl.params
     for i, param in ipairs(params) do
         local comma = i == #params and "" or ","
-        local dst, attr = table.unpack(CSType(param.ref.type, true))
-        writefln(f, "%s    %s%s %s%s", indent, attr, dst, CSEscapeName(param.name), comma)
+        local dst, option = table.unpack(CSType(param.ref.type, true))
+        writefln(f, "%s    %s%s %s%s", indent, option.attr or "", dst, CSEscapeName(param.name), comma)
         -- TODO: dfeault value = getValue(param, option.param_map)
     end
     writefln(f, "%s);", indent)
@@ -193,19 +199,47 @@ local function CSInterfaceMethod(f, decl, indent, option, isMethod)
     local callvariables = {}
     for i, param in ipairs(params) do
         local comma = i == #params and "" or ","
-        local dst, attr, inout = table.unpack(CSType(param.ref.type, true))
+        local dst, option = table.unpack(CSType(param.ref.type, true))
         local name = CSEscapeName(param.name)
-        writefln(f, "%s    %s %s%s", indent, dst, name, comma)
-        if inout == "out" then
-            table.insert(callvariables, string.format("%s = new %s();", name, string.gsub(dst, "ref ", "")))
-            table.insert(callbackParams, string.format("ref %s.PtrForNew", name))
-            table.insert(delegateParams, string.format("ref IntPtr %s", name))
-        elseif inout == "isCom" then
-            table.insert(callbackParams, string.format("%s.Ptr", name))
-            table.insert(delegateParams, string.format("IntPtr %s", name))
+        if option.isCom then
+            if param.ref.type.class == "Pointer" and param.ref.type.ref.type.class == "Pointer" then
+                if not option.isConst then
+                    -- out interface
+                    writefln(f, "%s    %s %s%s", indent, dst, name, comma)
+                    table.insert(
+                        callvariables,
+                        string.format("%s = new %s();", name, dst:gsub("^ref ", ""):gsub("^out ", ""))
+                    )
+                    table.insert(callbackParams, string.format("out %s.PtrForNew", name))
+                    table.insert(delegateParams, string.format("out IntPtr %s", name))
+                else
+                    -- may interface array
+                    -- printf("## %s %d ##", decl.name, i)
+                    -- print_table(option)
+                    writefln(f, "%s    ref IntPtr %s%s", indent, name, comma)
+                    table.insert(callbackParams, string.format("ref %s", name))
+                    table.insert(delegateParams, string.format("ref IntPtr %s", name))
+                end
+            else
+                -- in interface
+                writefln(f, "%s    %s %s%s", indent, dst, name, comma)
+                table.insert(callbackParams, string.format("%s.Ptr", name))
+                table.insert(delegateParams, string.format("IntPtr %s", name))
+            end
+        elseif option.isRef then
+            writefln(f, "%s    %s %s%s", indent, dst, name, comma)
+            local isRef = string.sub(dst, 1, 4)
+            if isRef == "ref " then
+                table.insert(callbackParams, string.format("ref %s", name))
+            elseif isRef == "out " then
+                table.insert(callbackParams, string.format("out %s", name))
+            else
+                table.insert(callbackParams, string.format("%s", name))
+            end
+            table.insert(delegateParams, string.format("%s %s", dst, name))
         else
-            local isRef = string.sub(dst, 1, 4) == "ref " and "ref " or ""
-            table.insert(callbackParams, string.format("%s%s", isRef, name))
+            writefln(f, "%s    %s %s%s", indent, dst, name, comma)
+            table.insert(callbackParams, string.format("%s", name))
             table.insert(delegateParams, string.format("%s %s", dst, name))
         end
         -- TODO: default value = getValue(param, option.param_map)
@@ -345,7 +379,7 @@ local function CSStructDecl(f, decl, option, i)
             writefln(f, "    public struct %s", name)
             writeln(f, "    {")
             for i, field in ipairs(decl.fields) do
-                local typeName, attr = table.unpack(CSType(field.ref.type, false))
+                local typeName, option = table.unpack(CSType(field.ref.type, false))
                 if not typeName then
                     typeName = anonymousMap[field.ref.type.hash]
                 -- print(field.ref.type.class, typeName, table.concat(field.ref.type.namespace, "_"))
@@ -374,7 +408,7 @@ local function CSStructDecl(f, decl, option, i)
                     if #name == 0 then
                         name = string.format("__anonymous__%d", i)
                     end
-                    writefln(f, "        %spublic %s %s;", attr, typeName, name)
+                    writefln(f, "        %spublic %s %s;", option.attr or "", typeName, name)
                 end
             end
 
