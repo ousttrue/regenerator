@@ -43,6 +43,12 @@ int lua_push(T : string)(lua_State* L, T value)
     return 1;
 }
 
+int lua_push(T : long)(lua_State* L, T value)
+{
+    lua_pushinteger(L, value);
+    return 1;
+}
+
 int lua_push(T : float)(lua_State* L, T value)
 {
     lua_pushnumber(L, value);

@@ -309,6 +309,7 @@ int main(string[] args)
 	enumType.instance.Method("omit", (Enum* self) => omit(*self));
 
 	auto field = new UserType!Field;
+	field.instance.Getter("offset", (Field* self) => self.offset);
 	field.instance.Getter("name", (Field* self) => self.name);
 	field.instance.Getter("ref", (lua_State* L) {
 		auto self = lua_to!(Field*)(L, 1);

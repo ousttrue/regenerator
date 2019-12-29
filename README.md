@@ -13,7 +13,7 @@
 
 * [ ] function pointer type
 * [x] multi source entry point
-* [ ] union
+* [x] union
 * [x] anonymous union
 * [x] D3D11CreateDevice
 * [x] interface method

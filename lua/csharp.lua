@@ -288,7 +288,7 @@ local function CSStructDecl(f, decl, option, i)
         -- writeln(f, "    // struct nameless")
         -- return
         name = string.format("%s_anonymous_%d", table.concat(decl.namespace, "_"), i)
-        print(name)
+        -- print(name)
         anonymousMap[decl.hash] = name
     end
 
@@ -337,14 +337,18 @@ local function CSStructDecl(f, decl, option, i)
             end
             writefln(f, "    public struct %s;", name)
         else
-            writeln(f, "    [StructLayout(LayoutKind.Sequential)]")
+            if decl.isUnion then
+                writeln(f, "    [StructLayout(LayoutKind.Explicit)]")
+            else
+                writeln(f, "    [StructLayout(LayoutKind.Sequential)]")
+            end
             writefln(f, "    public struct %s", name)
             writeln(f, "    {")
             for i, field in ipairs(decl.fields) do
                 local typeName, attr = table.unpack(CSType(field.ref.type, false))
                 if not typeName then
                     typeName = anonymousMap[field.ref.type.hash]
-                    -- print(field.ref.type.class, typeName, table.concat(field.ref.type.namespace, "_"))
+                -- print(field.ref.type.class, typeName, table.concat(field.ref.type.namespace, "_"))
                 end
                 if not typeName then
                     local fieldType = field.ref.type
@@ -363,6 +367,9 @@ local function CSStructDecl(f, decl, option, i)
                         error("unknown")
                     end
                 else
+                    if decl.isUnion then
+                        writefln(f, "        [FieldOffset(0)]", field.offset)
+                    end
                     local name = CSEscapeName(field.name)
                     if #name == 0 then
                         name = string.format("__anonymous__%d", i)

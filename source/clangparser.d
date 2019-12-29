@@ -566,9 +566,10 @@ class Parser
             {
             case CXCursorKind._FieldDecl:
                 {
+                    auto fieldOffset = clang_Cursor_getOffsetOfField(child);
                     auto fieldDecl = typeToDecl(child, fieldType);
                     auto fieldConst = clang_isConstQualifiedType(fieldType);
-                    decl.fields ~= Field(fieldName, TypeRef(fieldDecl, fieldConst != 0));
+                    decl.fields ~= Field(fieldOffset, fieldName, TypeRef(fieldDecl, fieldConst != 0));
                     break;
                 }
 
@@ -626,9 +627,10 @@ class Parser
                     if (fieldName == "")
                     {
                         // anonymous
+                        auto fieldOffset = clang_Cursor_getOffsetOfField(child);
                         auto fieldDecl = getDeclFromCursor(child);
                         auto fieldConst = clang_isConstQualifiedType(fieldType);
-                        decl.fields ~= Field(fieldName, TypeRef(fieldDecl, fieldConst != 0));
+                        decl.fields ~= Field(fieldOffset, fieldName, TypeRef(fieldDecl, fieldConst != 0));
                     }
                 }
                 break;

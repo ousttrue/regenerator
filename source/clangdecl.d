@@ -150,6 +150,7 @@ class UserDecl : Decl
 
 struct Field
 {
+    long offset;
     string name;
     TypeRef typeref;
 }
