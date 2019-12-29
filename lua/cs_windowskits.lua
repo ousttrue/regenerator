@@ -55,7 +55,16 @@ end
 ------------------------------------------------------------------------------
 -- export to dlang
 ------------------------------------------------------------------------------
+local ignoreTypes = {
+ID3D10Include = true,
+ID3DInclude = true,
+ID3DBlob = true,
+}
 local function filter(decl)
+    if ignoreTypes[decl.name] then
+        return false
+    end
+
     if decl.class == "Function" then
         return decl.isExternC
     else

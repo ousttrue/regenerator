@@ -77,12 +77,11 @@ local function CSType(t, isParam)
         elseif t.ref.type.class == "Void" then
             return {"IntPtr", ""}
         elseif isInterface(t.ref.type) then
-            if t.ref.type.name == "IUnknown" then
-                return {"IntPtr", ""}
-            else
-                local typeName = CSType(t.ref.type, isParam)[1]
-                return {typeName, "", t.ref.isConst and "" or true}
+            local typeName = CSType(t.ref.type, isParam)[1]
+            if typeName == "ID3DBlob" then
+                typeName = "ID3D10Blob"
             end
+            return {typeName, "", t.ref.isConst and "" or true}
         else
             local typeName, attr, isCom = table.unpack(CSType(t.ref.type, isParam))
             if isParam then
@@ -92,7 +91,7 @@ local function CSType(t, isParam)
                         "[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(CustomMarshaler<%s>))]",
                         typeName
                     )
-                    return {string.format("out %s", typeName), attr}
+                    return {string.format("ref %s", typeName), attr}
                 else
                     return {string.format("ref %s", typeName), ""}
                 end
@@ -174,24 +173,55 @@ local function CSGlobalFunction(f, decl, indent, option, sourceName)
     else
         writefln(f, '%s[DllImport("%s.dll", EntryPoint="mangle")]', indent)
     end
-    writef(f, "%spublic static extern %s %s(", indent, CSType(decl.ret)[1], decl.name)
+    writefln(f, "%spublic static extern %s %s(", indent, CSType(decl.ret)[1], decl.name)
     local params = decl.params
     for i, param in ipairs(params) do
         local comma = i == #params and "" or ","
         local dst, attr = table.unpack(CSType(param.ref.type, true))
-        writefln(f, "%s%s %s%s", attr, dst, CSEscapeName(param.name), comma)
+        writefln(f, "%s    %s%s %s%s", indent, attr, dst, CSEscapeName(param.name), comma)
         -- TODO: dfeault value = getValue(param, option.param_map)
     end
-    writeln(f, ");")
+    writefln(f, "%s);", indent)
 end
 
-local function CSInterfaceMethod(f, decl, indent, option)
-    writef(f, "%s%s %s(", indent, CSType(decl.ret)[1], decl.name)
+local function CSInterfaceMethod(f, decl, indent, option, isMethod)
+    local ret = CSType(decl.ret)[1]
+    writefln(f, "%spublic %s %s(", indent, ret, decl.name)
     local params = decl.params
+    local callbackParams = {'Self'}
     for i, param in ipairs(params) do
         local comma = i == #params and "" or ","
         local dst, attr = table.unpack(CSType(param.ref.type, true))
-        writefln(f, "%s%s %s%s", attr, dst, CSEscapeName(param.name), comma)
+        local name = CSEscapeName(param.name)
+        writefln(f, "%s    %s %s%s", indent, dst, name, comma)
+        if string.sub(dst, 1, 4) == "ref " then
+            name = "ref " .. name
+        end
+        table.insert(callbackParams, name)
+        -- TODO: default value = getValue(param, option.param_map)
+    end
+    local delegateName = decl.name .. "Func"
+    writefln(
+        f,
+        [[
+        ){
+            var fp = GetFunctionPointer(%s);
+            var callback = (%s)Marshal.GetDelegateForFunctionPointer(fp, typeof(%s));
+            %s callback(%s);
+        }
+        ]],
+        isMethod - 1,
+        delegateName,
+        delegateName,
+        ret == "void" and "" or "return ",
+        table.concat(callbackParams, ", ")
+    )
+
+    -- delegate
+    writef(f, "%sdelegate %s %s(IntPtr self", indent, ret, delegateName)
+    for i, param in ipairs(params) do
+        local dst, attr = table.unpack(CSType(param.ref.type, true))
+        writef(f, ", %s %s", dst, CSEscapeName(param.name))
         -- TODO: default value = getValue(param, option.param_map)
     end
     writeln(f, ");")
@@ -200,13 +230,43 @@ end
 local function CSFunctionDecl(f, decl, indent, isMethod, option, sourceName)
     indent = indent or ""
     if isMethod then
-        CSInterfaceMethod(f, decl, indent, option)
+        CSInterfaceMethod(f, decl, indent, option, isMethod)
     else
         CSGlobalFunction(f, decl, indent, option, sourceName)
     end
 end
 
--- local SKIP_METHODS = {QueryInterface = true, AddRef = true, Release = true}
+local function getStruct(decl)
+    if not decl then
+        return nil
+    end
+    if decl.class == "Struct" then
+        if decl.isForwardDecl then
+            decl = decl.definition
+        end
+        return decl
+    elseif decl.class == "Typedef" then
+        return getStruct(decl.ref.type)
+    else
+        error("XXXXX")
+    end
+end
+
+local function getIndexBase(decl)
+    local indexBase = 0
+    local current = decl
+    local i = 0
+    while true do
+        i = i + 1
+        current = getStruct(current.base)
+        if not current then
+            break
+        end
+        print(i, decl.name, current.name, #current.methods)
+        indexBase = indexBase + #current.methods
+    end
+    return indexBase
+end
 
 local function CSStructDecl(f, decl, option)
     -- assert(!decl.m_forwardDecl);
@@ -225,24 +285,32 @@ local function CSStructDecl(f, decl, option)
         end
 
         -- interface
-        if decl.iid then
-            writefln(f, '    [Guid("%s"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]', decl.iid)
-        end
         writef(f, "    public class %s", name)
-        if decl.base then
+        if not decl.base then
+            writef(f, ": ComPtr")
+        else
             writef(f, ": %s", decl.base.name)
         end
 
         writeln(f)
         writeln(f, "    {")
+        if decl.iid then
+            -- writefln(f, '    [Guid("%s"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]', decl.iid)
+            writefln(
+                f,
+                [[
+        static /*readonly*/ Guid s_uuid = new Guid("%s");
+        public override ref /*readonly*/ Guid IID => ref s_uuid;
+                    ]],
+                decl.iid
+            )
+        end
 
         -- methods
+        local indexBase = getIndexBase(decl)
+        print(decl.name, indexBase)
         for i, method in ipairs(decl.methods) do
-            -- if SKIP_METHODS[method.name] then
-            --     -- writefln(f, "        // skip %s", method.name)
-            -- else
-            CSFunctionDecl(f, method, "        ", true, option)
-            -- end
+            CSFunctionDecl(f, method, "        ", indexBase + i, option)
         end
         writeln(f, "    }")
     else
@@ -396,59 +464,6 @@ using System.Runtime.InteropServices;
 
 namespace ShrimpDX
 {
-    class CustomMarshaler<T> : ICustomMarshaler
-    {
-        public void CleanUpManagedData(object ManagedObj)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void CleanUpNativeData(IntPtr pNativeData)
-        {
-            throw new NotImplementedException();
-        }
-
-        public int GetNativeDataSize()
-        {
-            throw new NotImplementedException();
-        }
-
-        public IntPtr MarshalManagedToNative(object ManagedObj)
-        {
-            throw new NotImplementedException();
-        }
-
-        public object MarshalNativeToManaged(IntPtr pNativeData)
-        {
-            var count = Marshal.AddRef(pNativeData);
-            Marshal.Release(pNativeData);
-
-            // var deref = Marshal.ReadIntPtr(pNativeData);
-            // return Marshal.GetUniqueObjectForIUnknown(pNativeData);
-            var rcw = Marshal.GetObjectForIUnknown(pNativeData);
-            // var obj = Marshal.GetTypedObjectForIUnknown(pNativeData, typeof(T));
-            // var d = rcw as ID3D11Device;
-            // if (d != null)
-            if (rcw is ID3D11Device d)
-            {
-                var s = Marshal.GetStartComSlot(typeof(T));
-                var flags = d.GetCreationFlags();
-                D3D_FEATURE_LEVEL l = d.GetFeatureLevel();
-                var a = 0;
-            }
-            if (rcw is IDXGISwapChain sc)
-            {
-            }
-
-            return rcw;
-         }
-
-        public static ICustomMarshaler GetInstance(string src)
-        {
-            return new CustomMarshaler<T>();
-        }
-    }
-
     /// <summary>
     /// COMの virtual function table を自前で呼び出すヘルパークラス。
     /// </summary>
@@ -461,21 +476,6 @@ namespace ShrimpDX
         IntPtr m_ptr;
 
         protected IntPtr Self => m_ptr;
-
-        public virtual int MethodCount => 3;
-
-        public int RefCount
-        {
-            get
-            {
-                if (m_ptr == IntPtr.Zero)
-                {
-                    throw new InvalidOperationException();
-                }
-                Marshal.AddRef(m_ptr);
-                return Marshal.Release(m_ptr);
-            }
-        }
 
         public ref IntPtr PtrForNew
         {
@@ -507,52 +507,6 @@ namespace ShrimpDX
 
         abstract public ref /*readonly*/ Guid IID { get; }
 
-        public HRESULT QueryInterface(
-        ref Guid iid
-        , ref IntPtr ppvObject
-        )
-        {
-            var fp = GetFunctionPointer(0);
-            var callback = (QueryInterfaceFunc)Marshal.GetDelegateForFunctionPointer(fp, typeof(QueryInterfaceFunc));
-            return callback(Self, ref iid, ref ppvObject);
-        }
-        delegate HRESULT QueryInterfaceFunc(IntPtr self, ref Guid iid, ref IntPtr ppvObject);
-
-        public HRESULT QueryInterface<T>(T t) where T : ComPtr
-        {
-            return QueryInterface(ref t.IID, ref t.PtrForNew);
-        }
-
-        // uint AddRef()
-        // {
-        //     var fp = GetFunctionPointer(1);
-        //     var callback = (AddReleaseFunc)Marshal.GetDelegateForFunctionPointer(fp, typeof(AddReleaseFunc));
-        //     return callback(Self);
-        // }
-
-        uint Release()
-        {
-            var fp = GetFunctionPointer(2);
-            var callback = (AddReleaseFunc)Marshal.GetDelegateForFunctionPointer(fp, typeof(AddReleaseFunc));
-            return callback(Self);
-        }
-
-        // 没。GCが増える
-        // public static T CopyAddRef<T>(T self) where T : ComPtr
-        // {
-        //     if (!self)
-        //     {
-        //         throw new ArgumentNullException();
-        //     }
-
-        //     var p = Activator.CreateInstance<T>();
-        //     p.m_ptr = self.m_ptr;
-        //     p.AddRef();
-        //     return p;
-        // }
-
-        delegate uint AddReleaseFunc(IntPtr self);
-
         #region IDisposable Support
         private bool disposedValue = false; // 重複する呼び出しを検出するには
 
@@ -569,7 +523,7 @@ namespace ShrimpDX
                 // TODO: 大きなフィールドを null に設定します。
                 if (m_ptr != IntPtr.Zero)
                 {
-                    Release();
+                    Marshal.Release(m_ptr);
                     m_ptr = IntPtr.Zero;
                 }
 
@@ -592,6 +546,57 @@ namespace ShrimpDX
             // GC.SuppressFinalize(this);
         }
         #endregion
+    }
+
+    class CustomMarshaler<T> : ICustomMarshaler
+    where T : ComPtr, new()
+    {
+        public void CleanUpManagedData(object ManagedObj)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void CleanUpNativeData(IntPtr pNativeData)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int GetNativeDataSize()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IntPtr MarshalManagedToNative(object ManagedObj)
+        {
+            throw new NotImplementedException();
+        }
+
+        public object MarshalNativeToManaged(IntPtr pNativeData)
+        {
+            // var count = Marshal.AddRef(pNativeData);
+            // Marshal.Release(pNativeData);
+
+            var t = new T();
+            t.PtrForNew = pNativeData;
+
+            if (t is ID3D11Device d)
+            {
+                var s = Marshal.GetStartComSlot(typeof(T));
+                var flags = d.GetCreationFlags();
+                D3D_FEATURE_LEVEL l = d.GetFeatureLevel();
+                var a = 0;
+            }
+            if (t is IDXGISwapChain sc)
+            {
+            }
+
+            return t;
+        }
+
+        public static ICustomMarshaler GetInstance(string src)
+        {
+            return new CustomMarshaler<T>();
+        }
     }
 }
 ]]
