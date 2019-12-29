@@ -87,8 +87,12 @@ $ regenerator.exe lua/d_imgui.lua {d_generate_dir}
 
 ### d3d11(.NETStandard-2.0)
 
-* cs DllImport
+* com interface
+* DllImport(D3D11CreateDevice... etc)
+* directly call virtual method table of com IntPtr (ID3D11Device... etc)
 
 ```
 $ regenerator.exe lua/cs_windowskits.lua {cs_generate_dir}
 ```
+
+[generated](https://github.com/ousttrue/ShrimpDX/tree/master/ShrimpDX)
