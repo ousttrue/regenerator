@@ -81,17 +81,17 @@ local function CSType(t, isParam)
             if typeName == "ID3DBlob" then
                 typeName = "ID3D10Blob"
             end
-            return {typeName, "", t.ref.isConst and "" or true}
+            return {typeName, "", 'isCom'}
         else
             local typeName, attr, isCom = table.unpack(CSType(t.ref.type, isParam))
             if isParam then
+                local attr =
+                    string.format(
+                    "[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(CustomMarshaler<%s>))]",
+                    typeName
+                )
                 if isCom then
-                    local attr =
-                        string.format(
-                        "[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(CustomMarshaler<%s>))]",
-                        typeName
-                    )
-                    return {string.format("ref %s", typeName), attr}
+                    return {"ref " .. typeName, attr, t.ref.isConst and "in" or "out"}
                 else
                     return {string.format("ref %s", typeName), ""}
                 end
@@ -193,15 +193,18 @@ local function CSInterfaceMethod(f, decl, indent, option, isMethod)
     local callvariables = {}
     for i, param in ipairs(params) do
         local comma = i == #params and "" or ","
-        local dst, attr = table.unpack(CSType(param.ref.type, true))
+        local dst, attr, inout = table.unpack(CSType(param.ref.type, true))
         local name = CSEscapeName(param.name)
         writefln(f, "%s    %s %s%s", indent, dst, name, comma)
-        local isRef = string.sub(dst, 1, 4) == "ref " and "ref " or ""
-        if string.match(attr, "%[MarshalAs%(UnmanagedType%.CustomMarshaler") then
+        if inout == "out" then
             table.insert(callvariables, string.format("%s = new %s();", name, string.gsub(dst, "ref ", "")))
-            table.insert(callbackParams, string.format("%s%s.PtrForNew", isRef, name))
+            table.insert(callbackParams, string.format("ref %s.PtrForNew", name))
             table.insert(delegateParams, string.format("ref IntPtr %s", name))
+        elseif inout == "isCom" then
+            table.insert(callbackParams, string.format("%s.Ptr", name))
+            table.insert(delegateParams, string.format("IntPtr %s", name))
         else
+            local isRef = string.sub(dst, 1, 4) == "ref " and "ref " or ""
             table.insert(callbackParams, string.format("%s%s", isRef, name))
             table.insert(delegateParams, string.format("%s %s", dst, name))
         end
@@ -215,9 +218,8 @@ local function CSInterfaceMethod(f, decl, indent, option, isMethod)
             var fp = GetFunctionPointer(%s);
             var callback = (%s)Marshal.GetDelegateForFunctionPointer(fp, typeof(%s));
             %s
-            %s callback(%s);
-        }
-        ]],
+            %scallback(%s);
+        }]],
         isMethod - 1,
         delegateName,
         delegateName,
@@ -233,6 +235,7 @@ local function CSInterfaceMethod(f, decl, indent, option, isMethod)
         -- TODO: default value = getValue(param, option.param_map)
     end
     writeln(f, ");")
+    writeln(f)
 end
 
 local function CSFunctionDecl(f, decl, indent, isMethod, option, sourceName)
@@ -270,7 +273,7 @@ local function getIndexBase(decl)
         if not current then
             break
         end
-        print(i, decl.name, current.name, #current.methods)
+        -- print(i, decl.name, current.name, #current.methods)
         indexBase = indexBase + #current.methods
     end
     return indexBase
@@ -316,7 +319,7 @@ local function CSStructDecl(f, decl, option)
 
         -- methods
         local indexBase = getIndexBase(decl)
-        print(decl.name, indexBase)
+        -- print(decl.name, indexBase)
         for i, method in ipairs(decl.methods) do
             CSFunctionDecl(f, method, "        ", indexBase + i, option)
         end
@@ -333,7 +336,7 @@ local function CSStructDecl(f, decl, option)
             writefln(f, "    public struct %s", name)
             writeln(f, "    {")
             for i, field in ipairs(decl.fields) do
-                local typeName, attr = table.unpack(CSType(field.ref.type))
+                local typeName, attr = table.unpack(CSType(field.ref.type, false))
                 if not typeName then
                     local fieldType = field.ref.type
                     if fieldType.class == "Struct" then
