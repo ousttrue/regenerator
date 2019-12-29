@@ -15,20 +15,28 @@
 * [x] multi source entry point
 * [ ] union
 * [x] anonymous union
-* [ ] anonymous struct
 * [x] D3D11CreateDevice
 * [x] interface method
+* [x] macro definition value
+* [x] lua interface
+
+### D
+
 * [x] interface reduce asterisk
 * [x] use `core.sys.windows.windows` 
 * [x] com interface uuid
 * [x] com interface inheritance
-* [x] macro definition value
 * [x] function default parameter
-* [x] lua interface
 * [x] `const char *` to `const char *`. not `byte *`
 * [x] c++ namespace
 * [x] use `in` for const reference param
 * [x] use `ref` for reference
+
+### CS
+
+* [ ] naming anonymous struct/union
+* [x] marshal out com interface variable
+* [ ] marshal in com interface variable
 
 ## Usage
 
