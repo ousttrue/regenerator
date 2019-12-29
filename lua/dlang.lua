@@ -49,7 +49,11 @@ local function DType(t, isParam)
         if t.ref.type.name == "ID3DInclude" then
             return "void*   "
         elseif isInterface(t.ref.type) then
-            return string.format("%s", DType(t.ref.type, isParam))
+            local typeName = DType(t.ref.type, isParam)
+            if t.ref.isConst then
+                typeName = string.format("const(%s)", typeName)
+            end
+            return string.format("%s", typeName)
         else
             local typeName = DType(t.ref.type, isParam)
             if t.ref.isConst then
@@ -472,5 +476,5 @@ return {
     Package = DPackage,
     Source = DSource,
     GuidUtil = DGuidUtil,
-    Generate = DGenerate,
+    Generate = DGenerate
 }
