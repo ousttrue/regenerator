@@ -10,7 +10,7 @@
                 "${workspaceFolder}/lua/d_liblua.lua",
                 "${workspaceFolder}/submodules/lua",
                 "${workspaceFolder}/source/liblua",
-            ],
+    ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [
@@ -51,6 +51,26 @@
             "args": [
                 "${workspaceFolder}/lua/d_d3d11.lua",
                 "${workspaceFolder}/source/d3d11",
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [
+                {
+                    "name": "PATH",
+                    "value": "C:/Program Files/LLVM/bin"
+                }
+            ],
+            "externalConsole": false,
+            "visualizerFile": "${workspaceFolder}/.vscode/d.natvis"
+        },
+        {
+            "name": "cs d3d11",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/regenerator.exe",
+            "args": [
+                "${workspaceFolder}/lua/cs_windowskits.lua",
+                "${workspaceFolder}/cs/d3d11",
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

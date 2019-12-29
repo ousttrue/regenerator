@@ -61,59 +61,73 @@ end
 local function CSType(t, isParam)
     local name = TYPE_MAP[t.class]
     if name then
-        return name
+        return {name, ""}
     end
     if t.class == "Typedef" then
         local name = TYPE_MAP[t.name]
         if name then
-            return name
+            return {name, ""}
         end
     end
 
     if t.class == "Pointer" then
         -- return DPointer(t)
         if t.ref.type.name == "ID3DInclude" then
-            return "IntPtr"
+            return {"IntPtr", ""}
         elseif t.ref.type.class == "Void" then
-            return "IntPtr"
+            return {"IntPtr", ""}
         elseif isInterface(t.ref.type) then
             if t.ref.type.name == "IUnknown" then
-                return "IntPtr"
+                return {"IntPtr", ""}
             else
-                return string.format("%s", CSType(t.ref.type, isParam))
+                local typeName = CSType(t.ref.type, isParam)[1]
+                return {typeName, "", t.ref.isConst and "" or true}
             end
         else
-            local typeName = CSType(t.ref.type, isParam)
+            local typeName, attr, isCom = table.unpack(CSType(t.ref.type, isParam))
             if isParam then
-                return string.format("ref %s", typeName)
+                if isCom then
+                    local attr =
+                        string.format(
+                        "[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(CustomMarshaler<%s>))]",
+                        typeName
+                    )
+                    return {string.format("out %s", typeName), attr}
+                else
+                    return {string.format("ref %s", typeName), ""}
+                end
             else
-                return "IntPtr"
+                return {"IntPtr", ""}
             end
         end
     elseif t.class == "Reference" then
         -- return DPointer(t)
-        local typeName = CSType(t.ref.type, isParam)
+        local typeName = CSType(t.ref.type, isParam)[1]
         typeName = string.format("ref %s", typeName)
-        return typeName
+        return {typeName, ""}
     elseif t.class == "Array" then
         -- return DArray(t)
         local a = t
+        local typeName = CSType(a.ref.type, isParam)[1]
         if isParam then
-            return string.format("ref %s", CSType(a.ref.type, isParam))
+            return {string.format("ref %s", typeName), ""}
         else
-            return string.format("%s[%d]", CSType(a.ref.type, isParam), a.size)
+            return {
+                string.format("%s[]", typeName),
+                string.format("[MarshalAs(UnmanagedType.ByValArray, SizeConst=%d)]", a.size)
+            }
         end
     else
         if #t.name == 0 then
-            return nil
+            return {nil, ""}
         end
-        return t.name
+        return {t.name, ""}
     end
 end
 
 local function CSTypedefDecl(f, t)
     -- print(t, t.ref)
-    local dst = CSType(t.ref.type)
+    local dst = CSType(t.ref.type)[1]
     if not dst then
         -- nameless
         writeln(f, "// typedef target nameless")
@@ -154,40 +168,45 @@ local function CSEnumDecl(f, decl, omitEnumPrefix, indent)
     writefln(f, "%s}", indent)
 end
 
-local function CSFunctionDecl(f, decl, indent, isMethod, option)
-    indent = indent or ""
-
-    if not isMethod then
-        if decl.isExternC then
-            writefln(f, '%s[DllImport("some.dll")]', indent)
-        else
-            writefln(f, '%s[DllImport("some.dll", EntryPoint="mangle")]', indent)
-        end
-        writef(f, "%spublic static extern %s %s(", indent, CSType(decl.ret), decl.name)
+local function CSGlobalFunction(f, decl, indent, option, sourceName)
+    if decl.isExternC then
+        writefln(f, '%s[DllImport("%s.dll")]', indent, sourceName)
     else
-        -- interface
-        writef(f, "%s%s %s(", indent, CSType(decl.ret), decl.name)
+        writefln(f, '%s[DllImport("%s.dll", EntryPoint="mangle")]', indent)
     end
-
-    local isFirst = true
-    for i, param in ipairs(decl.params) do
-        if isFirst then
-            isFirst = false
-        else
-            f:write(", ")
-        end
-
-        local dst = CSType(param.ref.type, true)
-        -- if param.ref.isConst then
-        --     dst = string.format("const(%s)", dst)
-        -- end
-        writef(f, "%s %s", dst, CSEscapeName(param.name))
-        -- TODO: dfault value = getValue(param, option.param_map)
+    writef(f, "%spublic static extern %s %s(", indent, CSType(decl.ret)[1], decl.name)
+    local params = decl.params
+    for i, param in ipairs(params) do
+        local comma = i == #params and "" or ","
+        local dst, attr = table.unpack(CSType(param.ref.type, true))
+        writefln(f, "%s%s %s%s", attr, dst, CSEscapeName(param.name), comma)
+        -- TODO: dfeault value = getValue(param, option.param_map)
     end
     writeln(f, ");")
 end
 
-local SKIP_METHODS = {QueryInterface = true, AddRef = true, Release = true}
+local function CSInterfaceMethod(f, decl, indent, option)
+    writef(f, "%s%s %s(", indent, CSType(decl.ret)[1], decl.name)
+    local params = decl.params
+    for i, param in ipairs(params) do
+        local comma = i == #params and "" or ","
+        local dst, attr = table.unpack(CSType(param.ref.type, true))
+        writefln(f, "%s%s %s%s", attr, dst, CSEscapeName(param.name), comma)
+        -- TODO: default value = getValue(param, option.param_map)
+    end
+    writeln(f, ");")
+end
+
+local function CSFunctionDecl(f, decl, indent, isMethod, option, sourceName)
+    indent = indent or ""
+    if isMethod then
+        CSInterfaceMethod(f, decl, indent, option)
+    else
+        CSGlobalFunction(f, decl, indent, option, sourceName)
+    end
+end
+
+-- local SKIP_METHODS = {QueryInterface = true, AddRef = true, Release = true}
 
 local function CSStructDecl(f, decl, option)
     -- assert(!decl.m_forwardDecl);
@@ -197,7 +216,9 @@ local function CSStructDecl(f, decl, option)
         return
     end
 
+    local hasComInterface = false
     if decl.isInterface then
+        hasComInterface = true
         -- com interface
         if decl.isForwardDecl then
             return
@@ -205,14 +226,11 @@ local function CSStructDecl(f, decl, option)
 
         -- interface
         if decl.iid then
-            writefln(f, '    [Guid("%s")]', decl.iid)
+            writefln(f, '    [Guid("%s"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]', decl.iid)
         end
-        writef(f, "    public interface %s", name)
+        writef(f, "    public class %s", name)
         if decl.base then
-            if decl.base.name == "IUnknown" then
-            else
-                writef(f, ": %s", decl.base.name)
-            end
+            writef(f, ": %s", decl.base.name)
         end
 
         writeln(f)
@@ -220,11 +238,11 @@ local function CSStructDecl(f, decl, option)
 
         -- methods
         for i, method in ipairs(decl.methods) do
-            if SKIP_METHODS[method.name] then
-                -- writefln(f, "        // skip %s", method.name)
-            else
-                CSFunctionDecl(f, method, "        ", true, option)
-            end
+            -- if SKIP_METHODS[method.name] then
+            --     -- writefln(f, "        // skip %s", method.name)
+            -- else
+            CSFunctionDecl(f, method, "        ", true, option)
+            -- end
         end
         writeln(f, "    }")
     else
@@ -239,7 +257,7 @@ local function CSStructDecl(f, decl, option)
             writefln(f, "    public struct %s", name)
             writeln(f, "    {")
             for i, field in ipairs(decl.fields) do
-                local typeName = CSType(field.ref.type)
+                local typeName, attr = table.unpack(CSType(field.ref.type))
                 if not typeName then
                     local fieldType = field.ref.type
                     if fieldType.class == "Struct" then
@@ -257,38 +275,34 @@ local function CSStructDecl(f, decl, option)
                         error("unknown")
                     end
                 else
-                    if field.ref.type.class == 'Array' then
-                        local a = field.ref.type
-                        local arraySize = a.size
-                        if a.ref.type.class == 'Array' then
-                            -- 多次元
-                            a = a.ref.type
-                            arraySize = arraySize * a.size
-                        end
-                        writefln(f, "        [MarshalAs(UnmanagedType.ByValArray, SizeConst=%d)]public %s[] %s;", arraySize, CSType(a.ref.type), CSEscapeName(field.name))
-                    else
-                        writefln(f, "        public %s %s;", typeName, CSEscapeName(field.name))
-                    end
+                    writefln(f, "        %spublic %s %s;", attr, typeName, CSEscapeName(field.name))
                 end
             end
 
             writeln(f, "    }")
         end
     end
+
+    return hasComInterface
 end
 
 local function CSDecl(f, decl, option)
+    local hasComInterface = false
     if decl.class == "Typedef" then
         CSTypedefDecl(f, decl)
     elseif decl.class == "Enum" then
         CSEnumDecl(f, decl, option.omitEnumPrefix, "    ")
     elseif decl.class == "Function" then
-        CSFunctionDecl(f, decl, "        ", false, option)
+        -- CSFunctionDecl(f, decl, "        ", false, option)
+        error("not reach Function")
     elseif decl.class == "Struct" then
-        CSStructDecl(f, decl, option)
+        if CSStructDecl(f, decl, option) then
+            hasComInterface = true
+        end
     else
         error("unknown", decl)
     end
+    return hasComInterface
 end
 
 local function CSConstant(f, macroDefinition, macro_map)
@@ -347,13 +361,16 @@ local function CSSource(f, packageName, source, option)
     writeln(f, "    }")
 
     -- types
+    local hasComInterface = false
     local funcs = {}
     for j, decl in ipairs(source.types) do
         if not declFilter or declFilter(decl) then
             if decl.class == "Function" then
                 table.insert(funcs, decl)
             else
-                CSDecl(f, decl, option)
+                if CSDecl(f, decl, option) then
+                    hasComInterface = true
+                end
             end
         end
     end
@@ -361,7 +378,8 @@ local function CSSource(f, packageName, source, option)
     -- funcs
     writefln(f, "    public static class %s {", source.name)
     for i, decl in ipairs(funcs) do
-        CSDecl(f, decl, option)
+        -- CSDecl(f, decl, option, source.name)
+        CSFunctionDecl(f, decl, "        ", false, option, source.name)
     end
     writeln(f, "    }")
 
@@ -370,7 +388,214 @@ local function CSSource(f, packageName, source, option)
     return hasComInterface
 end
 
-local function ComUtil(packageName)
+local function ComUtil(f, packageName)
+    f:write(
+        [[
+using System;
+using System.Runtime.InteropServices;
+
+namespace ShrimpDX
+{
+    class CustomMarshaler<T> : ICustomMarshaler
+    {
+        public void CleanUpManagedData(object ManagedObj)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void CleanUpNativeData(IntPtr pNativeData)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int GetNativeDataSize()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IntPtr MarshalManagedToNative(object ManagedObj)
+        {
+            throw new NotImplementedException();
+        }
+
+        public object MarshalNativeToManaged(IntPtr pNativeData)
+        {
+            var count = Marshal.AddRef(pNativeData);
+            Marshal.Release(pNativeData);
+
+            // var deref = Marshal.ReadIntPtr(pNativeData);
+            // return Marshal.GetUniqueObjectForIUnknown(pNativeData);
+            var rcw = Marshal.GetObjectForIUnknown(pNativeData);
+            // var obj = Marshal.GetTypedObjectForIUnknown(pNativeData, typeof(T));
+            // var d = rcw as ID3D11Device;
+            // if (d != null)
+            if (rcw is ID3D11Device d)
+            {
+                var s = Marshal.GetStartComSlot(typeof(T));
+                var flags = d.GetCreationFlags();
+                D3D_FEATURE_LEVEL l = d.GetFeatureLevel();
+                var a = 0;
+            }
+            if (rcw is IDXGISwapChain sc)
+            {
+            }
+
+            return rcw;
+         }
+
+        public static ICustomMarshaler GetInstance(string src)
+        {
+            return new CustomMarshaler<T>();
+        }
+    }
+
+    /// <summary>
+    /// COMの virtual function table を自前で呼び出すヘルパークラス。
+    /// </summary>
+    public abstract class ComPtr : IDisposable
+    {
+        /// <summay>
+        /// IUnknown を継承した interface(ID3D11Deviceなど) に対するポインター。
+        /// このポインターの指す領域の先頭に virtual function table へのポインタが格納されている。
+        /// <summay>
+        IntPtr m_ptr;
+
+        protected IntPtr Self => m_ptr;
+
+        public virtual int MethodCount => 3;
+
+        public int RefCount
+        {
+            get
+            {
+                if (m_ptr == IntPtr.Zero)
+                {
+                    throw new InvalidOperationException();
+                }
+                Marshal.AddRef(m_ptr);
+                return Marshal.Release(m_ptr);
+            }
+        }
+
+        public ref IntPtr PtrForNew
+        {
+            get
+            {
+                if (m_ptr != IntPtr.Zero)
+                {
+                    Marshal.Release(m_ptr);
+                }
+                return ref m_ptr;
+            }
+        }
+
+        public /*readonly*/ ref IntPtr Ptr => ref m_ptr;
+
+        public static implicit operator bool(ComPtr i)
+        {
+            return i.m_ptr != IntPtr.Zero;
+        }
+
+        IntPtr VTable => Marshal.ReadIntPtr(m_ptr);
+
+        static readonly int IntPtrSize = Marshal.SizeOf(typeof(IntPtr));
+
+        protected IntPtr GetFunctionPointer(int index)
+        {
+            return Marshal.ReadIntPtr(VTable, index * IntPtrSize);
+        }
+
+        abstract public ref /*readonly*/ Guid IID { get; }
+
+        public HRESULT QueryInterface(
+        ref Guid iid
+        , ref IntPtr ppvObject
+        )
+        {
+            var fp = GetFunctionPointer(0);
+            var callback = (QueryInterfaceFunc)Marshal.GetDelegateForFunctionPointer(fp, typeof(QueryInterfaceFunc));
+            return callback(Self, ref iid, ref ppvObject);
+        }
+        delegate HRESULT QueryInterfaceFunc(IntPtr self, ref Guid iid, ref IntPtr ppvObject);
+
+        public HRESULT QueryInterface<T>(T t) where T : ComPtr
+        {
+            return QueryInterface(ref t.IID, ref t.PtrForNew);
+        }
+
+        // uint AddRef()
+        // {
+        //     var fp = GetFunctionPointer(1);
+        //     var callback = (AddReleaseFunc)Marshal.GetDelegateForFunctionPointer(fp, typeof(AddReleaseFunc));
+        //     return callback(Self);
+        // }
+
+        uint Release()
+        {
+            var fp = GetFunctionPointer(2);
+            var callback = (AddReleaseFunc)Marshal.GetDelegateForFunctionPointer(fp, typeof(AddReleaseFunc));
+            return callback(Self);
+        }
+
+        // 没。GCが増える
+        // public static T CopyAddRef<T>(T self) where T : ComPtr
+        // {
+        //     if (!self)
+        //     {
+        //         throw new ArgumentNullException();
+        //     }
+
+        //     var p = Activator.CreateInstance<T>();
+        //     p.m_ptr = self.m_ptr;
+        //     p.AddRef();
+        //     return p;
+        // }
+
+        delegate uint AddReleaseFunc(IntPtr self);
+
+        #region IDisposable Support
+        private bool disposedValue = false; // 重複する呼び出しを検出するには
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: マネージ状態を破棄します (マネージ オブジェクト)。
+                }
+
+                // TODO: アンマネージ リソース (アンマネージ オブジェクト) を解放し、下のファイナライザーをオーバーライドします。
+                // TODO: 大きなフィールドを null に設定します。
+                if (m_ptr != IntPtr.Zero)
+                {
+                    Release();
+                    m_ptr = IntPtr.Zero;
+                }
+
+                disposedValue = true;
+            }
+        }
+
+        ~ComPtr()
+        {
+            // このコードを変更しないでください。クリーンアップ コードを上の Dispose(bool disposing) に記述します。
+            Dispose(false);
+        }
+
+        // このコードは、破棄可能なパターンを正しく実装できるように追加されました。
+        public void Dispose()
+        {
+            // このコードを変更しないでください。クリーンアップ コードを上の Dispose(bool disposing) に記述します。
+            Dispose(true);
+            // TODO: 上のファイナライザーがオーバーライドされる場合は、次の行のコメントを解除してください。
+            // GC.SuppressFinalize(this);
+        }
+        #endregion
+    }
+}
+]]
+    )
 end
 
 local function CSProj(f)
