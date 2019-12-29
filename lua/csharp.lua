@@ -188,16 +188,23 @@ local function CSInterfaceMethod(f, decl, indent, option, isMethod)
     local ret = CSType(decl.ret)[1]
     writefln(f, "%spublic %s %s(", indent, ret, decl.name)
     local params = decl.params
-    local callbackParams = {'Self'}
+    local callbackParams = {"Self"}
+    local delegateParams = {}
+    local callvariables = {}
     for i, param in ipairs(params) do
         local comma = i == #params and "" or ","
         local dst, attr = table.unpack(CSType(param.ref.type, true))
         local name = CSEscapeName(param.name)
         writefln(f, "%s    %s %s%s", indent, dst, name, comma)
-        if string.sub(dst, 1, 4) == "ref " then
-            name = "ref " .. name
+        local isRef = string.sub(dst, 1, 4) == "ref " and "ref " or ""
+        if string.match(attr, "%[MarshalAs%(UnmanagedType%.CustomMarshaler") then
+            table.insert(callvariables, string.format("%s = new %s();", name, string.gsub(dst, "ref ", "")))
+            table.insert(callbackParams, string.format("%s%s.PtrForNew", isRef, name))
+            table.insert(delegateParams, string.format("ref IntPtr %s", name))
+        else
+            table.insert(callbackParams, string.format("%s%s", isRef, name))
+            table.insert(delegateParams, string.format("%s %s", dst, name))
         end
-        table.insert(callbackParams, name)
         -- TODO: default value = getValue(param, option.param_map)
     end
     local delegateName = decl.name .. "Func"
@@ -207,21 +214,22 @@ local function CSInterfaceMethod(f, decl, indent, option, isMethod)
         ){
             var fp = GetFunctionPointer(%s);
             var callback = (%s)Marshal.GetDelegateForFunctionPointer(fp, typeof(%s));
+            %s
             %s callback(%s);
         }
         ]],
         isMethod - 1,
         delegateName,
         delegateName,
+        table.concat(callvariables, ""),
         ret == "void" and "" or "return ",
         table.concat(callbackParams, ", ")
     )
 
     -- delegate
     writef(f, "%sdelegate %s %s(IntPtr self", indent, ret, delegateName)
-    for i, param in ipairs(params) do
-        local dst, attr = table.unpack(CSType(param.ref.type, true))
-        writef(f, ", %s %s", dst, CSEscapeName(param.name))
+    for i, param in ipairs(delegateParams) do
+        writef(f, ", %s", param)
         -- TODO: default value = getValue(param, option.param_map)
     end
     writeln(f, ");")
