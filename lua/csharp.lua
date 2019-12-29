@@ -190,11 +190,15 @@ local function CSGlobalFunction(f, decl, indent, option, sourceName)
     writefln(f, "%s);", indent)
 end
 
-local function CSInterfaceMethod(f, decl, indent, option, isMethod)
+local function CSInterfaceMethod(f, decl, indent, option, isMethod, override)
     local ret = CSType(decl.ret)[1]
-    writefln(f, "%spublic %s %s(", indent, ret, decl.name)
+    local name = decl.name
+    if name == "GetType" then
+        name = "GetComType"
+    end
+    writefln(f, "%spublic %s %s %s(", indent, override, ret, name)
     local params = decl.params
-    local callbackParams = {"Self"}
+    local callbackParams = {"m_ptr"}
     local delegateParams = {}
     local callvariables = {}
     for i, param in ipairs(params) do
@@ -272,15 +276,6 @@ local function CSInterfaceMethod(f, decl, indent, option, isMethod)
     writeln(f)
 end
 
-local function CSFunctionDecl(f, decl, indent, isMethod, option, sourceName)
-    indent = indent or ""
-    if isMethod then
-        CSInterfaceMethod(f, decl, indent, option, isMethod)
-    else
-        CSGlobalFunction(f, decl, indent, option, sourceName)
-    end
-end
-
 local function getStruct(decl)
     if not decl then
         return nil
@@ -311,6 +306,22 @@ local function getIndexBase(decl)
         indexBase = indexBase + #current.methods
     end
     return indexBase
+end
+
+local function hasSameMethod(name, decl)
+    local current = decl
+    while true do
+        current = getStruct(current.base)
+        if not current then
+            break
+        end
+        for i, method in ipairs(current.methods) do
+            if method.name == name then
+                -- print("found", name)
+                return true
+            end
+        end
+    end
 end
 
 local anonymousMap = {}
@@ -349,8 +360,8 @@ local function CSStructDecl(f, decl, option, i)
             writefln(
                 f,
                 [[
-        static /*readonly*/ Guid s_uuid = new Guid("%s");
-        public override ref /*readonly*/ Guid IID => ref s_uuid;
+        static Guid s_uuid = new Guid("%s");
+        public static new ref Guid IID => ref s_uuid;
                     ]],
                 decl.iid
             )
@@ -360,7 +371,8 @@ local function CSStructDecl(f, decl, option, i)
         local indexBase = getIndexBase(decl)
         -- print(decl.name, indexBase)
         for i, method in ipairs(decl.methods) do
-            CSFunctionDecl(f, method, "        ", indexBase + i, option)
+            local override = hasSameMethod(method.name, decl) and "override" or "virtual"
+            CSInterfaceMethod(f, method, "        ", option, indexBase + i, override)
         end
         writeln(f, "    }")
     else
@@ -426,7 +438,6 @@ local function CSDecl(f, decl, option, i)
     elseif decl.class == "Enum" then
         CSEnumDecl(f, decl, option.omitEnumPrefix, "    ")
     elseif decl.class == "Function" then
-        -- CSFunctionDecl(f, decl, "        ", false, option)
         error("not reach Function")
     elseif decl.class == "Struct" then
         if CSStructDecl(f, decl, option, i) then
@@ -519,8 +530,7 @@ local function CSSource(f, packageName, source, option)
     -- funcs
     writefln(f, "    public static class %s {", source.name)
     for i, decl in ipairs(funcs) do
-        -- CSDecl(f, decl, option, source.name)
-        CSFunctionDecl(f, decl, "        ", false, option, source.name)
+        CSGlobalFunction(f, decl, "        ", option, source.name)
     end
     writeln(f, "    }")
 
@@ -542,13 +552,14 @@ namespace ShrimpDX
     /// </summary>
     public abstract class ComPtr : IDisposable
     {
+        static Guid s_uuid;
+        public static ref Guid IID => ref s_uuid;
+ 
         /// <summay>
         /// IUnknown を継承した interface(ID3D11Deviceなど) に対するポインター。
         /// このポインターの指す領域の先頭に virtual function table へのポインタが格納されている。
         /// <summay>
-        IntPtr m_ptr;
-
-        protected IntPtr Self => m_ptr;
+        protected IntPtr m_ptr;
 
         public ref IntPtr PtrForNew
         {
@@ -562,7 +573,7 @@ namespace ShrimpDX
             }
         }
 
-        public /*readonly*/ ref IntPtr Ptr => ref m_ptr;
+        public ref IntPtr Ptr => ref m_ptr;
 
         public static implicit operator bool(ComPtr i)
         {
@@ -577,8 +588,6 @@ namespace ShrimpDX
         {
             return Marshal.ReadIntPtr(VTable, index * IntPtrSize);
         }
-
-        abstract public ref /*readonly*/ Guid IID { get; }
 
         #region IDisposable Support
         private bool disposedValue = false; // 重複する呼び出しを検出するには
@@ -648,21 +657,8 @@ namespace ShrimpDX
         {
             // var count = Marshal.AddRef(pNativeData);
             // Marshal.Release(pNativeData);
-
             var t = new T();
             t.PtrForNew = pNativeData;
-
-            if (t is ID3D11Device d)
-            {
-                var s = Marshal.GetStartComSlot(typeof(T));
-                var flags = d.GetCreationFlags();
-                D3D_FEATURE_LEVEL l = d.GetFeatureLevel();
-                var a = 0;
-            }
-            if (t is IDXGISwapChain sc)
-            {
-            }
-
             return t;
         }
 
