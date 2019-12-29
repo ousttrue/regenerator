@@ -58,28 +58,31 @@ class Source
         return false;
     }
 
-    bool addDecl(UserDecl type)
+    bool addDecl(UserDecl type, bool isD)
     {
         if (m_types.find(type).any())
         {
             return false;
         }
 
-        if (includeModule!(core.sys.windows.windef)(type.name))
+        if (isD)
         {
-            return false;
-        }
-        if (includeModule!(core.sys.windows.basetyps)(type.name))
-        {
-            return false;
-        }
-        if (includeModule!(core.sys.windows.winnt)(type.name))
-        {
-            return false;
-        }
-        if (includeModule!(core.sys.windows.unknwn)(type.name))
-        {
-            return false;
+            if (includeModule!(core.sys.windows.windef)(type.name))
+            {
+                return false;
+            }
+            if (includeModule!(core.sys.windows.basetyps)(type.name))
+            {
+                return false;
+            }
+            if (includeModule!(core.sys.windows.winnt)(type.name))
+            {
+                return false;
+            }
+            if (includeModule!(core.sys.windows.unknwn)(type.name))
+            {
+                return false;
+            }
         }
 
         m_types ~= type;

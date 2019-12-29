@@ -46,6 +46,7 @@ extern (C) int luaFunc_parse(lua_State* L)
 	auto includes = lua_to!(string[])(L, 2);
 	auto defines = lua_to!(string[])(L, 3);
 	auto externC = lua_to!bool(L, 4);
+	auto isD = lua_to!bool(L, 5);
 
 	// string dir;
 	// bool omitEnumPrefix = false;
@@ -58,7 +59,7 @@ extern (C) int luaFunc_parse(lua_State* L)
 
 	// // 出力する情報を整理する
 	// log("process...");
-	auto sourceMap = process(parser, headers);
+	auto sourceMap = process(parser, headers, isD);
 
 	lua_createtable(L, 0, cast(int) sourceMap.length);
 	auto table = lua_gettop(L);

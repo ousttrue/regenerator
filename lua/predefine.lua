@@ -119,7 +119,8 @@ function ClangParse(option)
     local includes = option.includes or {}
     local defines = option.defines or {}
     local externC = option.externC or false
-    local sourceMap = parse(headers, includes, defines, externC)
+    local isD = option.isD or false
+    local sourceMap = parse(headers, includes, defines, externC, isD)
     if sourceMap.empty then
         return nil
     end

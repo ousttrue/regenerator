@@ -18,10 +18,12 @@ class Processor
     Source[string] m_sourceMap;
 
     Parser m_parser;
+    bool m_isD;
 
-    this(Parser parser)
+    this(Parser parser, bool isD)
     {
         m_parser = parser;
+        m_isD = isD;
     }
 
     Source getSource(string path)
@@ -132,7 +134,7 @@ class Processor
             from ~= dsource;
         }
 
-        if (!dsource.addDecl(decl))
+        if (!dsource.addDecl(decl, m_isD))
         {
             return;
         }
@@ -215,9 +217,9 @@ class Processor
     }
 }
 
-Source[string] process(Parser parser, string[] headers)
+Source[string] process(Parser parser, string[] headers, bool isD)
 {
-    auto processor = new Processor(parser);
+    auto processor = new Processor(parser, isD);
     processor.process(headers);
     return processor.m_sourceMap;
 }

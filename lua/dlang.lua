@@ -81,18 +81,18 @@ end
 local function DTypedefDecl(f, t)
     -- print(t, t.ref)
     local dst = DType(t.ref.type)
-    if dst then
-        if t.name == dst then
-            -- f.writefln("// samename: %s", t.m_name);
-            return
-        end
-
-        writefln(f, "alias %s = %s;", t.name, dst)
+    if not dst then
+        -- nameless
+        writeln(f, "// typedef target nameless")
         return
     end
 
-    -- nameless
-    writeln(f, "// typedef target nameless")
+    if t.name == dst then
+        -- f.writefln("// samename: %s", t.m_name);
+        return
+    end
+
+    writefln(f, "alias %s = %s;", t.name, dst)
 end
 
 local function DEnumDecl(f, decl, omitEnumPrefix)
