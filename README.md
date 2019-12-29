@@ -37,6 +37,7 @@
 * [x] naming anonymous struct/union
 * [x] marshal out com interface variable
 * [x] marshal in com interface variable
+* [ ] cache delegate of com interface method
 
 ## Usage
 
