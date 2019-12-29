@@ -319,6 +319,8 @@ int main(string[] args)
 	lua_setglobal(lua.L, "Field");
 
 	auto structType = register_type!Struct(lua.L);
+	structType.instance.Getter("hash", (Struct* self) => self.hash);
+	structType.instance.Getter("namespace", (Struct* self) => self.namespace);
 	structType.instance.Getter("isInterface", (Struct* self) => self.isInterface);
 	structType.instance.Getter("isForwardDecl", (Struct* self) => self.forwardDecl);
 	structType.instance.Getter("isUnion", (Struct* self) => self.isUnion);

@@ -262,11 +262,12 @@ class Parser
         }
     }
 
-    uint pushDecl(CXCursor cursor, Decl decl)
+    uint pushDecl(CXCursor cursor, UserDecl decl)
     {
         auto hash = clang_hashCursor(cursor);
         assert(hash !in m_declMap);
         assert(decl);
+        decl.hash = hash;
         m_declMap[hash] = decl;
         return hash;
     }
@@ -539,6 +540,7 @@ class Parser
 
         // first regist
         auto decl = new Struct(location.path, location.line, name);
+        decl.namespace = context.namespace;
         decl.isUnion = isUnion;
         decl.forwardDecl = is_forward_declaration(cursor);
         if (!decl.forwardDecl)

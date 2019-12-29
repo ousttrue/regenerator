@@ -34,9 +34,9 @@
 
 ### CS
 
-* [ ] naming anonymous struct/union
+* [x] naming anonymous struct/union
 * [x] marshal out com interface variable
-* [ ] marshal in com interface variable
+* [x] marshal in com interface variable
 
 ## Usage
 

@@ -81,7 +81,7 @@ local function CSType(t, isParam)
             if typeName == "ID3DBlob" then
                 typeName = "ID3D10Blob"
             end
-            return {typeName, "", 'isCom'}
+            return {typeName, "", "isCom"}
         else
             local typeName, attr, isCom = table.unpack(CSType(t.ref.type, isParam))
             if isParam then
@@ -279,12 +279,17 @@ local function getIndexBase(decl)
     return indexBase
 end
 
-local function CSStructDecl(f, decl, option)
+local anonymousMap = {}
+
+local function CSStructDecl(f, decl, option, i)
     -- assert(!decl.m_forwardDecl);
     local name = decl.name
     if not name or #name == 0 then
-        writeln(f, "    // struct nameless")
-        return
+        -- writeln(f, "    // struct nameless")
+        -- return
+        name = string.format("%s_anonymous_%d", table.concat(decl.namespace, "_"), i)
+        print(name)
+        anonymousMap[decl.hash] = name
     end
 
     local hasComInterface = false
@@ -338,6 +343,10 @@ local function CSStructDecl(f, decl, option)
             for i, field in ipairs(decl.fields) do
                 local typeName, attr = table.unpack(CSType(field.ref.type, false))
                 if not typeName then
+                    typeName = anonymousMap[field.ref.type.hash]
+                    -- print(field.ref.type.class, typeName, table.concat(field.ref.type.namespace, "_"))
+                end
+                if not typeName then
                     local fieldType = field.ref.type
                     if fieldType.class == "Struct" then
                         if fieldType.isUnion then
@@ -354,7 +363,11 @@ local function CSStructDecl(f, decl, option)
                         error("unknown")
                     end
                 else
-                    writefln(f, "        %spublic %s %s;", attr, typeName, CSEscapeName(field.name))
+                    local name = CSEscapeName(field.name)
+                    if #name == 0 then
+                        name = string.format("__anonymous__%d", i)
+                    end
+                    writefln(f, "        %spublic %s %s;", attr, typeName, name)
                 end
             end
 
@@ -365,7 +378,7 @@ local function CSStructDecl(f, decl, option)
     return hasComInterface
 end
 
-local function CSDecl(f, decl, option)
+local function CSDecl(f, decl, option, i)
     local hasComInterface = false
     if decl.class == "Typedef" then
         CSTypedefDecl(f, decl)
@@ -375,7 +388,7 @@ local function CSDecl(f, decl, option)
         -- CSFunctionDecl(f, decl, "        ", false, option)
         error("not reach Function")
     elseif decl.class == "Struct" then
-        if CSStructDecl(f, decl, option) then
+        if CSStructDecl(f, decl, option, i) then
             hasComInterface = true
         end
     else
@@ -442,15 +455,23 @@ local function CSSource(f, packageName, source, option)
     -- types
     local hasComInterface = false
     local funcs = {}
+    local types = {}
     for j, decl in ipairs(source.types) do
         if not declFilter or declFilter(decl) then
             if decl.class == "Function" then
                 table.insert(funcs, decl)
+            elseif decl.name and #decl.name > 0 then
+                table.insert(types, decl)
             else
-                if CSDecl(f, decl, option) then
+                if CSDecl(f, decl, option, j) then
                     hasComInterface = true
                 end
             end
+        end
+    end
+    for i, decl in ipairs(types) do
+        if CSDecl(f, decl, option) then
+            hasComInterface = true
         end
     end
 

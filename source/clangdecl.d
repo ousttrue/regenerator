@@ -134,6 +134,7 @@ class LongDouble : Primitive
 
 class UserDecl : Decl
 {
+    ulong hash;
     string path;
     int line;
     string name;
