@@ -495,11 +495,13 @@ local function CSSource(f, packageName, source, option)
     end
 
     -- const
-    writeln(f, "    public static partial class Constants {")
-    for j, macroDefinition in ipairs(source.macros) do
-        CSConstant(f, macroDefinition, macro_map)
+    if #source.macros > 0 then
+        writeln(f, "    public static partial class Constants {")
+        for j, macroDefinition in ipairs(source.macros) do
+            CSConstant(f, macroDefinition, macro_map)
+        end
+        writeln(f, "    }")
     end
-    writeln(f, "    }")
 
     -- types
     local hasComInterface = false
