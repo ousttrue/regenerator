@@ -37,6 +37,113 @@ struct Vector3
 	}
 }
 
+Struct getForwardDecl(ref Source[string] map)
+{
+	foreach (k, s; map)
+	{
+		foreach (t; s.m_types)
+		{
+			auto decl = cast(Struct) t;
+			if (decl)
+			{
+				if (decl.forwardDecl)
+				{
+					if (decl.definition)
+					{
+						return decl;
+					}
+				}
+			}
+		}
+	}
+	return null;
+}
+
+Tuple!(clangdecl.Typedef, UserDecl) getDefTag(ref Source[string] map)
+{
+	foreach (k, s; map)
+	{
+		foreach (t; s.m_types)
+		{
+			auto decl = cast(clangdecl.Typedef) t;
+			if (decl)
+			{
+				auto tag = cast(UserDecl) decl.typeref.type;
+				if (tag)
+				{
+					auto en = cast(Enum)tag;
+					auto st = cast(Struct)tag;
+					if ((en || st))
+					{
+						return tuple(decl, tag);
+					}
+				}
+			}
+		}
+	}
+	return Tuple!(clangdecl.Typedef, UserDecl)();
+}
+
+void resolve(ref Source[string] map, UserDecl from, Decl to)
+{
+	// logf("replace %s => %s", from.hash, to.getName);
+
+	foreach (k, s; map)
+	{
+		// remove from types
+		s.m_types = s.m_types.remove!(t => t == from);
+
+		foreach (t; s.m_types)
+		{
+			// typedef, struct fields, function params
+			t.replace(from, to);
+		}
+	}
+}
+
+void resolveForwardDeclaration(ref Source[string] map)
+{
+	while (true)
+	{
+		auto forwardDecl = map.getForwardDecl();
+		if (!forwardDecl)
+		{
+			break;
+		}
+		map.resolve(forwardDecl, forwardDecl.definition);
+	}
+}
+
+void resolveStructTag(ref Source[string] map)
+{
+	while (true)
+	{
+		auto tag_def = map.getDefTag();
+		if (!tag_def[0])
+		{
+			break;
+		}
+		map.resolve(tag_def[0], tag_def[1]);
+		if (tag_def[1].name != tag_def[0].name)
+		{
+			logf("rename: %s => %s", tag_def[1].name, tag_def[0].name);
+			tag_def[1].name = tag_def[0].name;
+		}
+	}
+}
+
+int push(lua_State* L, Source[string] values)
+{
+	lua_createtable(L, 0, cast(int) values.length);
+	auto table = lua_gettop(L);
+	foreach (k, ref v; values)
+	{
+		lua_push(L, &v);
+		lua_setfield(L, table, k.toStringz);
+	}
+	return 1;
+}
+
 // parse(headers, includes, defines, externC);
 extern (C) int luaFunc_parse(lua_State* L)
 {
@@ -52,14 +159,16 @@ extern (C) int luaFunc_parse(lua_State* L)
 	auto isD = lua_to!bool(L, 5);
 	auto sourceMap = process(parser, headers, isD);
 
-	// TODO: forward decl を解決する
+	// process で 解決済み
+	// resolveForwardDeclaration(sourceMap); 
 
 	// TODO: struct tag っぽい typedef を解決する
+	resolveStructTag(sourceMap);
 
 	// TODO: primitive の名前変えを解決する
 
-	// aaray を table として push
-	return lua_push(L, sourceMap);
+	// array を table として push
+	return push(L, sourceMap);
 }
 
 extern (C) int luaFunc_exists(lua_State* L)
@@ -178,7 +287,7 @@ Decl GetTypedefSource(Decl decl)
 	return decl;
 }
 
-string GetName(Decl decl)
+string getName(Decl decl)
 {
 	auto userDecl = cast(UserDecl) decl;
 	if (!userDecl)
@@ -196,7 +305,7 @@ UserType!T register_type(T : Decl)(lua_State* L)
 	user.instance.Getter("class", (T* self) => name);
 	user.metaMethod(LuaMetaKey.tostring, (T* self) => self.toString);
 
-	user.instance.Getter("name", (T* self) => (*self).GetName);
+	user.instance.Getter("name", (T* self) => (*self).getName);
 	user.instance.Getter("typedefSource", (lua_State* L) {
 		auto self = lua_to!T(L, 1);
 		auto source = self.GetTypedefSource;

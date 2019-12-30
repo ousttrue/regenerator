@@ -132,18 +132,6 @@ int lua_push(T : T[])(lua_State* L, T[] values)
     return 1;
 }
 
-int lua_push(T : T[string])(lua_State* L, in T[string] values)
-{
-    lua_createtable(L, 0, cast(int) values.length);
-    auto table = lua_gettop(L);
-    foreach (k, ref v; values)
-    {
-        lua_push(L, &v);
-        lua_setfield(L, table, k.toStringz);
-    }
-    return 1;
-}
-
 //
 // usertype
 //

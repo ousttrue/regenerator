@@ -8,6 +8,9 @@ import libclang;
 
 class Decl
 {
+    void replace(UserDecl from, Decl to)
+    {
+    }
 }
 
 struct TypeRef
@@ -52,6 +55,18 @@ class Pointer : Decl
     {
         this.typeref = TypeRef(type, isConst);
     }
+
+    override void replace(UserDecl from, Decl to)
+    {
+        if (typeref.type == from)
+        {
+            typeref.type = to;
+        }
+        else
+        {
+            typeref.type.replace(from, to);
+        }
+    }
 }
 
 class Reference : Decl
@@ -61,6 +76,18 @@ class Reference : Decl
     this(Decl type, bool isConst = false)
     {
         this.typeref = TypeRef(type, isConst);
+    }
+
+    override void replace(UserDecl from, Decl to)
+    {
+        if (typeref.type == from)
+        {
+            typeref.type = to;
+        }
+        else
+        {
+            typeref.type.replace(from, to);
+        }
     }
 }
 
@@ -73,6 +100,18 @@ class Array : Decl
     {
         this.typeref = TypeRef(type, isConst);
         this.size = arraySize;
+    }
+
+    override void replace(UserDecl from, Decl to)
+    {
+        if (typeref.type == from)
+        {
+            typeref.type = to;
+        }
+        else
+        {
+            typeref.type.replace(from, to);
+        }
     }
 }
 
@@ -198,22 +237,15 @@ class Struct : UserDecl
         super(path, line, name);
     }
 
-    void resovleForeardDeclaration()
+    override void replace(UserDecl from, Decl to)
     {
-        if (!this.forwardDecl)
+        foreach (ref f; fields)
         {
-            return;
+            if (f.typeref.type == from)
+            {
+                f.typeref.type = to;
+            }
         }
-        if (!this.definition)
-        {
-            return;
-        }
-
-        this.forwardDecl = false;
-        this.fields = this.definition.fields;
-        this.methods = this.definition.methods;
-        this.iid = this.definition.iid;
-        this.definition = null;
     }
 }
 
@@ -277,6 +309,14 @@ class Typedef : UserDecl
         typeref = TypeRef(type, isConst);
     }
 
+    override void replace(UserDecl from, Decl to)
+    {
+        if (typeref.type == from)
+        {
+            typeref.type == to;
+        }
+    }
+
     Decl getConcreteDecl(Decl[] path = [])
     {
         foreach (x; path)
@@ -323,6 +363,22 @@ class Function : UserDecl
     override string toString() const
     {
         return "%s %s(%s)".format(ret, name, params);
+    }
+
+    override void replace(UserDecl from, Decl to)
+    {
+        if (ret == from)
+        {
+            ret = to;
+        }
+
+        foreach (ref p; params)
+        {
+            if (p.typeref.type == from)
+            {
+                p.typeref.type == to;
+            }
+        }
     }
 }
 
