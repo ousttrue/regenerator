@@ -343,7 +343,7 @@ local function DSource(f, packageName, source, option)
         return table.concat(a.namespace, ",") < table.concat(b.namespace, ".")
     end
     table.sort(funcs, pred)
-    local lastNS = nil
+    local lastNS = ""
     for i, decl in ipairs(funcs) do
         if not option.externC then
             local ns = table.concat(decl.namespace, ".")
@@ -361,7 +361,7 @@ local function DSource(f, packageName, source, option)
         end
         DDecl(f, decl, option)
     end
-    if lastNS then
+    if #lastNS>0 then
         writefln(f, "} // %s", lastNS)
     end
 

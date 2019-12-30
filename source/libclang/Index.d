@@ -1083,7 +1083,6 @@ enum CXIndexOptFlags
     _SkipParsedBodiesInSession = 0x10,
 }
 alias CXFieldVisitor = void*;
-extern(C++) {
 extern(C) CXIndex clang_createIndex(int excludeDeclarationsFromPCH, int displayDiagnostics);
 extern(C) uint clang_Cursor_isVariadic(CXCursor C);
 extern(C) uint clang_Cursor_isObjCOptional(CXCursor C);
@@ -1400,4 +1399,3 @@ extern(C) void clang_disposeCXCursorSet(CXCursorSet cset);
 extern(C) uint clang_CXCursorSet_insert(CXCursorSet cset, CXCursor cursor);
 extern(C) uint clang_CXCursorSet_contains(CXCursorSet cset, CXCursor cursor);
 extern(C) uint clang_Type_visitFields(CXType T, CXFieldVisitor visitor, CXClientData client_data);
-} // 
