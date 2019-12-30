@@ -248,20 +248,6 @@ class Parser
         return m_declMap;
     }
 
-    CXCursor getRootCanonical(CXCursor cursor)
-    {
-        auto current = cursor;
-        while (true)
-        {
-            auto canonical = clang_getCanonicalCursor(current);
-            if (canonical == current)
-            {
-                return current;
-            }
-            current = canonical;
-        }
-    }
-
     uint pushDecl(CXCursor cursor, UserDecl decl)
     {
         auto hash = clang_hashCursor(cursor);
@@ -272,11 +258,8 @@ class Parser
         return hash;
     }
 
-    Decl getDeclFromCursor(CXCursor cursor)
+    UserDecl getDeclFromCursor(CXCursor cursor)
     {
-        // cursor = getRootCanonical(cursor);
-        // hash = clang_hashCursor(cursor);
-        // return m_declMap[hash];
         auto current = cursor;
         while (true)
         {
@@ -288,6 +271,8 @@ class Parser
                 return decl;
             }
 
+            // Get forward decl.
+            // May not yet have a complete definition.
             auto canonical = clang_getCanonicalCursor(current);
             if (canonical == current)
             {
@@ -614,7 +599,7 @@ class Parser
                             auto referenced = clang_getCursorReferenced(base);
                             auto referencedKind = cast(CXCursorKind) clang_getCursorKind(referenced);
                             debug auto referencedKindName = getCursorKindName(referencedKind);
-                            auto baseDecl = cast(UserDecl) getDeclFromCursor(referenced);
+                            auto baseDecl = getDeclFromCursor(referenced);
                             assert(baseDecl);
                             decl.base = baseDecl;
                         }
