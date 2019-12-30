@@ -3,8 +3,10 @@
         "*.natvis": "xml"
     },
     "cSpell.words": [
+        "DWRITE",
         "LLVM",
         "MSVCRTD",
+        "UUID",
         "cindex",
         "clangdecl",
         "cpptypeinfo",
@@ -16,12 +18,17 @@
         "liblua",
         "logf",
         "mscrtlib",
+        "msvc",
         "msvcrt",
         "nargs",
+        "nullptr",
         "outdir",
+        "pointee",
         "struct",
         "typeref",
-        "ulong"
+        "uint",
+        "ulong",
+        "writeln"
     ],
     "cSpell.enabledLanguageIds": [
         "d",

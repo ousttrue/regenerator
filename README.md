@@ -40,6 +40,7 @@
 * [x] marshal out com interface variable
 * [x] marshal in com interface variable
 * [ ] cache delegate of com interface method
+* [ ] function brace formatting
 
 ## Usage
 

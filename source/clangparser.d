@@ -110,7 +110,6 @@ class Parser
 
     void traverse(CXCursor cursor, Context context = Context())
     {
-        // auto context = parentContext.getChild();
         auto tu = clang_Cursor_getTranslationUnit(cursor);
         auto cursorKind = cast(CXCursorKind) clang_getCursorKind(cursor);
         auto _ = getCursorKindName(cursorKind);
@@ -132,7 +131,6 @@ class Parser
 
         auto spelling = getCursorSpelling(cursor);
 
-        // writefln("%s%s", context.getIndent(), kind);
         switch (cursorKind)
         {
         case CXCursorKind._InclusionDirective:
@@ -166,7 +164,7 @@ class Parser
                 }
                 else
                 {
-                    auto a = 0;
+                    debug auto a = 0;
                 }
             }
             break;
@@ -208,10 +206,6 @@ class Parser
             break;
 
         case CXCursorKind._FunctionDecl:
-            debug if (spelling == "D3DCompile")
-            {
-                auto a = 0;
-            }
             {
                 auto decl = parseFunction(cursor, &context);
                 if (decl)
@@ -239,7 +233,7 @@ class Parser
             break;
 
         default:
-            throw new Exception("unknwon CXCursorKind");
+            throw new Exception("unknown CXCursorKind");
         }
     }
 
@@ -302,7 +296,6 @@ class Parser
                 auto spelling = getCursorSpelling(cursor);
                 throw new Exception("no pointee");
             }
-            // auto typeName = pointeeDecl.toString();
             return new Pointer(pointeeDecl, isConst != 0);
         }
 
@@ -318,7 +311,6 @@ class Parser
                 auto spelling = getCursorSpelling(cursor);
                 throw new Exception("no pointee");
             }
-            // auto typeName = pointeeDecl.toString();
             return new Reference(pointeeDecl, isConst != 0);
         }
 
@@ -351,13 +343,9 @@ class Parser
                     auto referenced = clang_getCursorReferenced(child);
                     return getDeclFromCursor(referenced);
                 }
-                // else
-                // {
-                //     return getDeclFromCursor(child);
-                // }
             }
 
-            int a = 0;
+            debug int a = 0;
             throw new Exception("record");
         }
 
@@ -367,8 +355,6 @@ class Parser
             foreach (child; cursor.getChildren())
             {
                 auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
-                auto childKindName = getCursorKindName(childKind);
-                // writeln(kind);
                 switch (childKind)
                 {
                 case CXCursorKind._StructDecl:
@@ -381,9 +367,6 @@ class Parser
                 case CXCursorKind._TypeRef:
                     {
                         auto referenced = clang_getCursorReferenced(child);
-                        debug auto referencedName = getCursorSpelling(referenced);
-                        debug auto referencedKind = cast(CXCursorKind) clang_getCursorKind(
-                                referenced);
                         return getDeclFromCursor(referenced);
                     }
 
@@ -430,7 +413,6 @@ class Parser
 
         if (type.kind == CXTypeKind._FunctionProto)
         {
-            // return new Function(null, 0, null, null, null);
             return new Void();
         }
 
@@ -440,7 +422,7 @@ class Parser
             return new Pointer(new Void());
         }
 
-        int a = 0;
+        debug int a = 0;
         throw new Exception("not implemented");
     }
 
@@ -524,7 +506,6 @@ class Parser
         auto location = getCursorLocation(cursor);
         auto name = getCursorSpelling(cursor);
 
-        // first regist
         auto decl = new Struct(location.path, location.line, name);
         decl.namespace = context.namespace;
         decl.isUnion = isUnion;
@@ -538,6 +519,7 @@ class Parser
                 forwardDecl.definition = decl;
             }
         }
+        // push before fields
         pushDecl(cursor, decl);
         auto header = getOrCreateHeader(cursor);
         header.types ~= decl;
@@ -734,7 +716,7 @@ class Parser
 
             default:
                 // writeln(childKind);
-                int a = 0;
+                debug int a = 0;
                 throw new Exception("unknown param type");
             }
         }
@@ -758,26 +740,16 @@ class Parser
             return;
         }
 
-        // auto src = getSource(cursor);
         auto tu = clang_Cursor_getTranslationUnit(cursor);
         auto tokens = getTokens(cursor);
         scope (exit)
             clang_disposeTokens(tu, tokens.ptr, cast(uint) tokens.length);
-        // assert(tokens.length);
         if (tokens.length == 1)
         {
-            // #define DEBUG
             return;
         }
 
         string[] tokenSpellings = tokens.map!(t => tokenToString(cursor, t)).array();
-
-        // debug if (tokenSpellings[0] == "MAKE_D3D11_HRESULT")
-        // {
-        //     auto a = 0;
-        // }
-
-        // debug auto view = makeView(tokenSpellings);
 
         auto header = getOrCreateHeader(cursor);
         header.m_macros ~= MacroDefinition(tokenSpellings[0], tokenSpellings[1 .. $]);
