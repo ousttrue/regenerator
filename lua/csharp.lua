@@ -19,17 +19,7 @@ local TYPE_MAP = {
     UInt64 = "ulong",
     Float = "float",
     Double = "double",
-    -- https://docs.microsoft.com/en-us/windows/win32/winprog/windows-data-types
-    LPCSTR = "string",
-    LPSTR = "string",
-    BOOL = "int",
-    BYTE = "byte",
-    BYTE = "byte",
-    INT = "int",
-    UINT = "uint",
-    FLOAT = "float",
-    LPVOID = "IntPtr",
-    GUID = "Guid",
+    --
     IID = "Guid"
 }
 
@@ -62,7 +52,7 @@ local function CSType(t, isParam)
     if name then
         return {name, {}}
     end
-    if t.class == "Typedef" then
+    if t.class == "Typedef" or t.class == "Struct" then
         local name = TYPE_MAP[t.name]
         if name then
             return {name, {}}
@@ -82,6 +72,14 @@ local function CSType(t, isParam)
                 typeName = "ID3D10Blob"
             end
             return {typeName, option}
+        elseif t.ref.type.class == "Int8" then
+            return {"string", option}
+        elseif t.ref.type.name == "HDC__" then
+            return {"IntPtr", option}
+        elseif t.ref.type.name == "HWND__" then
+            return {"IntPtr", option}
+        elseif t.ref.type.name == "HINSTANCE__" then
+            return {"IntPtr", option}
         else
             local typeName, refOption = table.unpack(CSType(t.ref.type, isParam))
             for k, v in pairs(refOption) do

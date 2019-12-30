@@ -84,7 +84,7 @@ Tuple!(clangdecl.Typedef, Decl) getDefTag(ref Source[string] map)
 
 void resolve(ref Source[string] map, UserDecl from, Decl to)
 {
-	logf("remove: %s", from.name);
+	// logf("remove: %s", from.name);
 	// logf("replace %s => %s", from.hash, to.getName);
 
 	foreach (k, s; map)

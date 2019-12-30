@@ -19,7 +19,7 @@
 * [x] interface method
 * [x] macro definition value
 * [x] lua interface
-* [ ] resolve typedef for struct tag
+* [x] resolve typedef(struct/enum tag, type rename, etc...)
 * [ ] lua stack cover primitive types
 
 ### D
