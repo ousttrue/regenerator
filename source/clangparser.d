@@ -92,7 +92,7 @@ UUID tokensToUUID(string[] t)
 class Parser
 {
     Header[string] m_headers;
-    private Decl[uint] m_declMap;
+    private UserDecl[uint] m_declMap;
     UUID[string] m_uuidMap;
 
     string getSource(CXCursor cursor)
@@ -243,7 +243,7 @@ class Parser
         }
     }
 
-    Decl[uint] declMap()
+    UserDecl[uint] declMap()
     {
         return m_declMap;
     }
@@ -284,6 +284,7 @@ class Parser
             auto decl = m_declMap.get(hash, null);
             if (decl)
             {
+                decl.useCount++;
                 return decl;
             }
 
@@ -569,7 +570,8 @@ class Parser
                     auto fieldOffset = clang_Cursor_getOffsetOfField(child);
                     auto fieldDecl = typeToDecl(child, fieldType);
                     auto fieldConst = clang_isConstQualifiedType(fieldType);
-                    decl.fields ~= Field(fieldOffset, fieldName, TypeRef(fieldDecl, fieldConst != 0));
+                    decl.fields ~= Field(fieldOffset, fieldName,
+                            TypeRef(fieldDecl, fieldConst != 0));
                     break;
                 }
 
@@ -630,7 +632,8 @@ class Parser
                         auto fieldOffset = clang_Cursor_getOffsetOfField(child);
                         auto fieldDecl = getDeclFromCursor(child);
                         auto fieldConst = clang_isConstQualifiedType(fieldType);
-                        decl.fields ~= Field(fieldOffset, fieldName, TypeRef(fieldDecl, fieldConst != 0));
+                        decl.fields ~= Field(fieldOffset, fieldName,
+                                TypeRef(fieldDecl, fieldConst != 0));
                     }
                 }
                 break;

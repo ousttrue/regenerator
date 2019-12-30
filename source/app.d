@@ -296,6 +296,7 @@ int main(string[] args)
 	ar.instance.Getter("size", (Array* self) => self.size);
 
 	auto typedefType = register_type!(clangdecl.Typedef)(lua.L);
+	typedefType.instance.Getter("useCount", (clangdecl.Typedef* self) => self.useCount);
 	typedefType.instance.Getter("ref", (clangdecl.Typedef* self) => self.typeref);
 
 	auto enumValue = new UserType!EnumValue;
@@ -305,6 +306,7 @@ int main(string[] args)
 	lua_setglobal(lua.L, "EnumValue");
 
 	auto enumType = register_type!Enum(lua.L);
+	enumType.instance.Getter("useCount", (Enum* self) => self.useCount);
 	enumType.instance.Getter("values", (Enum* self) => self.values);
 	enumType.instance.Method("omit", (Enum* self) => omit(*self));
 
@@ -320,6 +322,7 @@ int main(string[] args)
 	lua_setglobal(lua.L, "Field");
 
 	auto structType = register_type!Struct(lua.L);
+	structType.instance.Getter("useCount", (Struct* self) => self.useCount);
 	structType.instance.Getter("hash", (Struct* self) => self.hash);
 	structType.instance.Getter("namespace", (Struct* self) => self.namespace);
 	structType.instance.Getter("isInterface", (Struct* self) => self.isInterface);

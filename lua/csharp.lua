@@ -144,9 +144,9 @@ local function CSTypedefDecl(f, t)
     end
 
     if string.sub(dst, 1, 4) == "ref " then
-        writefln(f, "    public struct %s { public IntPtr Value; }", t.name)
+        writefln(f, "    public struct %s { public IntPtr Value; } // %s, %d", t.name, dst, t.useCount)
     else
-        writefln(f, "    public struct %s { public %s Value; }", t.name, dst)
+        writefln(f, "    public struct %s { public %s Value; } // %d", t.name, dst, t.useCount)
     end
 end
 
@@ -160,7 +160,7 @@ local function CSEnumDecl(f, decl, omitEnumPrefix, indent)
         decl.omit()
     end
 
-    writefln(f, "%spublic enum %s", indent, decl.name)
+    writefln(f, "%spublic enum %s // %d", indent, decl.name, decl.useCount)
     writefln(f, "%s{", indent)
     for i, value in ipairs(decl.values) do
         if value.value > INT_MAX then
@@ -387,7 +387,7 @@ local function CSStructDecl(f, decl, option, i)
             else
                 writeln(f, "    [StructLayout(LayoutKind.Sequential)]")
             end
-            writefln(f, "    public struct %s", name)
+            writefln(f, "    public struct %s // %d", name, decl.useCount)
             writeln(f, "    {")
             for i, field in ipairs(decl.fields) do
                 local typeName, option = table.unpack(CSType(field.ref.type, false))
