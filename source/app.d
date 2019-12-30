@@ -16,6 +16,7 @@ import exporter.omitenumprefix;
 import liblua;
 import luamacros;
 import luautils;
+import core.memory;
 
 struct Vector3
 {
@@ -170,6 +171,8 @@ extern (C) int luaFunc_parse(lua_State* L)
 	resolveStructTag(sourceMap);
 
 	// TODO: primitive の名前変えを解決する
+
+	GC.collect();
 
 	// array を table として push
 	return push(L, sourceMap);

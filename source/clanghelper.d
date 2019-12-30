@@ -125,7 +125,7 @@ Location getCursorLocation(CXCursor cursor)
     // auto begin = clang_getRangeStart(extent);
     auto end = clang_getRangeEnd(extent);
 
-    CXFile endFile;
+    void* endFile;
     uint endLine;
     uint endColumn;
     uint endOffset;
