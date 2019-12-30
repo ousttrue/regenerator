@@ -348,7 +348,7 @@ local function DSource(f, packageName, source, option)
         if not option.externC then
             local ns = table.concat(decl.namespace, ".")
             if ns ~= lastNS then
-                if lastNS then
+                if #lastNS>0 then
                     writefln(f, "} // %s", lastNS)
                 end
                 if string.match(ns, "^%s*$") then
