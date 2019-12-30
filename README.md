@@ -20,6 +20,7 @@
 * [x] macro definition value
 * [x] lua interface
 * [ ] resolve typedef for struct tag
+* [ ] lua stack cover primitive types
 
 ### D
 

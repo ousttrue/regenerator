@@ -40,36 +40,26 @@ struct Vector3
 // parse(headers, includes, defines, externC);
 extern (C) int luaFunc_parse(lua_State* L)
 {
-	// log("call");
-
+	// 型情報を集める
 	auto headers = lua_to!(string[])(L, 1);
 	auto includes = lua_to!(string[])(L, 2);
 	auto defines = lua_to!(string[])(L, 3);
 	auto externC = lua_to!bool(L, 4);
-	auto isD = lua_to!bool(L, 5);
-
-	// string dir;
-	// bool omitEnumPrefix = false;
-
 	auto parser = new Parser();
-
-	// 型情報を集める
-	// log("parse...");
 	parser.parse(headers, includes, defines, externC);
 
-	// // 出力する情報を整理する
-	// log("process...");
+	// 出力する情報を整理する
+	auto isD = lua_to!bool(L, 5);
 	auto sourceMap = process(parser, headers, isD);
 
-	lua_createtable(L, 0, cast(int) sourceMap.length);
-	auto table = lua_gettop(L);
-	foreach (k, ref v; sourceMap)
-	{
-		lua_push(L, &v);
-		lua_setfield(L, table, k.toStringz);
-	}
+	// TODO: forward decl を解決する
 
-	return 1;
+	// TODO: struct tag っぽい typedef を解決する
+
+	// TODO: primitive の名前変えを解決する
+
+	// aaray を table として push
+	return lua_push(L, sourceMap);
 }
 
 extern (C) int luaFunc_exists(lua_State* L)
