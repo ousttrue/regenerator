@@ -18,13 +18,15 @@ end
 -- libclang CIndex
 ------------------------------------------------------------------------------
 local headers = {"clang-c/Index.h", "clang-c/CXString.h"}
-local defines = {}
 for i, f in ipairs(headers) do
     headers[i] = string.format("%s/%s", src, f)
 end
 local includes = {src}
-local externC = false
-local sourceMap = parse(headers, includes, defines, externC)
+local sourceMap = ClangParse{
+    isD = true,
+    headers=headers, 
+    includes=includes,
+}
 if sourceMap.empty then
     error("empty")
 end

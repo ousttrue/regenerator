@@ -17,15 +17,18 @@ end
 ------------------------------------------------------------------------------
 -- libclang CIndex
 ------------------------------------------------------------------------------
-local LUA_HEADERS = {"lua.h", "lauxlib.h", "lualib.h"}
 local defines = {"LUA_BUILD_AS_DLL=1"} -- public functions has __declspec(dllexport)
-local headers = {}
-for i, f in ipairs(LUA_HEADERS) do
-    table.insert(headers, string.format("%s/%s", src, f))
+local headers = {"lua.h", "lauxlib.h", "lualib.h"}
+for i, f in ipairs(headers) do
+    headers[i] = string.format("%s/%s", src, f)
 end
-local includes = {}
-local externC = true
-local sourceMap = parse(headers, includes, defines, externC)
+local sourceMap =
+    ClangParse {
+    isD = true,
+    defines = defines,
+    externC = true,
+    headers = headers
+}
 if sourceMap.empty then
     error("empty")
 end
@@ -55,7 +58,7 @@ local option = {
         LUA_VERSUFFIX = 'enum LUA_VERSUFFIX = "_" ~ LUA_VERSION_MAJOR ~ "_" ~ LUA_VERSION_MINOR;'
     },
     filter = filter,
-    externC = externC,
+    externC = externC
 }
 
 D.Generate(sourceMap, dir, option)

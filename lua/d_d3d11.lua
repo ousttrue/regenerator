@@ -31,6 +31,7 @@ local function getLatestKits()
 end
 
 local src = getLatestKits()
+printf("use: %s", src)
 
 ------------------------------------------------------------------------------
 -- libclang CIndex
@@ -42,15 +43,16 @@ local headers = {
     "um/d3d10shader.h",
     "shared/dxgi.h"
 }
-local defines = {}
 for i, f in ipairs(headers) do
     local header = string.format("%s/%s", src, f)
-    print(header)
     headers[i] = header
 end
-local includes = {}
-local externC = false
-local sourceMap = parse(headers, includes, defines, externC)
+
+local sourceMap =
+    ClangParse {
+    headers = headers,
+    isD = true
+}
 if sourceMap.empty then
     error("empty")
 end

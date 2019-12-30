@@ -300,9 +300,9 @@ local function DConstant(f, macroDefinition, macro_map)
 end
 
 local function DSource(f, packageName, source, option)
-    macro_map = option["macro_map"] or {}
-    declFilter = option["filter"]
-    omitEnumPrefix = option["omitEnumPrefix"]
+    local macro_map = option["macro_map"] or {}
+    local declFilter = option["filter"]
+    local omitEnumPrefix = option["omitEnumPrefix"]
 
     writeln(f, HEADLINE)
     writefln(f, "module %s.%s;", packageName, source.name)
@@ -470,11 +470,5 @@ function DGenerate(sourceMap, dir, option)
 end
 
 return {
-    Decl = DDecl,
-    Import = DImport,
-    Const = DConstant,
-    Package = DPackage,
-    Source = DSource,
-    GuidUtil = DGuidUtil,
     Generate = DGenerate
 }

@@ -28,9 +28,12 @@ for i, f in ipairs(headers) do
     print(header)
     headers[i] = header
 end
-local includes = {}
-local externC = false
-local sourceMap = parse(headers, includes, defines, externC)
+local sourceMap =
+    ClangParse {
+    isD = true,
+    headers = headers,
+    defines = defines
+}
 if sourceMap.empty then
     error("empty")
 end

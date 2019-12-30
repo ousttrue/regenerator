@@ -56,9 +56,9 @@ end
 -- export to dlang
 ------------------------------------------------------------------------------
 local ignoreTypes = {
-ID3D10Include = true,
-ID3DInclude = true,
-ID3DBlob = true,
+    ID3D10Include = true,
+    ID3DInclude = true,
+    ID3DBlob = true
 }
 local function filter(decl)
     if ignoreTypes[decl.name] then
