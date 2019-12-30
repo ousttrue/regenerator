@@ -59,38 +59,37 @@ Struct getForwardDecl(ref Source[string] map)
 	return null;
 }
 
-Tuple!(clangdecl.Typedef, UserDecl) getDefTag(ref Source[string] map)
+Tuple!(clangdecl.Typedef, Decl) getDefTag(ref Source[string] map)
 {
 	foreach (k, s; map)
 	{
 		foreach (t; s.m_types)
 		{
-			auto decl = cast(clangdecl.Typedef) t;
-			if (decl)
+			auto def = cast(clangdecl.Typedef) t;
+			if (def)
 			{
-				auto tag = cast(UserDecl) decl.typeref.type;
-				if (tag)
+				auto tag = def.typeref.type;
+				if (cast(clangdecl.Typedef) tag)
 				{
-					auto en = cast(Enum)tag;
-					auto st = cast(Struct)tag;
-					if ((en || st))
-					{
-						return tuple(decl, tag);
-					}
+				}
+				else
+				{
+					return tuple(def, tag);
 				}
 			}
 		}
 	}
-	return Tuple!(clangdecl.Typedef, UserDecl)();
+	return Tuple!(clangdecl.Typedef, Decl)();
 }
 
 void resolve(ref Source[string] map, UserDecl from, Decl to)
 {
+	logf("remove: %s", from.name);
 	// logf("replace %s => %s", from.hash, to.getName);
 
 	foreach (k, s; map)
 	{
-		// remove from types
+		// remove from (typedef or forward decl)
 		s.m_types = s.m_types.remove!(t => t == from);
 
 		foreach (t; s.m_types)
@@ -118,16 +117,21 @@ void resolveStructTag(ref Source[string] map)
 {
 	while (true)
 	{
-		auto tag_def = map.getDefTag();
-		if (!tag_def[0])
+		auto def_tag = map.getDefTag();
+		if (!def_tag[0])
 		{
 			break;
 		}
-		map.resolve(tag_def[0], tag_def[1]);
-		if (tag_def[1].name != tag_def[0].name)
+
+		map.resolve(def_tag[0], def_tag[1]);
+		auto tag = cast(UserDecl) def_tag[1];
+		if (tag)
 		{
-			logf("rename: %s => %s", tag_def[1].name, tag_def[0].name);
-			tag_def[1].name = tag_def[0].name;
+			if (tag.name != def_tag[0].name)
+			{
+				// logf("rename: %s => %s", tag.name, def_tag[0].name);
+				tag.name = def_tag[0].name;
+			}
 		}
 	}
 }

@@ -8,7 +8,7 @@ import libclang;
 
 class Decl
 {
-    void replace(UserDecl from, Decl to)
+    void replace(UserDecl from, Decl to, Decl[] = [])
     {
     }
 }
@@ -17,6 +17,24 @@ struct TypeRef
 {
     Decl type;
     bool isConst;
+
+    void replace(UserDecl from, Decl to, Decl[] path)
+    {
+        if (type == from)
+        {
+            type = to;
+        }
+        else
+        {
+            if (path.any!(a => a == type))
+            {
+                // cyclic
+                debug auto a = 0;
+                return;
+            }
+            type.replace(from, to, path);
+        }
+    }
 
     bool hasConstRecursive()
     {
@@ -56,16 +74,9 @@ class Pointer : Decl
         this.typeref = TypeRef(type, isConst);
     }
 
-    override void replace(UserDecl from, Decl to)
+    override void replace(UserDecl from, Decl to, Decl[] path)
     {
-        if (typeref.type == from)
-        {
-            typeref.type = to;
-        }
-        else
-        {
-            typeref.type.replace(from, to);
-        }
+        typeref.replace(from, to, path ~ this);
     }
 }
 
@@ -78,16 +89,9 @@ class Reference : Decl
         this.typeref = TypeRef(type, isConst);
     }
 
-    override void replace(UserDecl from, Decl to)
+    override void replace(UserDecl from, Decl to, Decl[] path)
     {
-        if (typeref.type == from)
-        {
-            typeref.type = to;
-        }
-        else
-        {
-            typeref.type.replace(from, to);
-        }
+        typeref.replace(from, to, path ~ this);
     }
 }
 
@@ -102,16 +106,9 @@ class Array : Decl
         this.size = arraySize;
     }
 
-    override void replace(UserDecl from, Decl to)
+    override void replace(UserDecl from, Decl to, Decl[] path)
     {
-        if (typeref.type == from)
-        {
-            typeref.type = to;
-        }
-        else
-        {
-            typeref.type.replace(from, to);
-        }
+        typeref.replace(from, to, path ~ this);
     }
 }
 
@@ -237,14 +234,15 @@ class Struct : UserDecl
         super(path, line, name);
     }
 
-    override void replace(UserDecl from, Decl to)
+    override void replace(UserDecl from, Decl to, Decl[] path)
     {
         foreach (ref f; fields)
         {
-            if (f.typeref.type == from)
-            {
-                f.typeref.type = to;
-            }
+            f.typeref.replace(from, to, path ~ this);
+        }
+        foreach (ref m; methods)
+        {
+            m.replace(from, to, path ~ this);
         }
     }
 }
@@ -309,12 +307,9 @@ class Typedef : UserDecl
         typeref = TypeRef(type, isConst);
     }
 
-    override void replace(UserDecl from, Decl to)
+    override void replace(UserDecl from, Decl to, Decl[] path)
     {
-        if (typeref.type == from)
-        {
-            typeref.type == to;
-        }
+        typeref.replace(from, to, path ~ this);
     }
 
     Decl getConcreteDecl(Decl[] path = [])
@@ -365,7 +360,7 @@ class Function : UserDecl
         return "%s %s(%s)".format(ret, name, params);
     }
 
-    override void replace(UserDecl from, Decl to)
+    override void replace(UserDecl from, Decl to, Decl[] path)
     {
         if (ret == from)
         {
@@ -374,10 +369,7 @@ class Function : UserDecl
 
         foreach (ref p; params)
         {
-            if (p.typeref.type == from)
-            {
-                p.typeref.type == to;
-            }
+            p.typeref.replace(from, to, path ~ this);
         }
     }
 }
