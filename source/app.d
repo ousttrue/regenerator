@@ -69,8 +69,12 @@ Tuple!(clangdecl.Typedef, Decl) getDefTag(ref Source[string] map)
 			auto def = cast(clangdecl.Typedef) t;
 			if (def)
 			{
+				if (def.name == "D3D10_RECT" || def.name == "D3D11_RECT")
+				{
+					continue;
+				}
 				auto tag = def.typeref.type;
-				if (cast(clangdecl.Typedef) tag)
+				if (cast(clangdecl.Typedef) tag || cast(Function) tag)
 				{
 				}
 				else

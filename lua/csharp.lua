@@ -23,11 +23,15 @@ local TYPE_MAP = {
     IID = "Guid"
 }
 
-local ESCAPE_SYMBOLS = {ref = true, ["in"] = true}
+local ESCAPE_SYMBOLS = {ref = true, ["in"] = true, event = true}
 
-local function CSEscapeName(src)
+local function CSEscapeName(src, i)
+    i = i or ""
     if ESCAPE_SYMBOLS[src] then
         return "_" .. src
+    end
+    if #src == 0 then
+        src = string.format("__param__%s", i)
     end
     return src
 end
@@ -45,6 +49,24 @@ local function isInterface(decl)
     end
 
     return decl.isInterface
+end
+
+local pointerTypes = {
+    "HDC__",
+    "HWND__",
+    "HINSTANCE__",
+    "HKL__",
+    "HICON__",
+    "RAWINPUT",
+    "HMENU__"
+}
+
+local function isPointer(name)
+    for i, key in ipairs(pointerTypes) do
+        if name == key then
+            return true
+        end
+    end
 end
 
 local function CSType(t, isParam)
@@ -74,11 +96,7 @@ local function CSType(t, isParam)
             return {typeName, option}
         elseif t.ref.type.class == "Int8" then
             return {"string", option}
-        elseif t.ref.type.name == "HDC__" then
-            return {"IntPtr", option}
-        elseif t.ref.type.name == "HWND__" then
-            return {"IntPtr", option}
-        elseif t.ref.type.name == "HINSTANCE__" then
+        elseif isPointer(t.ref.type.name) then
             return {"IntPtr", option}
         else
             local typeName, refOption = table.unpack(CSType(t.ref.type, isParam))
@@ -181,7 +199,7 @@ local function CSGlobalFunction(f, decl, indent, option, sourceName)
     for i, param in ipairs(params) do
         local comma = i == #params and "" or ","
         local dst, option = table.unpack(CSType(param.ref.type, true))
-        writefln(f, "%s    %s%s %s%s", indent, option.attr or "", dst, CSEscapeName(param.name), comma)
+        writefln(f, "%s    %s%s %s%s", indent, option.attr or "", dst, CSEscapeName(param.name, i), comma)
         -- TODO: dfeault value = getValue(param, option.param_map)
     end
     writefln(f, "%s);", indent)
@@ -413,7 +431,7 @@ local function CSStructDecl(f, decl, option, i)
                     if decl.isUnion then
                         writefln(f, "        [FieldOffset(0)]", field.offset)
                     end
-                    local name = CSEscapeName(field.name)
+                    local name = CSEscapeName(field.name, i)
                     if #name == 0 then
                         name = string.format("__anonymous__%d", i)
                     end
@@ -446,6 +464,20 @@ local function CSDecl(f, decl, option, i)
     return hasComInterface
 end
 
+local function getPointerValue(str)
+    for i, key in ipairs {"HWND", "HBITMAP", "HANDLE"} do
+        local pattern = "(.*)%( *" .. key .. " *%)(.*)"
+        local s, e = string.match(str, pattern)
+        if s then
+            return s .. e
+        end
+    end
+end
+
+local function trim(s)
+    return s:match "^%s*(.-)%s*$"
+end
+
 local function CSConstant(f, macroDefinition, macro_map)
     if not isFirstAlpha(macroDefinition.tokens[1]) then
         local text = macro_map[macroDefinition.name]
@@ -453,26 +485,54 @@ local function CSConstant(f, macroDefinition, macro_map)
             writefln(f, "        %s", text)
         else
             local value = table.concat(macroDefinition.tokens, " ")
+
+            for i, key in ipairs {"LONG", "DWORD", "int"} do
+                value = value:gsub("%( " .. key .. " %)", "")
+            end
+
+            local pointerValue = getPointerValue(value)
+            if pointerValue then
+                -- HWND, HBITMAP...
+                writefln(
+                    f,
+                    "        public static readonly IntPtr %s = new IntPtr(%s);",
+                    macroDefinition.name,
+                    pointerValue
+                )
+                return
+            end
+
+            for i, pattern in ipairs {"^(0x)([0-9a-fA-F]+)(U*)(L*)$", "%( *(0x)(%w+) %)"} do
+                local hex, n, u, l = string.match(value, pattern)
+                if n and #n > 0 then
+                    -- hex
+                    if l and #l > 1 then
+                        error("not implemented: " .. l)
+                    end
+
+                    if u and #u > 0 then
+                        -- unsigned
+                        writefln(f, "        public const uint %s = %s%s;", macroDefinition.name, hex, n)
+                        return
+                    else
+                        -- signed
+                        writefln(f, "        public const int %s = unchecked((int)%s%s);", macroDefinition.name, hex, n)
+                        return
+                    end
+                end
+            end
+
             local valueType = "int"
             if string.find(value, '%"') then
                 valueType = "string"
-            elseif string.find(value, "f") then
+            elseif string.find(value, "f") and not string.find(value, "0x") then
                 valueType = "float"
             elseif string.find(value, "%.") then
                 valueType = "double"
-            elseif string.find(value, "UL") then
-                valueType = "ulong"
-            end
-            if valueType == "int" then
-                local num = tonumber(value)
-                if num then
-                    if num > INT_MAX then
-                        valueType = "uint"
-                    end
-                else
-                    -- fail tonumber
-                    -- ex. "( 1 << 0 )"
-                end
+            elseif string.find(value, "WS_") then
+                valueType = "long"
+            elseif string.find(value, "DS_") then
+                valueType = "long"
             end
             writefln(f, "        public const %s %s = %s;", valueType, macroDefinition.name, value)
         end
@@ -497,8 +557,14 @@ local function CSSource(f, packageName, source, option)
     -- const
     if #source.macros > 0 then
         writeln(f, "    public static partial class Constants {")
+        local constants = {}
         for j, macroDefinition in ipairs(source.macros) do
-            CSConstant(f, macroDefinition, macro_map)
+            if constants[macroDefinition.name] then
+                writefln(f, "// duplicate: %s = %s", macroDefinition.name, table.concat(macroDefinition.tokens, " "))
+            else
+                CSConstant(f, macroDefinition, macro_map)
+                constants[macroDefinition.name] = true
+            end
         end
         writeln(f, "    }")
     end
@@ -510,7 +576,9 @@ local function CSSource(f, packageName, source, option)
     for j, decl in ipairs(source.types) do
         if not declFilter or declFilter(decl) then
             if decl.class == "Function" then
-                table.insert(funcs, decl)
+                if not decl.name:find("operator") then
+                    table.insert(funcs, decl)
+                end
             elseif decl.name and #decl.name > 0 then
                 table.insert(types, decl)
             else

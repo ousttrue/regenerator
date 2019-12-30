@@ -37,7 +37,10 @@ local headers = {
     "um/d3dcompiler.h",
     "um/d3d11shader.h",
     "um/d3d10shader.h",
-    "shared/dxgi.h"
+    "shared/dxgi.h",
+    --
+    "um/timeapi.h",
+    "um/winuser.h"
 }
 for i, f in ipairs(headers) do
     local header = string.format("%s/%s", src, f)
@@ -55,8 +58,7 @@ end
 ------------------------------------------------------------------------------
 -- export to dlang
 ------------------------------------------------------------------------------
-local ignoreTypes = {
-}
+local ignoreTypes = {}
 local function filter(decl)
     if ignoreTypes[decl.name] then
         return false
@@ -75,7 +77,17 @@ local option = {
     macro_map = {
         D3D_COMPILE_STANDARD_FILE_INCLUDE = "public static IntPtr D3D_COMPILE_STANDARD_FILE_INCLUDE = new IntPtr(1);",
         DXGI_RESOURCE_PRIORITY_HIGH = "public const int DXGI_RESOURCE_PRIORITY_HIGH = unchecked ((int) 0xa0000000 );",
-        DXGI_RESOURCE_PRIORITY_MAXIMUM = "public const int DXGI_RESOURCE_PRIORITY_MAXIMUM = unchecked ((int) 0xc8000000 );"
+        DXGI_RESOURCE_PRIORITY_MAXIMUM = "public const int DXGI_RESOURCE_PRIORITY_MAXIMUM = unchecked ((int) 0xc8000000 );",
+        DXGI_MAP_READ = "public const int DXGI_MAP_READ = ( 1 );",
+        DXGI_MAP_WRITE = "public const int DXGI_MAP_WRITE = ( 2 );",
+        DXGI_MAP_DISCARD = "public const int DXGI_MAP_DISCARD = ( 4 );",
+        DXGI_ENUM_MODES_INTERLACED = "public const int DXGI_ENUM_MODES_INTERLACED = ( 1 );",
+        DXGI_ENUM_MODES_SCALING = "public const int DXGI_ENUM_MODES_SCALING = ( 2 );",
+        SETWALLPAPER_DEFAULT = "public static readonly IntPtr SETWALLPAPER_DEFAULT = new IntPtr(- 1);",
+        TIMERR_NOCANDO = "public const int TIMERR_NOCANDO = ( /*TIMERR_BASE*/96 + 1 );",
+        TIMERR_STRUCT = "public const int TIMERR_STRUCT = ( /*TIMERR_BASE*/96 + 33 );",
+        LB_CTLCODE = "public const int LB_CTLCODE = 0;",
+        WHEEL_PAGESCROLL = "public const int WHEEL_PAGESCROLL = unchecked( /*UINT_MAX*/(int)0xfffffff );"
     }
 }
 
