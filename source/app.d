@@ -149,6 +149,9 @@ int push(lua_State* L, Source[string] values)
 	return 1;
 }
 
+// keep GC
+Source[string] g_sourceMap;
+
 // parse(headers, includes, defines, externC);
 extern (C) int luaFunc_parse(lua_State* L)
 {
@@ -162,20 +165,20 @@ extern (C) int luaFunc_parse(lua_State* L)
 
 	// 出力する情報を整理する
 	auto isD = lua_to!bool(L, 5);
-	auto sourceMap = process(parser, headers, isD);
+	g_sourceMap = process(parser, headers, isD);
 
 	// process で 解決済み
 	// resolveForwardDeclaration(sourceMap); 
 
 	// TODO: struct tag っぽい typedef を解決する
-	resolveStructTag(sourceMap);
+	resolveStructTag(g_sourceMap);
 
 	// TODO: primitive の名前変えを解決する
 
-	GC.collect();
+	// GC.collect();
 
 	// array を table として push
-	return push(L, sourceMap);
+	return push(L, g_sourceMap);
 }
 
 extern (C) int luaFunc_exists(lua_State* L)
