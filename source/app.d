@@ -175,7 +175,7 @@ extern (C) int luaFunc_parse(lua_State* L)
 	// resolveForwardDeclaration(sourceMap); 
 
 	// TODO: struct tag っぽい typedef を解決する
-	resolveStructTag(g_sourceMap);
+	// resolveStructTag(g_sourceMap);
 
 	// TODO: primitive の名前変えを解決する
 

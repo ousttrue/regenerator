@@ -15,6 +15,7 @@ import sliceview;
 import std.conv;
 import std.bigint;
 import std.experimental.logger;
+import std.exception;
 
 struct MacroDefinition
 {
@@ -276,144 +277,19 @@ class Parser
         }
     }
 
-    Decl typeToDecl(CXCursor cursor, CXType type)
+    ///
+    /// * Primitiveを得る
+    /// * 参照型を構築する(Pointer, Reference, Array...)
+    /// * User型(Struct, Enum, Typedef)への参照を得る(cursor.children の CXCursorKind._TypeRef から)
+    /// * 無名型(Struct)への参照を得る
+    /// * Functionの型(struct field, function param/return, typedef)を得る
+    ///
+    Decl typeToDecl(CXType type, CXCursor cursor)
     {
         auto primitive = KindToPrimitive(type.kind);
         if (primitive)
         {
             return primitive;
-        }
-
-        if (type.kind == CXTypeKind._Pointer)
-        {
-            // pointer
-            auto pointeeType = clang_getPointeeType(type);
-            auto isConst = clang_isConstQualifiedType(pointeeType);
-            auto pointeeDecl = typeToDecl(cursor, pointeeType);
-            if (!pointeeDecl)
-            {
-                auto location = getCursorLocation(cursor);
-                auto spelling = getCursorSpelling(cursor);
-                throw new Exception("no pointee");
-            }
-            return new Pointer(pointeeDecl, isConst != 0);
-        }
-
-        if (type.kind == CXTypeKind._LValueReference)
-        {
-            // reference
-            auto pointeeType = clang_getPointeeType(type);
-            auto isConst = clang_isConstQualifiedType(pointeeType);
-            auto pointeeDecl = typeToDecl(cursor, pointeeType);
-            if (!pointeeDecl)
-            {
-                auto location = getCursorLocation(cursor);
-                auto spelling = getCursorSpelling(cursor);
-                throw new Exception("no pointee");
-            }
-            return new Reference(pointeeDecl, isConst != 0);
-        }
-
-        if (type.kind == CXTypeKind._IncompleteArray)
-        {
-            // treat as pointer
-            auto isConst = clang_isConstQualifiedType(type);
-            auto arrayType = clang_getArrayElementType(type);
-            auto arrayDecl = typeToDecl(cursor, arrayType);
-            auto arraySize = clang_getArraySize(type);
-            return new Pointer(arrayDecl, isConst != 0);
-        }
-
-        if (type.kind == CXTypeKind._ConstantArray)
-        {
-            auto arrayType = clang_getArrayElementType(type);
-            auto arrayDecl = typeToDecl(cursor, arrayType);
-            auto arraySize = clang_getArraySize(type);
-            return new Array(arrayDecl, arraySize);
-        }
-
-        if (type.kind == CXTypeKind._Record)
-        {
-            auto children = cursor.getChildren();
-            foreach (child; children)
-            {
-                auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
-                if (childKind == CXCursorKind._TypeRef)
-                {
-                    auto referenced = clang_getCursorReferenced(child);
-                    return getDeclFromCursor(referenced);
-                }
-            }
-
-            debug int a = 0;
-            throw new Exception("record");
-        }
-
-        if (type.kind == CXTypeKind._Elaborated)
-        {
-            // struct
-            foreach (child; cursor.getChildren())
-            {
-                auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
-                switch (childKind)
-                {
-                case CXCursorKind._StructDecl:
-                case CXCursorKind._UnionDecl:
-                case CXCursorKind._EnumDecl:
-                    {
-                        return getDeclFromCursor(child);
-                    }
-
-                case CXCursorKind._TypeRef:
-                    {
-                        auto referenced = clang_getCursorReferenced(child);
-                        return getDeclFromCursor(referenced);
-                    }
-
-                case CXCursorKind._DLLImport:
-                case CXCursorKind._DLLExport:
-                case CXCursorKind._UnexposedAttr:
-                    // skip
-                    break;
-
-                default:
-                    {
-                        throw new Exception("not implemented");
-                    }
-                }
-            }
-
-            throw new Exception("not implemented");
-        }
-
-        if (type.kind == CXTypeKind._Typedef)
-        {
-            foreach (child; cursor.getChildren())
-            {
-                auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
-                switch (childKind)
-                {
-                case CXCursorKind._TypeRef:
-                    {
-                        auto referenced = clang_getCursorReferenced(child);
-                        return getDeclFromCursor(referenced);
-                    }
-
-                case CXCursorKind._DLLImport:
-                case CXCursorKind._DLLExport:
-                case CXCursorKind._UnexposedAttr:
-                    break;
-
-                default:
-                    throw new Exception("unknown");
-                }
-            }
-            throw new Exception("no TypeRef");
-        }
-
-        if (type.kind == CXTypeKind._FunctionProto)
-        {
-            return new Void();
         }
 
         if (type.kind == CXTypeKind._Unexposed)
@@ -422,7 +298,97 @@ class Parser
             return new Pointer(new Void());
         }
 
-        debug int a = 0;
+        if (type.kind == CXTypeKind._Pointer)
+        {
+            auto pointeeType = clang_getPointeeType(type);
+            auto isConst = clang_isConstQualifiedType(pointeeType);
+            auto pointeeDecl = typeToDecl(pointeeType, cursor);
+            enforce(pointeeDecl, "pointer type not found");
+            return new Pointer(pointeeDecl, isConst != 0);
+        }
+
+        if (type.kind == CXTypeKind._LValueReference)
+        {
+            auto pointeeType = clang_getPointeeType(type);
+            auto isConst = clang_isConstQualifiedType(pointeeType);
+            auto pointeeDecl = typeToDecl(pointeeType, cursor);
+            enforce(pointeeDecl, "reference type not found");
+            return new Reference(pointeeDecl, isConst != 0);
+        }
+
+        if (type.kind == CXTypeKind._IncompleteArray)
+        {
+            auto arrayType = clang_getArrayElementType(type);
+            auto isConst = clang_isConstQualifiedType(type);
+            auto pointeeDecl = typeToDecl(arrayType, cursor);
+            enforce(pointeeDecl, "array[] type not found");
+            // auto arraySize = clang_getArraySize(type);
+            return new Pointer(pointeeDecl, isConst != 0);
+        }
+
+        if (type.kind == CXTypeKind._ConstantArray)
+        {
+            auto arrayType = clang_getArrayElementType(type);
+            auto pointeeDecl = typeToDecl(arrayType, cursor);
+            auto arraySize = clang_getArraySize(type);
+            enforce(pointeeDecl, "array[x] type not found");
+            return new Array(pointeeDecl, arraySize);
+        }
+
+        if (type.kind == CXTypeKind._FunctionProto)
+        {
+            auto dummy = Context();
+            auto decl = parseFunction(cursor, &dummy);
+            return decl;
+        }
+
+        // 子カーソルから型を得る
+        foreach (child; cursor.getChildren())
+        {
+            auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
+            switch (childKind)
+            {
+            case CXCursorKind._StructDecl:
+            case CXCursorKind._UnionDecl:
+            case CXCursorKind._EnumDecl:
+                {
+                    // 宣言
+                    // tag名無し？
+                    enforce(type.kind == CXTypeKind._Elaborated, "not elaborated");
+                    return getDeclFromCursor(child);
+                }
+
+            case CXCursorKind._TypeRef:
+                {
+                    enforce(type.kind == CXTypeKind._Record || type.kind == CXTypeKind._Typedef
+                            || type.kind == CXTypeKind._Elaborated, "not record or typedef");
+                    // auto referenced = clang_getCursorReferenced(child);
+                    // return getDeclFromCursor(referenced);
+                    // auto referenced = clang_getCursorReferenced(child);
+                    // return getDeclFromCursor(referenced);
+                    auto referenced = clang_getCursorReferenced(child);
+                    return getDeclFromCursor(referenced);
+                }
+
+                // case CXCursorKind._DLLImport:
+                // case CXCursorKind._DLLExport:
+                // case CXCursorKind._UnexposedAttr:
+                //     // skip
+                //     break;
+
+            default:
+                {
+                    // debug auto a = 0;
+                    // throw new Exception("unknown");
+                    break;
+                }
+            }
+        }
+
+        debug
+        {
+            int a = 0;
+        }
         throw new Exception("not implemented");
     }
 
@@ -489,7 +455,7 @@ class Parser
         }
         else
         {
-            auto type = typeToDecl(cursor, underlying);
+            auto type = typeToDecl(underlying, cursor);
             pushTypedef(cursor, type);
         }
     }
@@ -544,7 +510,7 @@ class Parser
             case CXCursorKind._FieldDecl:
                 {
                     auto fieldOffset = clang_Cursor_getOffsetOfField(child);
-                    auto fieldDecl = typeToDecl(child, fieldType);
+                    auto fieldDecl = typeToDecl(fieldType, child);
                     auto fieldConst = clang_isConstQualifiedType(fieldType);
                     decl.fields ~= Field(fieldOffset, fieldName,
                             TypeRef(fieldDecl, fieldConst != 0));
@@ -653,7 +619,7 @@ class Parser
         auto name = getCursorSpelling(cursor);
 
         auto retType = clang_getCursorResultType(cursor);
-        auto ret = typeToDecl(cursor, retType);
+        auto ret = retType.kind == CXTypeKind._Invalid ? new Void() : typeToDecl(retType, cursor);
         auto tu = clang_Cursor_getTranslationUnit(cursor);
 
         bool dllExport = false;
@@ -678,7 +644,7 @@ class Parser
                         }
                     }
                     auto paramCursorType = clang_getCursorType(child);
-                    auto paramType = typeToDecl(child, paramCursorType);
+                    auto paramType = typeToDecl(paramCursorType, child);
                     auto paramConst = clang_isConstQualifiedType(paramCursorType);
 
                     auto param = Param(childName, TypeRef(paramType, paramConst != 0));

@@ -54,6 +54,11 @@ local function DType(t, isParam)
                 typeName = string.format("const(%s)", typeName)
             end
             return string.format("%s", typeName)
+        elseif t.ref.type.class == "Function" then
+            local f = t.ref.type
+            local extern = f.isExternC and "extern(C)" or "extern(C++)"
+            local text = string.format("void function()")
+            return text
         else
             local typeName = DType(t.ref.type, isParam)
             if t.ref.isConst then
@@ -80,6 +85,10 @@ local function DType(t, isParam)
         end
         return t.name
     end
+end
+
+local function getFunctionType(t)
+    return "void function()"
 end
 
 local function DTypedefDecl(f, t)
@@ -348,7 +357,7 @@ local function DSource(f, packageName, source, option)
         if not option.externC then
             local ns = table.concat(decl.namespace, ".")
             if ns ~= lastNS then
-                if #lastNS>0 then
+                if #lastNS > 0 then
                     writefln(f, "} // %s", lastNS)
                 end
                 if string.match(ns, "^%s*$") then
@@ -361,7 +370,7 @@ local function DSource(f, packageName, source, option)
         end
         DDecl(f, decl, option)
     end
-    if #lastNS>0 then
+    if #lastNS > 0 then
         writefln(f, "} // %s", lastNS)
     end
 
