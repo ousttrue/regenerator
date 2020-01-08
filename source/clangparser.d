@@ -447,17 +447,8 @@ class Parser
     void parseTypedef(CXCursor cursor)
     {
         auto underlying = clang_getTypedefDeclUnderlyingType(cursor);
-        if (underlying.kind == CXTypeKind._FunctionProto)
-        {
-            auto dummy = Context();
-            auto type = parseFunction(cursor, &dummy);
-            pushTypedef(cursor, type);
-        }
-        else
-        {
-            auto type = typeToDecl(underlying, cursor);
-            pushTypedef(cursor, type);
-        }
+        auto type = typeToDecl(underlying, cursor);
+        pushTypedef(cursor, type);
     }
 
     // https://joshpeterson.github.io/identifying-a-forward-declaration-with-libclang
