@@ -159,11 +159,11 @@ local function CSTypedefDecl(f, t)
         return
     end
 
-    if string.sub(dst, 1, 4) == "ref " then
-        writefln(f, "    public struct %s { public IntPtr Value; } // %s, %d", t.name, dst, t.useCount)
-    else
-        writefln(f, "    public struct %s { public %s Value; } // %d", t.name, dst, t.useCount)
-    end
+    -- if string.sub(dst, 1, 4) == "ref " then
+    --     writefln(f, "    public struct %s { public IntPtr Value; } // %s, %d", t.name, dst, t.useCount)
+    -- else
+    writefln(f, "    public struct %s { public %s Value; } // %d", t.name, dst, t.useCount)
+    -- end
 end
 
 local function CSEnumDecl(f, decl, omitEnumPrefix, indent)
@@ -341,6 +341,50 @@ end
 
 local anonymousMap = {}
 
+local function CSComInterface(f, decl, option, i)
+    if not decl.isInterface then
+        error("is not interface")
+    end
+
+    -- com interface
+    if decl.isForwardDecl then
+        return
+    end
+
+    local name = decl.name
+
+    -- interface
+    writef(f, "    public class %s", name)
+    if not decl.base then
+        writef(f, ": ComPtr")
+    else
+        writef(f, ": %s", decl.base.name)
+    end
+
+    writeln(f)
+    writeln(f, "    {")
+    if decl.iid then
+        -- writefln(f, '    [Guid("%s"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]', decl.iid)
+        writefln(
+            f,
+            [[
+    static Guid s_uuid = new Guid("%s");
+    public static new ref Guid IID => ref s_uuid;
+                ]],
+            decl.iid
+        )
+    end
+
+    -- methods
+    local indexBase = getIndexBase(decl)
+    -- print(decl.name, indexBase)
+    for i, method in ipairs(decl.methods) do
+        local override = hasSameMethod(method.name, decl) and "override" or "virtual"
+        CSInterfaceMethod(f, method, "        ", option, indexBase + i, override)
+    end
+    writeln(f, "    }")
+end
+
 local function CSStructDecl(f, decl, option, i)
     -- assert(!decl.m_forwardDecl);
     local name = decl.name
@@ -352,98 +396,56 @@ local function CSStructDecl(f, decl, option, i)
         anonymousMap[decl.hash] = name
     end
 
-    local hasComInterface = false
-    if decl.isInterface then
-        hasComInterface = true
-        -- com interface
-        if decl.isForwardDecl then
-            return
+    if decl.isForwardDecl then
+        -- forward decl
+        if #decl.fields > 0 then
+            error("forward decl has fields")
         end
-
-        -- interface
-        writef(f, "    public class %s", name)
-        if not decl.base then
-            writef(f, ": ComPtr")
-        else
-            writef(f, ": %s", decl.base.name)
-        end
-
-        writeln(f)
-        writeln(f, "    {")
-        if decl.iid then
-            -- writefln(f, '    [Guid("%s"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]', decl.iid)
-            writefln(
-                f,
-                [[
-        static Guid s_uuid = new Guid("%s");
-        public static new ref Guid IID => ref s_uuid;
-                    ]],
-                decl.iid
-            )
-        end
-
-        -- methods
-        local indexBase = getIndexBase(decl)
-        -- print(decl.name, indexBase)
-        for i, method in ipairs(decl.methods) do
-            local override = hasSameMethod(method.name, decl) and "override" or "virtual"
-            CSInterfaceMethod(f, method, "        ", option, indexBase + i, override)
-        end
-        writeln(f, "    }")
+        writefln(f, "    public struct %s;", name)
     else
-        if decl.isForwardDecl then
-            -- forward decl
-            if #decl.fields > 0 then
-                error("forward decl has fields")
-            end
-            writefln(f, "    public struct %s;", name)
+        if decl.isUnion then
+            writeln(f, "    [StructLayout(LayoutKind.Explicit)]")
         else
-            if decl.isUnion then
-                writeln(f, "    [StructLayout(LayoutKind.Explicit)]")
-            else
-                writeln(f, "    [StructLayout(LayoutKind.Sequential)]")
+            writeln(f, "    [StructLayout(LayoutKind.Sequential)]")
+        end
+        writefln(f, "    public struct %s // %d", name, decl.useCount)
+        writeln(f, "    {")
+        for i, field in ipairs(decl.fields) do
+            local typeName, option = table.unpack(CSType(field.ref.type, false))
+            if not typeName then
+                typeName = anonymousMap[field.ref.type.hash]
+            -- print(field.ref.type.class, typeName, table.concat(field.ref.type.namespace, "_"))
             end
-            writefln(f, "    public struct %s // %d", name, decl.useCount)
-            writeln(f, "    {")
-            for i, field in ipairs(decl.fields) do
-                local typeName, option = table.unpack(CSType(field.ref.type, false))
-                if not typeName then
-                    typeName = anonymousMap[field.ref.type.hash]
-                -- print(field.ref.type.class, typeName, table.concat(field.ref.type.namespace, "_"))
-                end
-                if not typeName then
-                    local fieldType = field.ref.type
-                    if fieldType.class == "Struct" then
-                        if fieldType.isUnion then
-                            -- for i, unionField in ipairs(fieldType.fields) do
-                            --     local unionFieldTypeName = CSType(unionField.ref.type)
-                            --     writefln(f, "        %s %s;", unionFieldTypeName, CSEscapeName(unionField.name))
-                            -- end
-                            -- writefln(f, "    }")
-                            writefln(f, "        // anonymous union")
-                        else
-                            writefln(f, "       // anonymous struct %s;", CSEscapeName(field.name))
-                        end
+            if not typeName then
+                local fieldType = field.ref.type
+                if fieldType.class == "Struct" then
+                    if fieldType.isUnion then
+                        -- for i, unionField in ipairs(fieldType.fields) do
+                        --     local unionFieldTypeName = CSType(unionField.ref.type)
+                        --     writefln(f, "        %s %s;", unionFieldTypeName, CSEscapeName(unionField.name))
+                        -- end
+                        -- writefln(f, "    }")
+                        writefln(f, "        // anonymous union")
                     else
-                        error("unknown")
+                        writefln(f, "       // anonymous struct %s;", CSEscapeName(field.name))
                     end
                 else
-                    if decl.isUnion then
-                        writefln(f, "        [FieldOffset(0)]", field.offset)
-                    end
-                    local name = CSEscapeName(field.name, i)
-                    if #name == 0 then
-                        name = string.format("__anonymous__%d", i)
-                    end
-                    writefln(f, "        %spublic %s %s;", option.attr or "", typeName, name)
+                    error("unknown")
                 end
+            else
+                if decl.isUnion then
+                    writefln(f, "        [FieldOffset(0)]", field.offset)
+                end
+                local name = CSEscapeName(field.name, i)
+                if #name == 0 then
+                    name = string.format("__anonymous__%d", i)
+                end
+                writefln(f, "        %spublic %s %s;", option.attr or "", typeName, name)
             end
-
-            writeln(f, "    }")
         end
-    end
 
-    return hasComInterface
+        writeln(f, "    }")
+    end
 end
 
 local function CSDecl(f, decl, option, i)
@@ -455,8 +457,11 @@ local function CSDecl(f, decl, option, i)
     elseif decl.class == "Function" then
         error("not reach Function")
     elseif decl.class == "Struct" then
-        if CSStructDecl(f, decl, option, i) then
-            hasComInterface = true
+        hasComInterface = decl.isInterface
+        if hasComInterface then
+            CSComInterface(f, decl, option, i)
+        else
+            CSStructDecl(f, decl, option, i)
         end
     else
         error("unknown", decl)

@@ -79,6 +79,9 @@ local option = {
         D3D_COMPILE_STANDARD_FILE_INCLUDE = "enum D3D_COMPILE_STANDARD_FILE_INCLUDE = cast(void*)1;"
     },
     injection = {
+        d3dcommon = [[
+            alias ID3DBlob = ID3D10Blob;
+        ]]
     }
 }
 
