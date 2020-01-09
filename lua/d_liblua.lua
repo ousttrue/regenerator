@@ -50,6 +50,11 @@ local function filter(decl)
     end
 end
 
+local injection_lua = [[
+alias lua_Number = double;
+alias lua_Integer = long;
+]]
+
 local option = {
     macro_map = {
         LUA_VERSION = 'enum LUA_VERSION = "Lua " ~ LUA_VERSION_MAJOR ~ "." ~ LUA_VERSION_MINOR;',
@@ -58,7 +63,10 @@ local option = {
         LUA_VERSUFFIX = 'enum LUA_VERSUFFIX = "_" ~ LUA_VERSION_MAJOR ~ "_" ~ LUA_VERSION_MINOR;'
     },
     filter = filter,
-    externC = externC
+    externC = externC,
+    injection = {
+        lua = injection_lua
+    },
 }
 
 D.Generate(sourceMap, dir, option)
