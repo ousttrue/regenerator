@@ -11,7 +11,7 @@
 
 ## ToDo
 
-* [ ] function pointer type
+* [x] function pointer type
 * [x] multi source entry point
 * [x] union
 * [x] anonymous union
@@ -20,7 +20,7 @@
 * [x] macro definition value
 * [x] lua interface
 * [x] resolve typedef(struct/enum tag, type rename, etc...)
-* [ ] lua stack cover primitive types
+* [ ] luastack.d cover primitive types
 
 ### D
 

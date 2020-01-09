@@ -74,11 +74,11 @@ Tuple!(clangdecl.Typedef, Decl) getDefTag(ref Source[string] map)
 					continue;
 				}
 				auto tag = def.typeref.type;
-				Pointer tagP = cast(clangdecl.Pointer)tag;
+				Pointer tagP = cast(clangdecl.Pointer) tag;
 				if (cast(clangdecl.Typedef) tag || cast(Function) tag)
 				{
 				}
-				else if(tagP && cast(clangdecl.Function)tagP.typeref.type)
+				else if (tagP && cast(clangdecl.Function) tagP.typeref.type)
 				{
 				}
 				else
@@ -372,8 +372,9 @@ int main(string[] args)
 
 	// export struct MacroDefinition
 	auto macroDef = new UserType!MacroDefinition;
-	macroDef.instance.Getter("name", (MacroDefinition* m) => m.name);
+	macroDef.instance.Getter("name", (MacroDefinition* m) => m.tokens.length > 0 ? m.tokens[0] : "");
 	macroDef.instance.Getter("tokens", (MacroDefinition* m) => m.tokens);
+	macroDef.instance.Getter("isFunctionLike", (MacroDefinition* m) => m.isFunctionLike);
 	macroDef.push(lua.L);
 	lua_setglobal(lua.L, "MacroDefinition");
 
@@ -487,15 +488,7 @@ int main(string[] args)
 	funcType.instance.Getter("isExternC", (Function* self) => self.externC);
 	funcType.instance.Getter("params", (Function* self) => self.params);
 	funcType.instance.Getter("namespace", (Function* self) => self.namespace);
-	funcType.instance.Getter("ret", (lua_State* L) {
-		auto self = lua_to!Function(L, 1);
-		// if (!self.ret)
-		// {
-		// 	return 0;
-		// }
-		push_clangdecl(L, self.ret);
-		return 1;
-	});
+	funcType.instance.Getter("ret", (Function* self) => self.ret);
 
 	// parse
 	lua_register(lua.L, "parse", &luaFunc_parse);

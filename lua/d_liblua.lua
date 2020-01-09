@@ -66,7 +66,7 @@ local option = {
     externC = externC,
     injection = {
         lua = injection_lua
-    },
+    }
 }
 
 D.Generate(sourceMap, dir, option)

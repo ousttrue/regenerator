@@ -275,7 +275,7 @@ void DFucntionDecl(File* f, Function decl, string indent, bool isMethod)
 {
     if (!isMethod && !decl.dllExport)
     {
-        auto retType = cast(UserDecl) decl.ret;
+        auto retType = cast(UserDecl) decl.ret.type;
         if (!retType)
         {
             return;
@@ -291,7 +291,7 @@ void DFucntionDecl(File* f, Function decl, string indent, bool isMethod)
     {
         f.write("extern(C) ");
     }
-    f.write(DType(decl.ret));
+    f.write(DType(decl.ret.type));
     f.write(" ");
     f.write(decl.name);
     f.write("(");
@@ -411,14 +411,14 @@ void dlangExport(Source[string] sourceMap, string dir, bool omitEnumPrefix)
                     continue;
                 }
 
-                auto p = macroDefinition.name in macroMap;
+                auto p = macroDefinition.tokens[0] in macroMap;
                 if (p)
                 {
                     f.writeln(*p);
                 }
                 else
                 {
-                    f.writefln("enum %s = %s;", macroDefinition.name,
+                    f.writefln("enum %s = %s;", macroDefinition.tokens[0],
                             macroDefinition.tokens.join(" "));
                 }
             }

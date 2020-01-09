@@ -145,7 +145,7 @@ class Processor
         Struct structDecl = cast(Struct) decl;
         if (functionDecl)
         {
-            addDecl(_decl ~ functionDecl.ret, from);
+            addDecl(_decl ~ functionDecl.ret.type, from);
             foreach (param; functionDecl.params)
             {
                 addDecl(_decl ~ param.typeref.type, from);
@@ -175,7 +175,7 @@ class Processor
             }
             foreach (method; structDecl.methods)
             {
-                addDecl(_decl ~ method.ret, from);
+                addDecl(_decl ~ method.ret.type, from);
                 foreach (param; method.params)
                 {
                     addDecl(_decl ~ param.typeref.type, from);

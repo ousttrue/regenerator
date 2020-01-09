@@ -12,6 +12,7 @@ enum LUA_BITLIBNAME = "bit32";
 enum LUA_MATHLIBNAME = "math";
 enum LUA_DBLIBNAME = "debug";
 enum LUA_LOADLIBNAME = "package";
+// macro function: lua_assert ( x ) ( ( void ) 0 );
 extern(C) int luaopen_base(lua_State* L);
 extern(C) int luaopen_bit32(lua_State* L);
 extern(C) int luaopen_utf8(lua_State* L);

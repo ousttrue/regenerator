@@ -1,5 +1,5 @@
 module clangparser;
-import std.typecons : Tuple;
+import std.typecons : Tuple, Nullable;
 import std.algorithm;
 import std.file;
 import std.string;
@@ -19,19 +19,12 @@ import std.exception;
 
 struct MacroDefinition
 {
-    string name;
     string[] tokens;
+    bool isFunctionLike;
 
     string toString() const
     {
-        if (tokens.length == 1)
-        {
-            return "%s = %s".format(name, tokens[0]);
-        }
-        else
-        {
-            return "%s = %s".format(name, tokens);
-        }
+        return tokens.join("");
     }
 }
 
@@ -447,6 +440,7 @@ class Parser
     void parseTypedef(CXCursor cursor)
     {
         auto underlying = clang_getTypedefDeclUnderlyingType(cursor);
+
         auto type = typeToDecl(underlying, cursor);
         pushTypedef(cursor, type);
     }
@@ -608,10 +602,7 @@ class Parser
     {
         auto location = getCursorLocation(cursor);
         auto name = getCursorSpelling(cursor);
-
-        Decl ret = null;
         auto tu = clang_Cursor_getTranslationUnit(cursor);
-
         bool dllExport = false;
         Param[] params;
         foreach (child; cursor.getChildren())
@@ -622,11 +613,6 @@ class Parser
             switch (childKind)
             {
             case CXCursorKind._TypeRef:
-                {
-                    auto referenced = clang_getCursorReferenced(child);
-                    auto retDecl = getDeclFromCursor(referenced);
-                    ret = retDecl;
-                }
                 break;
 
             case CXCursorKind._WarnUnusedResultAttr:
@@ -693,14 +679,22 @@ class Parser
             }
         }
 
-        if (!ret)
+        Decl ret = new Void();
+        auto retType = clang_getCursorResultType(cursor);
+        if (cursor.kind == CXCursorKind._TypedefDecl)
         {
-            auto retType = clang_getCursorResultType(cursor);
-            ret = retType.kind == CXTypeKind._Invalid ? new Void() : typeToDecl(retType, cursor);
+            // from typedef
+            assert(retType.kind == CXTypeKind._Invalid);
+            auto underlying = clang_getTypedefDeclUnderlyingType(cursor);
+            assert(underlying.kind == CXTypeKind._Pointer);
+            auto pointee = clang_getPointeeType(underlying);
+            assert(pointee.kind == CXTypeKind._FunctionProto);
+            retType = clang_getResultType(pointee);
         }
+        ret = typeToDecl(retType, cursor);
 
-        auto decl = new Function(location.path, location.line, name, ret,
-                params, dllExport, context.isExternC);
+        auto decl = new Function(location.path, location.line, name,
+                TypeRef(ret), params, dllExport, context.isExternC);
         decl.namespace = context.namespace;
         return decl;
     }
@@ -713,10 +707,7 @@ class Parser
             return;
         }
 
-        if (clang_Cursor_isMacroFunctionLike(cursor))
-        {
-            return;
-        }
+        auto isFunctionLike = clang_Cursor_isMacroFunctionLike(cursor) != 0;
 
         auto tu = clang_Cursor_getTranslationUnit(cursor);
         auto tokens = getTokens(cursor);
@@ -730,7 +721,7 @@ class Parser
         string[] tokenSpellings = tokens.map!(t => tokenToString(cursor, t)).array();
 
         auto header = getOrCreateHeader(cursor);
-        header.m_macros ~= MacroDefinition(tokenSpellings[0], tokenSpellings[1 .. $]);
+        header.m_macros ~= MacroDefinition(tokenSpellings, isFunctionLike);
     }
 
     bool parse(string[] headers, string[] includes, string[] defines, bool externC)

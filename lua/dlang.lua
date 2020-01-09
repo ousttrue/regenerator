@@ -57,11 +57,12 @@ local function DType(t, funcType)
         for i, p in ipairs(t.params) do
             table.insert(params, string.format("%s %s", DType(p.ref.type), p.name))
         end
-        local ret = DType(t.ret)
+        local ret = DType(t.ret.type)
         -- if t.ret.isConst then
         --     ret = string.format("const(%s)", ret)
         -- end
-        return string.format("%s%s function(%s)", extern, ret, table.concat(params, ", "))
+        local ret = string.format("%s%s function(%s)", extern, ret, table.concat(params, ", "))
+        return ret
     end
 
     local name = DTYPE_MAP[t.class]
@@ -85,7 +86,8 @@ local function DType(t, funcType)
             if t.ref.isConst then
                 typeName = string.format("const(%s)", typeName)
             end
-            return string.format("%s*", typeName)
+            local result = string.format("%s*", typeName)
+            return result
         end
     elseif t.class == "Reference" then
         -- return DPointer(t)
@@ -178,7 +180,9 @@ local function DFunctionDecl(f, decl, indent, isMethod, option)
         end
     end
 
-    f:write(DType(decl.ret, "RETURN"))
+    local retType = DType(decl.ret.type, "RETURN")
+    -- printf("%s %s", retType, decl.name)
+    f:write(retType)
     f:write(" ")
     f:write(decl.name)
     f:write("(")
@@ -249,8 +253,8 @@ local function DStructDecl(f, decl, option)
             writeln(f, "{")
             for i, field in ipairs(decl.fields) do
                 local typeName = DType(field.ref.type, "FIELD")
-                if not typeName then
-                    local fieldType = field.ref.type
+                local fieldType = field.ref.type
+                if fieldType.class ~= "Pointer" and not typeName then
                     if fieldType.class == "Struct" then
                         if fieldType.isUnion then
                             writefln(f, "    union {")
@@ -263,7 +267,7 @@ local function DStructDecl(f, decl, option)
                             writefln(f, "   // anonymous struct %s;", DEscapeName(field.name))
                         end
                     else
-                        error("unknown")
+                        error(string.format("unknown: %s", fieldType))
                     end
                 else
                     if field.ref.isConst then
@@ -315,12 +319,18 @@ local function DImport(f, packageName, src, modules)
 end
 
 local function DConstant(f, macroDefinition, macro_map)
-    if not isFirstAlpha(macroDefinition.tokens[1]) then
+    local tokens = macroDefinition.tokens
+    if not isFirstAlpha(tokens[2]) then
         local p = macro_map[macroDefinition.name]
         if p then
             writeln(f, p)
         else
-            writefln(f, "enum %s = %s;", macroDefinition.name, table.concat(macroDefinition.tokens, " "))
+            if macroDefinition.isFunctionLike then
+                writefln(f, "// macro function: %s;", table.concat(tokens, " "))
+            else
+                table.remove(tokens, 1)
+                writefln(f, "enum %s = %s;", macroDefinition.name, table.concat(tokens, " "))
+            end
         end
     end
 end

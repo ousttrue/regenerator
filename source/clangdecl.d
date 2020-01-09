@@ -341,12 +341,12 @@ struct Param
 
 class Function : UserDecl
 {
-    Decl ret;
+    TypeRef ret;
     bool externC;
     bool dllExport;
     Param[] params;
 
-    this(string path, int line, string name, Decl ret, Param[] params, bool dllExport, bool externC)
+    this(string path, int line, string name, TypeRef ret, Param[] params, bool dllExport, bool externC)
     {
         super(path, line, name);
         this.ret = ret;
@@ -362,10 +362,7 @@ class Function : UserDecl
 
     override void replace(UserDecl from, Decl to, Decl[] path)
     {
-        if (ret == from)
-        {
-            ret = to;
-        }
+        ret.replace(from, to, path);
 
         foreach (ref p; params)
         {
