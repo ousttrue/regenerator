@@ -533,19 +533,7 @@ class Parser
 
             case CXCursorKind._CXXBaseSpecifier:
                 {
-                    foreach (base; child.getChildren())
-                    {
-                        auto baseKind = cast(CXCursorKind) clang_getCursorKind(base);
-                        if (baseKind == CXCursorKind._TypeRef)
-                        {
-                            auto referenced = clang_getCursorReferenced(base);
-                            auto referencedKind = cast(CXCursorKind) clang_getCursorKind(referenced);
-                            debug auto referencedKindName = getCursorKindName(referencedKind);
-                            auto baseDecl = getDeclFromCursor(referenced);
-                            assert(baseDecl);
-                            decl.base = baseDecl;
-                        }
-                    }
+                    decl.base = cast(UserDecl) getReferenceType(child);
                 }
                 break;
 
@@ -679,40 +667,83 @@ class Parser
             }
         }
 
-        Decl ret = new Void();
-        auto retType = clang_getCursorResultType(cursor);
-        if (retType.kind == CXTypeKind._Invalid)
+        // return type
+        auto retDecl = getReferenceType(cursor);
+        if (!retDecl)
         {
-            if (cursor.kind == CXCursorKind._TypedefDecl)
+            auto retType = getReturnType(cursor);
+            retDecl = typeToDecl(retType, cursor);
+        }
+
+        auto decl = new Function(location.path, location.line, name,
+                TypeRef(retDecl), params, dllExport, context.isExternC);
+        decl.namespace = context.namespace;
+        return decl;
+    }
+
+    Decl getReferenceType(CXCursor cursor)
+    {
+        foreach (child; getChildren(cursor))
+        {
+            if (child.kind == CXCursorKind._TypeRef)
             {
-                // from typedef
-                auto underlying = clang_getTypedefDeclUnderlyingType(cursor);
-                assert(underlying.kind == CXTypeKind._Pointer);
+                auto referenced = clang_getCursorReferenced(child);
+                return getDeclFromCursor(referenced);
+            }
+        }
+
+        return null;
+    }
+
+    CXType getReturnType(CXCursor cursor)
+    {
+        if (cursor.kind == CXCursorKind._FunctionDecl || cursor.kind == CXCursorKind._CXXMethod)
+        {
+            return clang_getCursorResultType(cursor);
+        }
+
+        if (cursor.kind == CXCursorKind._TypedefDecl)
+        {
+            // from typedef
+            auto underlying = clang_getTypedefDeclUnderlyingType(cursor);
+            if (underlying.kind == CXTypeKind._Pointer)
+            {
                 auto pointee = clang_getPointeeType(underlying);
                 assert(pointee.kind == CXTypeKind._FunctionProto);
-                retType = clang_getResultType(pointee);
+                return clang_getResultType(pointee);
             }
-            else if (cursor.kind == CXCursorKind._ParmDecl || cursor.kind == CXCursorKind
-                    ._FieldDecl)
+            else if (underlying.kind == CXTypeKind._FunctionProto)
             {
-                // from param or field
-                auto type = clang_getCursorType(cursor);
-                assert(type.kind == CXTypeKind._Pointer);
-                auto pointee = clang_getPointeeType(type);
-                assert(pointee.kind == CXTypeKind._FunctionProto);
-                retType = clang_getResultType(pointee);
+                return clang_getResultType(underlying);
             }
             else
             {
-                throw new Exception("not implemented");
+                throw new Exception("not impl");
             }
         }
-        ret = typeToDecl(retType, cursor);
 
-        auto decl = new Function(location.path, location.line, name,
-                TypeRef(ret), params, dllExport, context.isExternC);
-        decl.namespace = context.namespace;
-        return decl;
+        if (cursor.kind == CXCursorKind._ParmDecl || cursor.kind == CXCursorKind._FieldDecl)
+        {
+            // from param or field
+            auto type = clang_getCursorType(cursor);
+            if (type.kind == CXTypeKind._Pointer)
+            {
+                assert(type.kind == CXTypeKind._Pointer);
+                auto pointee = clang_getPointeeType(type);
+                assert(pointee.kind == CXTypeKind._FunctionProto);
+                return clang_getResultType(pointee);
+            }
+            else if (type.kind == CXTypeKind._FunctionProto)
+            {
+                return clang_getResultType(type);
+            }
+            else
+            {
+                throw new Exception("not impl");
+            }
+        }
+
+        throw new Exception("not implemented");
     }
 
     void parseMacroDefinition(CXCursor cursor)
