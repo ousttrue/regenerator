@@ -681,15 +681,31 @@ class Parser
 
         Decl ret = new Void();
         auto retType = clang_getCursorResultType(cursor);
-        if (cursor.kind == CXCursorKind._TypedefDecl)
+        if (retType.kind == CXTypeKind._Invalid)
         {
-            // from typedef
-            assert(retType.kind == CXTypeKind._Invalid);
-            auto underlying = clang_getTypedefDeclUnderlyingType(cursor);
-            assert(underlying.kind == CXTypeKind._Pointer);
-            auto pointee = clang_getPointeeType(underlying);
-            assert(pointee.kind == CXTypeKind._FunctionProto);
-            retType = clang_getResultType(pointee);
+            if (cursor.kind == CXCursorKind._TypedefDecl)
+            {
+                // from typedef
+                auto underlying = clang_getTypedefDeclUnderlyingType(cursor);
+                assert(underlying.kind == CXTypeKind._Pointer);
+                auto pointee = clang_getPointeeType(underlying);
+                assert(pointee.kind == CXTypeKind._FunctionProto);
+                retType = clang_getResultType(pointee);
+            }
+            else if (cursor.kind == CXCursorKind._ParmDecl || cursor.kind == CXCursorKind
+                    ._FieldDecl)
+            {
+                // from param or field
+                auto type = clang_getCursorType(cursor);
+                assert(type.kind == CXTypeKind._Pointer);
+                auto pointee = clang_getPointeeType(type);
+                assert(pointee.kind == CXTypeKind._FunctionProto);
+                retType = clang_getResultType(pointee);
+            }
+            else
+            {
+                throw new Exception("not implemented");
+            }
         }
         ret = typeToDecl(retType, cursor);
 
