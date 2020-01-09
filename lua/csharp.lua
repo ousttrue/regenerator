@@ -72,35 +72,35 @@ end
 local function CSType(t, isParam)
     local name = TYPE_MAP[t.class]
     if name then
-        return {name, {}}
+        return name, {}
     end
     if t.class == "Typedef" or t.class == "Struct" then
         local name = TYPE_MAP[t.name]
         if name then
-            return {name, {}}
+            return name, {}
         end
     end
 
     if t.class == "Pointer" then
         local option = {isConst = t.ref.isConst, isRef = true}
         if t.ref.type.name == "ID3DInclude" then
-            return {"IntPtr", option}
+            return "IntPtr", option
         elseif t.ref.type.class == "Void" then
-            return {"IntPtr", option}
+            return "IntPtr", option
         elseif isInterface(t.ref.type) then
             option.isCom = true
-            local typeName = CSType(t.ref.type, isParam)[1]
+            local typeName = CSType(t.ref.type, isParam)
             if typeName == "ID3DBlob" then
                 typeName = "ID3D10Blob"
             end
-            return {typeName, option}
+            return typeName, option
         elseif t.ref.type.class == "Int8" then
-            return {"string", option}
+            return "string", option
         elseif isPointer(t.ref.type.name) then
             -- HWND etc...
-            return {"IntPtr", option}
+            return "IntPtr", option
         elseif isParam then
-            local typeName, refOption = table.unpack(CSType(t.ref.type, isParam))
+            local typeName, refOption = CSType(t.ref.type, isParam)
             for k, v in pairs(refOption) do
                 option[k] = option[k] or v
             end
@@ -112,43 +112,43 @@ local function CSType(t, isParam)
                 )
             end
             local inout = option.isConst and "ref" or "out"
-            return {string.format("%s %s", inout, typeName), option}
+            return string.format("%s %s", inout, typeName), option
         elseif t.ref.type.class == "Function" then
-            return {typeName, option}
+            return typeName, option
         else
-            return {"IntPtr", option}
+            return "IntPtr", option
         end
     elseif t.class == "Reference" then
         local option = {isConst = t.ref.isConst, isRef = true}
-        local typeName, refOption = table.unpack(CSType(t.ref.type, isParam))
+        local typeName, refOption = CSType(t.ref.type, isParam)
         for k, v in pairs(refOption) do
             option[k] = option[k] or v
         end
         local inout = option.isConst and "ref" or "out"
-        return {string.format("%s %s", inout, typeName), option}
+        return string.format("%s %s", inout, typeName), option
     elseif t.class == "Array" then
         -- return DArray(t)
         local a = t
-        local typeName, option = table.unpack(CSType(a.ref.type, isParam))
+        local typeName, option = CSType(a.ref.type, isParam)
         option.isConst = option.isConst or t.ref.isConst
         if isParam then
             option.isRef = true
-            return {string.format("ref %s", typeName), option}
+            return string.format("ref %s", typeName), option
         else
             option.attr = string.format("[MarshalAs(UnmanagedType.ByValArray, SizeConst=%d)]", a.size)
-            return {string.format("%s[]", typeName), option}
+            return string.format("%s[]", typeName), option
         end
     else
         if #t.name == 0 then
-            return {nil, {}}
+            return nil, {}
         end
-        return {t.name, {}}
+        return t.name, {}
     end
 end
 
 local function CSTypedefDecl(f, t)
     -- print(t, t.ref)
-    local dst = CSType(t.ref.type)[1]
+    local dst = CSType(t.ref.type)
     if not dst then
         -- nameless
         writeln(f, "// typedef target nameless")
@@ -195,11 +195,11 @@ local function CSGlobalFunction(f, decl, indent, option, sourceName)
     else
         writefln(f, '%s[DllImport("%s.dll", EntryPoint="mangle")]', indent)
     end
-    writefln(f, "%spublic static extern %s %s(", indent, CSType(decl.ret)[1], decl.name)
+    writefln(f, "%spublic static extern %s %s(", indent, CSType(decl.ret), decl.name)
     local params = decl.params
     for i, param in ipairs(params) do
         local comma = i == #params and "" or ","
-        local dst, option = table.unpack(CSType(param.ref.type, true))
+        local dst, option = CSType(param.ref.type, true)
         writefln(f, "%s    %s%s %s%s", indent, option.attr or "", dst, CSEscapeName(param.name, i), comma)
         -- TODO: dfeault value = getValue(param, option.param_map)
     end
@@ -207,7 +207,7 @@ local function CSGlobalFunction(f, decl, indent, option, sourceName)
 end
 
 local function CSInterfaceMethod(f, decl, indent, option, isMethod, override)
-    local ret = CSType(decl.ret)[1]
+    local ret = CSType(decl.ret)
     local name = decl.name
     if name == "GetType" then
         name = "GetComType"
@@ -219,7 +219,7 @@ local function CSInterfaceMethod(f, decl, indent, option, isMethod, override)
     local callvariables = {}
     for i, param in ipairs(params) do
         local comma = i == #params and "" or ","
-        local dst, option = table.unpack(CSType(param.ref.type, true))
+        local dst, option = CSType(param.ref.type, true)
         local name = CSEscapeName(param.name)
         if option.isCom then
             if param.ref.type.class == "Pointer" and param.ref.type.ref.type.class == "Pointer" then
@@ -412,7 +412,7 @@ local function CSStructDecl(f, decl, option, i)
         writefln(f, "    public struct %s // %d", name, decl.useCount)
         writeln(f, "    {")
         for i, field in ipairs(decl.fields) do
-            local typeName, option = table.unpack(CSType(field.ref.type, false))
+            local typeName, option = CSType(field.ref.type, false)
             if not typeName then
                 typeName = anonymousMap[field.ref.type.hash]
             -- print(field.ref.type.class, typeName, table.concat(field.ref.type.namespace, "_"))
