@@ -97,25 +97,26 @@ local function CSType(t, isParam)
         elseif t.ref.type.class == "Int8" then
             return {"string", option}
         elseif isPointer(t.ref.type.name) then
+            -- HWND etc...
             return {"IntPtr", option}
-        else
+        elseif isParam then
             local typeName, refOption = table.unpack(CSType(t.ref.type, isParam))
             for k, v in pairs(refOption) do
                 option[k] = option[k] or v
             end
-            if isParam then
-                if option.isCom then
-                    option.attr =
-                        string.format(
-                        "[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(CustomMarshaler<%s>))]",
-                        typeName
-                    )
-                end
-                local inout = option.isConst and "ref" or "out"
-                return {string.format("%s %s", inout, typeName), option}
-            else
-                return {"IntPtr", option}
+            if option.isCom then
+                option.attr =
+                    string.format(
+                    "[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(CustomMarshaler<%s>))]",
+                    typeName
+                )
             end
+            local inout = option.isConst and "ref" or "out"
+            return {string.format("%s %s", inout, typeName), option}
+        elseif t.ref.type.class == "Function" then
+            return {typeName, option}
+        else
+            return {"IntPtr", option}
         end
     elseif t.class == "Reference" then
         local option = {isConst = t.ref.isConst, isRef = true}
@@ -401,7 +402,7 @@ local function CSStructDecl(f, decl, option, i)
         if #decl.fields > 0 then
             error("forward decl has fields")
         end
-        writefln(f, "    public struct %s;", name)
+        writefln(f, "    // forward declaration %s;", name)
     else
         if decl.isUnion then
             writeln(f, "    [StructLayout(LayoutKind.Explicit)]")
