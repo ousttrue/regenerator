@@ -609,8 +609,7 @@ class Parser
         auto location = getCursorLocation(cursor);
         auto name = getCursorSpelling(cursor);
 
-        auto retType = clang_getCursorResultType(cursor);
-        auto ret = retType.kind == CXTypeKind._Invalid ? new Void() : typeToDecl(retType, cursor);
+        Decl ret = null;
         auto tu = clang_Cursor_getTranslationUnit(cursor);
 
         bool dllExport = false;
@@ -626,14 +625,7 @@ class Parser
                 {
                     auto referenced = clang_getCursorReferenced(child);
                     auto retDecl = getDeclFromCursor(referenced);
-                    if (ret == retDecl)
-                    {
-                        debug auto a = 0;
-                    }
-                    else
-                    {
-                        ret = retDecl;
-                    }
+                    ret = retDecl;
                 }
                 break;
 
@@ -699,6 +691,12 @@ class Parser
                 debug int a = 0;
                 throw new Exception("unknown param type");
             }
+        }
+
+        if (!ret)
+        {
+            auto retType = clang_getCursorResultType(cursor);
+            ret = retType.kind == CXTypeKind._Invalid ? new Void() : typeToDecl(retType, cursor);
         }
 
         auto decl = new Function(location.path, location.line, name, ret,
