@@ -9,14 +9,17 @@ local INT_MAX = 2147483647
 local TYPE_MAP = {
     Void = "void",
     Bool = "bool",
+    --
     Int8 = "sbyte",
     Int16 = "short",
     Int32 = "int",
     Int64 = "long",
+    --
     UInt8 = "byte",
     UInt16 = "ushort",
     UInt32 = "uint",
     UInt64 = "ulong",
+    --
     Float = "float",
     Double = "double",
     --
@@ -95,6 +98,7 @@ local function CSType(t, isParam)
             end
             return typeName, option
         elseif t.ref.type.class == "Int8" then
+            -- string
             return "string", option
         elseif isPointer(t.ref.type.name) then
             -- HWND etc...
@@ -114,7 +118,28 @@ local function CSType(t, isParam)
             local inout = option.isConst and "ref" or "out"
             return string.format("%s %s", inout, typeName), option
         elseif t.ref.type.class == "Function" then
-            return typeName, option
+            if isParam then
+                return t.ref.type.name, option
+            else
+                local decl = t.ref.type
+                local retType = CSType(decl.ret)
+                local params = decl.params
+                local paramTypes = {}
+                for i, param in ipairs(params) do
+                    local comma = i == #params and "" or ","
+                    local dst, option = CSType(param.ref.type, true)
+                    local paramName = param.name
+                    if #paramName == 0 then
+                        paramName = string.format("p%d", i)
+                    end
+                    local typeName = string.format("%s %s", dst, paramName)
+                    table.insert(paramTypes, typeName)
+                end
+                local func = string.format("%s %%s(%s)", retType, table.concat(paramTypes, ", "))
+                return func, {
+                    isDelegate = true
+                }
+            end
         else
             return "IntPtr", option
         end
@@ -138,6 +163,8 @@ local function CSType(t, isParam)
             option.attr = string.format("[MarshalAs(UnmanagedType.ByValArray, SizeConst=%d)]", a.size)
             return string.format("%s[]", typeName), option
         end
+    elseif t.class == "Function" then
+        error("not implemented: function")
     else
         if #t.name == 0 then
             return nil, {}
@@ -148,7 +175,7 @@ end
 
 local function CSTypedefDecl(f, t)
     -- print(t, t.ref)
-    local dst = CSType(t.ref.type)
+    local dst, option = CSType(t.ref.type)
     if not dst then
         -- nameless
         writeln(f, "// typedef target nameless")
@@ -160,11 +187,12 @@ local function CSTypedefDecl(f, t)
         return
     end
 
-    -- if string.sub(dst, 1, 4) == "ref " then
-    --     writefln(f, "    public struct %s { public IntPtr Value; } // %s, %d", t.name, dst, t.useCount)
-    -- else
-    writefln(f, "    public struct %s { public %s Value; } // %d", t.name, dst, t.useCount)
-    -- end
+    if option.isDelegate then
+        local template = string.format("    public delegate %s;", dst)
+        writefln(f, template, t.name)
+    else
+        writefln(f, "    public struct %s { public %s Value; } // %d", t.name, dst, t.useCount)
+    end
 end
 
 local function CSEnumDecl(f, decl, omitEnumPrefix, indent)
