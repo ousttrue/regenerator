@@ -26,7 +26,12 @@ local TYPE_MAP = {
     IID = "Guid"
 }
 
-local ESCAPE_SYMBOLS = {ref = true, ["in"] = true, event = true}
+local ESCAPE_SYMBOLS = {
+    --
+    ref = true,
+    ["in"] = true,
+    event = true
+}
 
 local function CSEscapeName(src, i)
     i = i or ""
@@ -128,10 +133,7 @@ local function CSType(t, isParam)
                 for i, param in ipairs(params) do
                     local comma = i == #params and "" or ","
                     local dst, option = CSType(param.ref.type, true)
-                    local paramName = param.name
-                    if #paramName == 0 then
-                        paramName = string.format("p%d", i)
-                    end
+                    local paramName = CSEscapeName(param.name, i)
                     local typeName = string.format("%s %s", dst, paramName)
                     table.insert(paramTypes, typeName)
                 end
