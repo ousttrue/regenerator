@@ -39,7 +39,31 @@ local function isInterface(decl)
     return decl.isInterface
 end
 
-local function DType(t, isParam)
+--- functype: TYPEDEF, RETURN, PARAM or FIELD
+local function DType(t, funcType)
+    local function getFunctionType(t)
+        local extern = ""
+        if funcType == "PARAM" then
+            --
+        elseif funcType == "RETURN" then
+            --
+        elseif funcType == "TYPEDEF" or funcType == "FIELD" then
+            extern = "extern(C) "
+        else
+            error("unknown")
+        end
+
+        local params = {}
+        for i, p in ipairs(t.params) do
+            table.insert(params, string.format("%s %s", DType(p.ref.type), p.name))
+        end
+        local ret = DType(t.ret)
+        -- if t.ret.isConst then
+        --     ret = string.format("const(%s)", ret)
+        -- end
+        return string.format("%s%s function(%s)", extern, ret, table.concat(params, ", "))
+    end
+
     local name = DTYPE_MAP[t.class]
     if name then
         return name
@@ -49,18 +73,15 @@ local function DType(t, isParam)
         if t.ref.type.name == "ID3DInclude" then
             return "void*   "
         elseif isInterface(t.ref.type) then
-            local typeName = DType(t.ref.type, isParam)
+            local typeName = DType(t.ref.type, funcType)
             if t.ref.isConst then
                 typeName = string.format("const(%s)", typeName)
             end
             return string.format("%s", typeName)
         elseif t.ref.type.class == "Function" then
-            local f = t.ref.type
-            local extern = f.isExternC and "extern(C)" or "extern(C++)"
-            local text = string.format("void function()")
-            return text
+            return getFunctionType(t.ref.type)
         else
-            local typeName = DType(t.ref.type, isParam)
+            local typeName = DType(t.ref.type, funcType)
             if t.ref.isConst then
                 typeName = string.format("const(%s)", typeName)
             end
@@ -68,7 +89,7 @@ local function DType(t, isParam)
         end
     elseif t.class == "Reference" then
         -- return DPointer(t)
-        local typeName = DType(t.ref.type, isParam)
+        local typeName = DType(t.ref.type, funcType)
         if t.ref.isConst and isParam then
             typeName = string.format("in %s", typeName)
         else
@@ -78,7 +99,7 @@ local function DType(t, isParam)
     elseif t.class == "Array" then
         -- return DArray(t)
         local a = t
-        return string.format("%s[%d]", DType(a.ref.type, isParam), a.size)
+        return string.format("%s[%d]", DType(a.ref.type, funcType), a.size)
     else
         if #t.name == 0 then
             return nil
@@ -87,13 +108,9 @@ local function DType(t, isParam)
     end
 end
 
-local function getFunctionType(t)
-    return "void function()"
-end
-
 local function DTypedefDecl(f, t)
     -- print(t, t.ref)
-    local dst = DType(t.ref.type)
+    local dst = DType(t.ref.type, "TYPEDEF")
     if not dst then
         -- nameless
         writeln(f, "// typedef target nameless")
@@ -161,7 +178,7 @@ local function DFunctionDecl(f, decl, indent, isMethod, option)
         end
     end
 
-    f:write(DType(decl.ret))
+    f:write(DType(decl.ret, "RETURN"))
     f:write(" ")
     f:write(decl.name)
     f:write("(")
@@ -174,7 +191,7 @@ local function DFunctionDecl(f, decl, indent, isMethod, option)
             f:write(", ")
         end
 
-        local dst = DType(param.ref.type, true)
+        local dst = DType(param.ref.type, "PARAM")
         if param.ref.isConst then
             dst = string.format("const(%s)", dst)
         end
@@ -231,14 +248,14 @@ local function DStructDecl(f, decl, option)
             writefln(f, "struct %s", name)
             writeln(f, "{")
             for i, field in ipairs(decl.fields) do
-                local typeName = DType(field.ref.type)
+                local typeName = DType(field.ref.type, "FIELD")
                 if not typeName then
                     local fieldType = field.ref.type
                     if fieldType.class == "Struct" then
                         if fieldType.isUnion then
                             writefln(f, "    union {")
                             for i, unionField in ipairs(fieldType.fields) do
-                                local unionFieldTypeName = DType(unionField.ref.type)
+                                local unionFieldTypeName = DType(unionField.ref.type, "FIELD")
                                 writefln(f, "        %s %s;", unionFieldTypeName, DEscapeName(unionField.name))
                             end
                             writefln(f, "    }")

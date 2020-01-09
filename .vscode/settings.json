@@ -6,6 +6,7 @@
         "DWRITE",
         "LLVM",
         "MSVCRTD",
+        "Proto",
         "UUID",
         "cindex",
         "clangdecl",

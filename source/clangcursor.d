@@ -34,9 +34,9 @@ struct CursorList
     CXCursor[] cursors;
 }
 
-extern (C) CXChildVisitResult visitor(CXCursor cursor, CXCursor /* parent */ , CursorList* list)
+extern (C) CXChildVisitResult visitor(CXCursor cursor, CXCursor /* parent */ , void* list)
 {
-    list.cursors ~= cursor;
+    (cast(CursorList*) list).cursors ~= cursor;
     return CXChildVisitResult._Continue;
 }
 

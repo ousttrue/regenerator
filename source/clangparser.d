@@ -623,6 +623,20 @@ class Parser
             switch (childKind)
             {
             case CXCursorKind._TypeRef:
+                {
+                    auto referenced = clang_getCursorReferenced(child);
+                    auto retDecl = getDeclFromCursor(referenced);
+                    if (ret == retDecl)
+                    {
+                        debug auto a = 0;
+                    }
+                    else
+                    {
+                        ret = retDecl;
+                    }
+                }
+                break;
+
             case CXCursorKind._WarnUnusedResultAttr:
                 break;
 
