@@ -906,6 +906,29 @@ namespace ShrimpDX
                 Marshal.FreeHGlobal(strPtr);
             }
         }
+
+        public static void ThrowIfFailed(this int hr)
+        {
+            if (hr != 0)
+            {
+                var ex = new ComException(hr);
+                throw ex;
+            }
+        }
+
+        public static bool Succeeded(this int hr) => hr == 0;
+
+        public static bool Failed(this int hr) => hr != 0;
+    }
+
+    public class ComException : Exception
+    {
+        public readonly int HR;
+ 
+        public ComException(int hr)
+        {
+            HR = hr;
+        }
     }
 }
 ]]
