@@ -615,47 +615,63 @@ local function CSSource(f, packageName, source, option)
         writeln(f, "    public static partial class Constants {")
         local macros = source.macros
 
-        local function CSMacroEnum(prefix, items, packageName, pred, type)
+        -- enum じゃなくて const 変数に(castを避けたい)
+        local function CSMacroEnum(path, prefix, items, packageName, pred, type)
             if #items == 0 then
                 return
             end
 
-            local path = string.format("%s/%s.cs", option.dir, prefix)
+            type = type or "int"
+
             local f = io.open(path, "w")
             writeln(f, HEADLINE)
             writefln(f, "namespace %s {", packageName)
 
-            writefln(f, "    public enum %s%s {", prefix, type and (": " .. type) or "")
+            writefln(f, "    public static class %s {", prefix)
             for i, m in ipairs(items) do
                 local tokens = m.tokens
                 table.remove(tokens, 1)
                 local name = string.sub(m.name, #prefix + 1)
-                writefln(f, "        %s = %s,", name, pred and pred(tokens) or table.concat(tokens, " "))
+                writefln(
+                    f,
+                    "        public const %s %s = %s;",
+                    type,
+                    name,
+                    pred and pred(prefix, tokens) or table.concat(tokens, " ")
+                )
             end
             writeln(f, "    }")
 
             writeln(f, "}")
             io.close(f)
         end
+
+        local used = {}
         for prefix, const in pairs(option.const) do
             local group = {}
-            for i = #macros, 1, -1 do
-                local macro = macros[i]
-                if startswith(macro.name, prefix .. "_") then
+            local match = prefix .. "_"
+            if const.match then
+                match = const.match
+            end
+            for i, macro in ipairs(macros) do
+                if startswith(macro.name, match) then
                     table.insert(group, macro)
-                    table.remove(macros, i)
+                    used[i] = true
                 end
             end
-            CSMacroEnum(prefix, group, packageName, const.value, const.type)
+            local path = string.format("%s/%s_%s.cs", option.dir, source.name, prefix)
+            CSMacroEnum(path, prefix, group, packageName, const.value, const.type)
         end
 
         local constants = {}
-        for _, macro in ipairs(macros) do
-            if constants[macro.name] then
-                writefln(f, "// duplicate: %s = %s", macro.name, table.concat(macro.tokens, " "))
-            else
-                CSMacro(f, macro, macro_map)
-                constants[macro.name] = true
+        for i, macro in ipairs(macros) do
+            if not used[i] then
+                if constants[macro.name] then
+                    writefln(f, "// duplicate: %s = %s", macro.name, table.concat(macro.tokens, " "))
+                else
+                    CSMacro(f, macro, macro_map)
+                    constants[macro.name] = true
+                end
             end
         end
         writeln(f, "    }")

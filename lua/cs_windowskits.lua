@@ -70,7 +70,7 @@ local function filter(decl)
         return true
     end
 end
-local function remove_MAKEINTRESOURCE(tokens)
+local function remove_MAKEINTRESOURCE(prefix, tokens)
     local items = {}
     for _, t in ipairs(tokens) do
         if t == "MAKEINTRESOURCE" then
@@ -80,25 +80,55 @@ local function remove_MAKEINTRESOURCE(tokens)
     end
     return table.concat(items, " ")
 end
-local function rename_WS(tokens)
+local function rename_values(prefix, tokens)
     local items = {}
     for _, t in ipairs(tokens) do
-        local rename = string.gsub(t, "^WS_", "")
+        local rename = string.gsub(t, "^" .. prefix .. "_", "")
         if rename ~= t then
+            -- 数字で始まる場合があるので
             rename = "_" .. rename
+        end
+        if rename:sub(#rename) == "L" then
+            rename = string.sub(rename, 1, #rename - 1)
         end
         table.insert(items, rename)
     end
     return table.concat(items, " ")
 end
+local function rename_values_dm(prefix, tokens)
+    local items = {}
+    for _, t in ipairs(tokens) do
+        if t == "WM_USER" then
+            table.insert(items, "WM._USER")
+        else
+            local rename = string.gsub(t, "^" .. prefix .. "_", "")
+            if rename ~= t then
+                -- 数字で始まる場合があるので
+                rename = "_" .. rename
+            end
+            if rename:sub(#rename) == "L" then
+                rename = string.sub(rename, 1, #rename - 1)
+            end
+            table.insert(items, rename)
+        end
+    end
+    return table.concat(items, " ")
+end
 local const = {
-    --
     IDC = {
         value = remove_MAKEINTRESOURCE
     },
     WS = {
-        type = "long",
-        value = rename_WS
+        value = rename_values,
+        type = "uint"
+    },
+    WM = {
+        value = rename_values,
+        type = "uint"
+    },
+    DM = {
+        value = rename_values_dm,
+        type = "uint"
     }
 }
 local option = {
