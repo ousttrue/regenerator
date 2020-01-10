@@ -740,6 +740,8 @@ local function ComUtil(f, packageName)
     writeln(f, HEADLINE)
     f:write(
         [[
+using System.Text;
+
 namespace ShrimpDX
 {
     /// <summary>
@@ -919,6 +921,11 @@ namespace ShrimpDX
         public static bool Succeeded(this int hr) => hr == 0;
 
         public static bool Failed(this int hr) => hr != 0;
+
+        public static MutableString ToMutableString(this ushort[] src)
+        {
+            return new MutableString(src);
+        }
     }
 
     public class ComException : Exception
@@ -930,7 +937,34 @@ namespace ShrimpDX
             HR = hr;
         }
     }
-}
+
+    public struct MutableString
+    {
+        // zero terminated
+        public byte[] Buffer;
+
+        public MutableString(string src)
+        {
+            Buffer = Encoding.Unicode.GetBytes(src);
+        }
+
+        public MutableString(ushort[] src)
+        {
+            var end = Array.IndexOf<ushort>(src, 0, 0);
+            if (end == -1)
+            {
+                end = src.Length;
+            }
+            var span = MemoryMarshal.Cast<ushort, byte>(src.AsSpan().Slice(0, end));
+            Buffer = new byte[end * 2 + 2];
+            span.CopyTo(Buffer.AsSpan());
+        }
+
+        public override string ToString()
+        {
+            return Encoding.Unicode.GetString(Buffer, 0, Buffer.Length - 2);
+        }
+    }}
 ]]
     )
 end
