@@ -27,11 +27,21 @@ local TYPE_MAP = {
 }
 
 local FIELD_MAP = {
-    LPCWSTR = {"string", "[MarshalAs(UnmanagedType.LPWStr)]"}
+    LPCWSTR = {
+        "string",
+        {
+            attr = "[MarshalAs(UnmanagedType.LPWStr)]"
+        }
+    }
 }
 
 local PARAM_MAP = {
-    LPCWSTR = {"ref ushort"}
+    LPCWSTR = {
+        "ref ushort",
+        {
+            isRef = true
+        }
+    }
 }
 
 local ESCAPE_SYMBOLS = {
@@ -98,18 +108,14 @@ local function CSType(t, isParam)
         end
 
         if isParam then
-            local marshal = PARAM_MAP[t.name]
-            if marshal then
-                return marshal[1], {
-                    attr = marshal[2]
-                }
+            local nameOption = PARAM_MAP[t.name]
+            if nameOption then
+                return table.unpack(nameOption)
             end
         else
-            local marshal = FIELD_MAP[t.name]
-            if marshal then
-                return marshal[1], {
-                    attr = marshal[2]
-                }
+            local nameOption = FIELD_MAP[t.name]
+            if nameOption then
+                return table.unpack(nameOption)
             end
         end
     end
@@ -129,6 +135,7 @@ local function CSType(t, isParam)
             return typeName, option
         elseif t.ref.type.class == "Int8" then
             -- string
+            option['attr'] = '[MarshalAs(UnmanagedType.LPStr)]'
             return "string", option
         elseif isPointer(t.ref.type.name) then
             -- HWND etc...
@@ -305,7 +312,7 @@ local function CSInterfaceMethod(f, decl, indent, option, isMethod, override)
             else
                 -- in interface
                 writefln(f, "%s    %s %s%s", indent, dst, name, comma)
-                table.insert(callbackParams, string.format("%s.Ptr", name))
+                table.insert(callbackParams, string.format("%s!=null ? %s.Ptr : IntPtr.Zero", name, name))
                 table.insert(delegateParams, string.format("IntPtr %s", name))
             end
         elseif option.isRef then
@@ -647,7 +654,7 @@ local function CSSource(f, packageName, source, option)
             writeln(f, HEADLINE)
             writefln(f, "namespace %s {", packageName)
 
-            writefln(f, "    public static class %s {", prefix)
+            writefln(f, "    public static partial class %s {", prefix)
             for i, m in ipairs(items) do
                 local tokens = m.tokens
                 table.remove(tokens, 1)

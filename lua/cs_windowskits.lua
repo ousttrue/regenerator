@@ -89,7 +89,9 @@ local function rename_values(prefix, tokens)
             -- 数字で始まる場合があるので
             rename = "_" .. rename
         end
-        if rename:sub(#rename) == "L" then
+        if rename:sub(#rename - 1) == "UL" then
+            rename = string.sub(rename, 1, #rename - 2)
+        elseif rename:sub(#rename) == "L" then
             rename = string.sub(rename, 1, #rename - 1)
         end
         table.insert(items, rename)
@@ -129,6 +131,14 @@ local const = {
     },
     DM = {
         value = rename_values_dm,
+        type = "uint"
+    },
+    DXGI_USAGE = {
+        value = rename_values,
+        type = "uint"
+    },
+    DXGI_ENUM_MODES = {
+        value = rename_values,
         type = "uint"
     }
 }
@@ -171,7 +181,8 @@ local option = {
     overload = overload,
     dll_map = {
         winuser = "user32",
-        timeapi = "winmm"
+        timeapi = "winmm",
+        d3dcompiler = "D3dcompiler_47"
     }
 }
 
