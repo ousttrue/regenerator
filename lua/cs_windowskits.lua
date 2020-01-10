@@ -131,6 +131,20 @@ local const = {
         type = "uint"
     }
 }
+local overload = {
+    LoadCursorW = [[
+        public static IntPtr LoadCursorW(
+            IntPtr hInstance,
+            int lpCursorName
+        )
+        {
+            Span<int> src = stackalloc int[1];
+            src[0] = lpCursorName;
+            var cast = MemoryMarshal.Cast<int, ushort>(src);
+            return LoadCursorW(hInstance, cast[0]);
+        }
+    ]]
+}
 local option = {
     filter = filter,
     omitEnumPrefix = true,
@@ -152,7 +166,8 @@ local option = {
         LBS_STANDARD = "public const long LBS_STANDARD = ( LBS_NOTIFY | LBS_SORT | (long)WS._VSCROLL | (long)WS._BORDER );"
     },
     dir = dir,
-    const = const
+    const = const,
+    overload = overload
 }
 
 CS.Generate(sourceMap, option)

@@ -26,8 +26,12 @@ local TYPE_MAP = {
     IID = "Guid"
 }
 
-local MARSHAL_MAP = {
+local FIELD_MAP = {
     LPCWSTR = {"string", "[MarshalAs(UnmanagedType.LPWStr)]"}
+}
+
+local PARAM_MAP = {
+    LPCWSTR = "in ushort"
 }
 
 local ESCAPE_SYMBOLS = {
@@ -93,11 +97,18 @@ local function CSType(t, isParam)
             return name, {}
         end
 
-        local marshal = MARSHAL_MAP[t.name]
-        if marshal then
-            return marshal[1], {
-                attr = marshal[2]
-            }
+        if isParam then
+            local marshal = PARAM_MAP[t.name]
+            if marshal then
+                return marshal, {}
+            end
+        else
+            local marshal = FIELD_MAP[t.name]
+            if marshal then
+                return marshal[1], {
+                    attr = marshal[2]
+                }
+            end
         end
     end
 
@@ -246,6 +257,10 @@ local function CSGlobalFunction(f, decl, indent, option, sourceName)
         -- TODO: dfeault value = getValue(param, option.param_map)
     end
     writefln(f, "%s);", indent)
+    local overload = option.overload[decl.name]
+    if overload then
+        writefln(f, overload)
+    end
 end
 
 local function CSInterfaceMethod(f, decl, indent, option, isMethod, override)
@@ -843,6 +858,30 @@ namespace ShrimpDX
         }
     }
 }
+
+static class WindowsAPIExtensions
+{
+    public static short HIWORD(this ulong _dw)
+    {
+        return ((short)((_dw >> 16) & 0xffff));
+    }
+
+    public static short LOWORD(this ulong _dw)
+    {
+        return ((short)(_dw & 0xffff));
+    }
+
+    public static short HIWORD(this long _dw)
+    {
+        return ((short)((_dw >> 16) & 0xffff));
+    }
+
+    public static short LOWORD(this long _dw)
+    {
+        return ((short)(_dw & 0xffff));
+    }
+}
+
 ]]
     )
 end
@@ -855,6 +894,10 @@ local function CSProj(f)
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Memory" Version="4.5.3" />
+  </ItemGroup>
 
 </Project>
     ]]
