@@ -26,6 +26,10 @@ local TYPE_MAP = {
     IID = "Guid"
 }
 
+local MARSHAL_MAP = {
+    LPCWSTR = {"string", "[MarshalAs(UnmanagedType.LPWStr)]"}
+}
+
 local ESCAPE_SYMBOLS = {
     --
     ref = true,
@@ -82,10 +86,18 @@ local function CSType(t, isParam)
     if name then
         return name, {}
     end
+
     if t.class == "Typedef" or t.class == "Struct" then
         local name = TYPE_MAP[t.name]
         if name then
             return name, {}
+        end
+
+        local marshal = MARSHAL_MAP[t.name]
+        if marshal then
+            return marshal[1], {
+                attr = marshal[2]
+            }
         end
     end
 
@@ -127,7 +139,7 @@ local function CSType(t, isParam)
                 return t.ref.type.name, option
             else
                 local decl = t.ref.type
-                local retType = CSType(decl.ret)
+                local retType = CSType(decl.ret.type)
                 local params = decl.params
                 local paramTypes = {}
                 for i, param in ipairs(params) do
@@ -225,7 +237,7 @@ local function CSGlobalFunction(f, decl, indent, option, sourceName)
     else
         writefln(f, '%s[DllImport("%s.dll", EntryPoint="mangle")]', indent)
     end
-    writefln(f, "%spublic static extern %s %s(", indent, CSType(decl.ret), decl.name)
+    writefln(f, "%spublic static extern %s %s(", indent, CSType(decl.ret.type), decl.name)
     local params = decl.params
     for i, param in ipairs(params) do
         local comma = i == #params and "" or ","
@@ -237,7 +249,7 @@ local function CSGlobalFunction(f, decl, indent, option, sourceName)
 end
 
 local function CSInterfaceMethod(f, decl, indent, option, isMethod, override)
-    local ret = CSType(decl.ret)
+    local ret = CSType(decl.ret.type)
     local name = decl.name
     if name == "GetType" then
         name = "GetComType"
@@ -514,65 +526,73 @@ local function trim(s)
     return s:match "^%s*(.-)%s*$"
 end
 
-local function CSConstant(f, macroDefinition, macro_map)
-    if not isFirstAlpha(macroDefinition.tokens[1]) then
-        local text = macro_map[macroDefinition.name]
-        if text then
-            writefln(f, "        %s", text)
-        else
-            local value = table.concat(macroDefinition.tokens, " ")
+local function CSMacro(f, macro, macro_map)
+    if macro.isFunctionLike then
+        writefln(f, "        // macro function: %s", table.concat(macro.tokens, " "))
+        return
+    end
 
-            for i, key in ipairs {"LONG", "DWORD", "int"} do
-                value = value:gsub("%( " .. key .. " %)", "")
+    local text = macro_map[macro.name]
+    if text then
+        writefln(f, "        %s", text)
+        return
+    end
+
+    local tokens = macro.tokens
+    table.remove(tokens, 1)
+
+    if isFirstAlpha(tokens[1]) then
+        writefln(f, "        // unknown type: %s", table.concat(macro.tokens, " "))
+        return
+    end
+
+    -- const definitions
+    local value = table.concat(tokens, " ")
+
+    for i, key in ipairs {"LONG", "DWORD", "int"} do
+        value = value:gsub("%( " .. key .. " %)", "")
+    end
+
+    local pointerValue = getPointerValue(value)
+    if pointerValue then
+        -- HWND, HBITMAP...
+        writefln(f, "        public static readonly IntPtr %s = new IntPtr(%s);", macro.name, pointerValue)
+        return
+    end
+
+    for i, pattern in ipairs {"^(0x)([0-9a-fA-F]+)(U*)(L*)$", "%( *(0x)(%w+) %)"} do
+        local hex, n, u, l = string.match(value, pattern)
+        if n and #n > 0 then
+            -- hex
+            if l and #l > 1 then
+                error("not implemented: " .. l)
             end
 
-            local pointerValue = getPointerValue(value)
-            if pointerValue then
-                -- HWND, HBITMAP...
-                writefln(
-                    f,
-                    "        public static readonly IntPtr %s = new IntPtr(%s);",
-                    macroDefinition.name,
-                    pointerValue
-                )
+            if u and #u > 0 then
+                -- unsigned
+                writefln(f, "        public const uint %s = %s%s;", macro.name, hex, n)
+                return
+            else
+                -- signed
+                writefln(f, "        public const int %s = unchecked((int)%s%s);", macro.name, hex, n)
                 return
             end
-
-            for i, pattern in ipairs {"^(0x)([0-9a-fA-F]+)(U*)(L*)$", "%( *(0x)(%w+) %)"} do
-                local hex, n, u, l = string.match(value, pattern)
-                if n and #n > 0 then
-                    -- hex
-                    if l and #l > 1 then
-                        error("not implemented: " .. l)
-                    end
-
-                    if u and #u > 0 then
-                        -- unsigned
-                        writefln(f, "        public const uint %s = %s%s;", macroDefinition.name, hex, n)
-                        return
-                    else
-                        -- signed
-                        writefln(f, "        public const int %s = unchecked((int)%s%s);", macroDefinition.name, hex, n)
-                        return
-                    end
-                end
-            end
-
-            local valueType = "int"
-            if string.find(value, '%"') then
-                valueType = "string"
-            elseif string.find(value, "f") and not string.find(value, "0x") then
-                valueType = "float"
-            elseif string.find(value, "%.") then
-                valueType = "double"
-            elseif string.find(value, "WS_") then
-                valueType = "long"
-            elseif string.find(value, "DS_") then
-                valueType = "long"
-            end
-            writefln(f, "        public const %s %s = %s;", valueType, macroDefinition.name, value)
         end
     end
+
+    local valueType = "int"
+    if string.find(value, '%"') then
+        valueType = "string"
+    elseif string.find(value, "f") and not string.find(value, "0x") then
+        valueType = "float"
+    elseif string.find(value, "%.") then
+        valueType = "double"
+    elseif string.find(value, "WS_") then
+        valueType = "long"
+    elseif string.find(value, "DS_") then
+        valueType = "long"
+    end
+    writefln(f, "        public const %s %s = %s;", valueType, macro.name, value)
 end
 
 local function CSSource(f, packageName, source, option)
@@ -593,13 +613,49 @@ local function CSSource(f, packageName, source, option)
     -- const
     if #source.macros > 0 then
         writeln(f, "    public static partial class Constants {")
+        local macros = source.macros
+
+        local function CSMacroEnum(prefix, items, packageName, pred, type)
+            if #items == 0 then
+                return
+            end
+
+            local path = string.format("%s/%s.cs", option.dir, prefix)
+            local f = io.open(path, "w")
+            writeln(f, HEADLINE)
+            writefln(f, "namespace %s {", packageName)
+
+            writefln(f, "    public enum %s%s {", prefix, type and (": " .. type) or "")
+            for i, m in ipairs(items) do
+                local tokens = m.tokens
+                table.remove(tokens, 1)
+                local name = string.sub(m.name, #prefix + 1)
+                writefln(f, "        %s = %s,", name, pred and pred(tokens) or table.concat(tokens, " "))
+            end
+            writeln(f, "    }")
+
+            writeln(f, "}")
+            io.close(f)
+        end
+        for prefix, const in pairs(option.const) do
+            local group = {}
+            for i = #macros, 1, -1 do
+                local macro = macros[i]
+                if startswith(macro.name, prefix .. "_") then
+                    table.insert(group, macro)
+                    table.remove(macros, i)
+                end
+            end
+            CSMacroEnum(prefix, group, packageName, const.value, const.type)
+        end
+
         local constants = {}
-        for j, macroDefinition in ipairs(source.macros) do
-            if constants[macroDefinition.name] then
-                writefln(f, "// duplicate: %s = %s", macroDefinition.name, table.concat(macroDefinition.tokens, " "))
+        for _, macro in ipairs(macros) do
+            if constants[macro.name] then
+                writefln(f, "// duplicate: %s = %s", macro.name, table.concat(macro.tokens, " "))
             else
-                CSConstant(f, macroDefinition, macro_map)
-                constants[macroDefinition.name] = true
+                CSMacro(f, macro, macro_map)
+                constants[macro.name] = true
             end
         end
         writeln(f, "    }")
@@ -609,7 +665,7 @@ local function CSSource(f, packageName, source, option)
     local hasComInterface = false
     local funcs = {}
     local types = {}
-    for j, decl in ipairs(source.types) do
+    for i, decl in ipairs(source.types) do
         if not declFilter or declFilter(decl) then
             if decl.class == "Function" then
                 if not decl.name:find("operator") then
@@ -618,7 +674,7 @@ local function CSSource(f, packageName, source, option)
             elseif decl.name and #decl.name > 0 then
                 table.insert(types, decl)
             else
-                if CSDecl(f, decl, option, j) then
+                if CSDecl(f, decl, option, i) then
                     hasComInterface = true
                 end
             end
@@ -789,21 +845,21 @@ local function CSProj(f)
     )
 end
 
-local function CSGenerate(sourceMap, dir, option)
+local function CSGenerate(sourceMap, option)
     -- clear dir
-    if file.exists(dir) then
-        printf("rmdir %s", dir)
-        file.rmdirRecurse(dir)
+    if file.exists(option.dir) then
+        printf("rmdir %s", option.dir)
+        file.rmdirRecurse(option.dir)
     end
 
-    local packageName = basename(dir)
+    local packageName = basename(option.dir)
     local hasComInterface = false
     for k, source in pairs(sourceMap) do
         -- write each source
         if not source.empty then
-            local path = string.format("%s/%s.cs", dir, source.name)
+            local path = string.format("%s/%s.cs", option.dir, source.name)
             printf("writeTo: %s", path)
-            file.mkdirRecurse(dir)
+            file.mkdirRecurse(option.dir)
 
             do
                 -- open
@@ -818,7 +874,7 @@ local function CSGenerate(sourceMap, dir, option)
 
     if hasComInterface then
         -- write utility
-        local path = string.format("%s/ComUtil.cs", dir)
+        local path = string.format("%s/ComUtil.cs", option.dir)
         local f = io.open(path, "w")
         ComUtil(f, packageName)
         io.close(f)
@@ -826,7 +882,7 @@ local function CSGenerate(sourceMap, dir, option)
 
     do
         -- csproj
-        local path = string.format("%s/ShrimpDX.csproj", dir)
+        local path = string.format("%s/ShrimpDX.csproj", option.dir)
         local f = io.open(path, "w")
         CSProj(f)
         io.close(f)

@@ -69,6 +69,9 @@ function print_table(t, indent)
 end
 
 function writeln(f, text)
+    if not f then
+        error("no f: " .. text)
+    end
     if text then
         f:write(text)
     end
@@ -125,4 +128,14 @@ function ClangParse(option)
         return nil
     end
     return sourceMap
+end
+
+function startswith(src, start)
+    local found = string.find(src, start)
+    if found and found == 1 then
+        -- printf("%s start with %s: %d", src, start, found and found or -1)
+        return true
+    else
+        return false
+    end
 end

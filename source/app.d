@@ -73,6 +73,11 @@ Tuple!(clangdecl.Typedef, Decl) getDefTag(ref Source[string] map)
 				{
 					continue;
 				}
+				if (def.name == "LPCWSTR")
+				{
+					continue;
+				}
+
 				auto tag = def.typeref.type;
 				Pointer tagP = cast(clangdecl.Pointer) tag;
 				if (cast(clangdecl.Typedef) tag || cast(Function) tag)

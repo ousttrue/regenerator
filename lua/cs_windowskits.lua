@@ -70,7 +70,37 @@ local function filter(decl)
         return true
     end
 end
-
+local function remove_MAKEINTRESOURCE(tokens)
+    local items = {}
+    for _, t in ipairs(tokens) do
+        if t == "MAKEINTRESOURCE" then
+        else
+            table.insert(items, t)
+        end
+    end
+    return table.concat(items, " ")
+end
+local function rename_WS(tokens)
+    local items = {}
+    for _, t in ipairs(tokens) do
+        local rename = string.gsub(t, "^WS_", "")
+        if rename ~= t then
+            rename = "_" .. rename
+        end
+        table.insert(items, rename)
+    end
+    return table.concat(items, " ")
+end
+local const = {
+    --
+    IDC = {
+        value = remove_MAKEINTRESOURCE
+    },
+    WS = {
+        type = "long",
+        value = rename_WS
+    }
+}
 local option = {
     filter = filter,
     omitEnumPrefix = true,
@@ -87,8 +117,12 @@ local option = {
         TIMERR_NOCANDO = "public const int TIMERR_NOCANDO = ( /*TIMERR_BASE*/96 + 1 );",
         TIMERR_STRUCT = "public const int TIMERR_STRUCT = ( /*TIMERR_BASE*/96 + 33 );",
         LB_CTLCODE = "public const int LB_CTLCODE = 0;",
-        WHEEL_PAGESCROLL = "public const int WHEEL_PAGESCROLL = unchecked( /*UINT_MAX*/(int)0xfffffff );"
-    }
+        WHEEL_PAGESCROLL = "public const int WHEEL_PAGESCROLL = unchecked( /*UINT_MAX*/(int)0xfffffff );",
+        --
+        LBS_STANDARD = "public const long LBS_STANDARD = ( LBS_NOTIFY | LBS_SORT | (long)WS._VSCROLL | (long)WS._BORDER );"
+    },
+    dir = dir,
+    const = const
 }
 
-CS.Generate(sourceMap, dir, option)
+CS.Generate(sourceMap, option)
