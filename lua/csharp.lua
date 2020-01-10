@@ -31,7 +31,7 @@ local FIELD_MAP = {
 }
 
 local PARAM_MAP = {
-    LPCWSTR = "in ushort"
+    LPCWSTR = {"ref ushort"}
 }
 
 local ESCAPE_SYMBOLS = {
@@ -100,7 +100,9 @@ local function CSType(t, isParam)
         if isParam then
             local marshal = PARAM_MAP[t.name]
             if marshal then
-                return marshal, {}
+                return marshal[1], {
+                    attr = marshal[2]
+                }
             end
         else
             local marshal = FIELD_MAP[t.name]
@@ -243,10 +245,11 @@ local function CSEnumDecl(f, decl, omitEnumPrefix, indent)
 end
 
 local function CSGlobalFunction(f, decl, indent, option, sourceName)
+    local dllName = option.dll_map[sourceName] or sourceName
     if decl.isExternC then
-        writefln(f, '%s[DllImport("%s.dll")]', indent, sourceName)
+        writefln(f, '%s[DllImport("%s.dll")]', indent, dllName)
     else
-        writefln(f, '%s[DllImport("%s.dll", EntryPoint="mangle")]', indent)
+        writefln(f, '%s[DllImport("%s.dll", EntryPoint="mangle")]', indent, dllName)
     end
     writefln(f, "%spublic static extern %s %s(", indent, CSType(decl.ret.type), decl.name)
     local params = decl.params
@@ -257,9 +260,11 @@ local function CSGlobalFunction(f, decl, indent, option, sourceName)
         -- TODO: dfeault value = getValue(param, option.param_map)
     end
     writefln(f, "%s);", indent)
-    local overload = option.overload[decl.name]
-    if overload then
-        writefln(f, overload)
+    if option.overload then
+        local overload = option.overload[decl.name]
+        if overload then
+            writefln(f, overload)
+        end
     end
 end
 
@@ -857,31 +862,52 @@ namespace ShrimpDX
             return new CustomMarshaler<T>();
         }
     }
+
+    public static class WindowsAPIExtensions
+    {
+        public static short HIWORD(this ulong _dw)
+        {
+            return ((short)((_dw >> 16) & 0xffff));
+        }
+
+        public static short LOWORD(this ulong _dw)
+        {
+            return ((short)(_dw & 0xffff));
+        }
+
+        public static short HIWORD(this long _dw)
+        {
+            return ((short)((_dw >> 16) & 0xffff));
+        }
+
+        public static short LOWORD(this long _dw)
+        {
+            return ((short)(_dw & 0xffff));
+        }
+
+        [ThreadStatic]
+        static IntPtr ts_ptr = Marshal.AllocHGlobal(4);
+
+        public static IntPtr Ptr(this int value)
+        {
+            Marshal.WriteInt32(ts_ptr, value);
+            return ts_ptr;
+        }
+
+        public static IntPtr Ptr(this string src)
+        {
+            IntPtr strPtr = Marshal.StringToHGlobalUni(src);
+            try
+            {
+                return strPtr;
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(strPtr);
+            }
+        }
+    }
 }
-
-static class WindowsAPIExtensions
-{
-    public static short HIWORD(this ulong _dw)
-    {
-        return ((short)((_dw >> 16) & 0xffff));
-    }
-
-    public static short LOWORD(this ulong _dw)
-    {
-        return ((short)(_dw & 0xffff));
-    }
-
-    public static short HIWORD(this long _dw)
-    {
-        return ((short)((_dw >> 16) & 0xffff));
-    }
-
-    public static short LOWORD(this long _dw)
-    {
-        return ((short)(_dw & 0xffff));
-    }
-}
-
 ]]
     )
 end

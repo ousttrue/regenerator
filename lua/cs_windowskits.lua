@@ -141,7 +141,7 @@ local overload = {
             Span<int> src = stackalloc int[1];
             src[0] = lpCursorName;
             var cast = MemoryMarshal.Cast<int, ushort>(src);
-            return LoadCursorW(hInstance, cast[0]);
+            return LoadCursorW(hInstance, ref cast[0]);
         }
     ]]
 }
@@ -167,7 +167,11 @@ local option = {
     },
     dir = dir,
     const = const,
-    overload = overload
+    overload = overload,
+    dll_map = {
+        winuser = "user32",
+        timeapi = "winmm"
+    }
 }
 
 CS.Generate(sourceMap, option)
