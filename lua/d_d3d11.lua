@@ -41,7 +41,8 @@ local headers = {
     "um/d3dcompiler.h",
     "um/d3d11shader.h",
     "um/d3d10shader.h",
-    "shared/dxgi.h"
+    "shared/dxgi.h",
+    "shared/dxgi1_2.h"
 }
 for i, f in ipairs(headers) do
     local header = string.format("%s/%s", src, f)

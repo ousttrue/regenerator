@@ -922,9 +922,9 @@ namespace ShrimpDX
 
         public static bool Failed(this int hr) => hr != 0;
 
-        public static MutableString ToMutableString(this ushort[] src)
+        public static WSTR ToMutableString(this ushort[] src)
         {
-            return new MutableString(src);
+            return new WSTR(src);
         }
     }
 
@@ -938,17 +938,25 @@ namespace ShrimpDX
         }
     }
 
-    public struct MutableString
+    public struct WSTR
     {
         // zero terminated
         public byte[] Buffer;
 
-        public MutableString(string src)
+        public ref ushort Data
         {
-            Buffer = Encoding.Unicode.GetBytes(src);
+            get
+            {
+                return ref MemoryMarshal.Cast<byte, ushort>(Buffer.AsSpan())[0];
+            }
         }
 
-        public MutableString(ushort[] src)
+        public WSTR(string src)
+        {
+            Buffer = Encoding.Unicode.GetBytes(src + "\0");
+        }
+
+        public WSTR(ushort[] src)
         {
             var end = Array.IndexOf<ushort>(src, 0, 0);
             if (end == -1)
@@ -964,7 +972,37 @@ namespace ShrimpDX
         {
             return Encoding.Unicode.GetString(Buffer, 0, Buffer.Length - 2);
         }
-    }}
+    }
+
+    public struct STR
+    {
+        // zero terminated
+        public byte[] Buffer;
+
+        static readonly Encoding s_utf8 = new UTF8Encoding(false);
+
+        public STR(string src)
+        {
+            Buffer = s_utf8.GetBytes(src + "\0");
+        }
+
+        public STR(byte[] src)
+        {
+            var end = Array.IndexOf<byte>(src, 0, 0);
+            if (end == -1)
+            {
+                end = src.Length;
+            }
+            Buffer = new byte[end * 2 + 2];
+            src.AsSpan().CopyTo(Buffer.AsSpan());
+        }
+
+        public override string ToString()
+        {
+            return s_utf8.GetString(Buffer, 0, Buffer.Length - 2);
+        }
+    }    
+}
 ]]
     )
 end
