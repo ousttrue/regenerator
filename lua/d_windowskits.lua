@@ -42,6 +42,7 @@ local headers = {
     "um/d3d11shader.h",
     "um/d3d10shader.h",
     "um/d2d1.h",
+    "um/d2d1_2.h",
     "shared/dxgi.h",
     "shared/dxgi1_2.h"
 }
@@ -77,7 +78,9 @@ end
 local param_map = {
     D2D1_BITMAP_INTERPOLATION_MODE_LINEAR = "D2D1_BITMAP_INTERPOLATION_MODE._LINEAR",
     D2D1_DRAW_TEXT_OPTIONS_NONE = "D2D1_DRAW_TEXT_OPTIONS._NONE",
-    DWRITE_MEASURING_MODE_NATURAL = "DWRITE_MEASURING_MODE._NATURAL"
+    DWRITE_MEASURING_MODE_NATURAL = "DWRITE_MEASURING_MODE._NATURAL",
+    D2D1_INTERPOLATION_MODE_LINEAR = "D2D1_INTERPOLATION_MODE._LINEAR",
+    D2D1_COMPOSITE_MODE_SOURCE_OVER = "D2D1_COMPOSITE_MODE._SOURCE_OVER",
 }
 
 local option = {
@@ -99,7 +102,7 @@ local option = {
     end,
     injection = {
         d3dcommon = [[
-            alias ID3DBlob = ID3D10Blob;
+            // alias ID3DBlob = ID3D10Blob;
         ]]
     }
 }
