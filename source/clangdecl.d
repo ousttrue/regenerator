@@ -11,6 +11,11 @@ class Decl
     void replace(UserDecl from, Decl to, Decl[] = [])
     {
     }
+
+    override string toString() const
+    {
+        return typeid(this).name;
+    }
 }
 
 struct TypeRef

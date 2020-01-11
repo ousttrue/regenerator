@@ -26,6 +26,8 @@ local TYPE_MAP = {
     IID = "Guid"
 }
 
+local typedef_map = {}
+
 local FIELD_MAP = {
     LPCWSTR = {
         "string",
@@ -101,7 +103,14 @@ local function CSType(t, isParam)
         return name, {}
     end
 
-    if t.class == "Typedef" or t.class == "Struct" then
+    if t.class == "TypeDef" then
+        name = typedef_map[t.hash]
+        if name then
+            return name, {}
+        end
+    end
+
+    if t.class == "TypeDef" or t.class == "Struct" then
         local name = TYPE_MAP[t.name]
         if name then
             return name, {}
@@ -135,7 +144,7 @@ local function CSType(t, isParam)
             return typeName, option
         elseif t.ref.type.class == "Int8" then
             -- string
-            option['attr'] = '[MarshalAs(UnmanagedType.LPStr)]'
+            option["attr"] = "[MarshalAs(UnmanagedType.LPStr)]"
             return "string", option
         elseif isPointer(t.ref.type.name) then
             -- HWND etc...
@@ -207,7 +216,46 @@ local function CSType(t, isParam)
     end
 end
 
+local function _resolveTypedef(t)
+    if t.class == "TypeDef" then
+        return _resolveTypedef(t.ref.type)
+    else
+        return t
+    end
+end
+
+local function resolveTypedef(t)
+    local map = typedef_map[t.hash]
+    if map then
+        return true
+    end
+
+    local resolve = _resolveTypedef(t)
+    local typeName = TYPE_MAP[resolve.class]
+    if typeName then
+        printf("resolve %s => %s", t.name, typeName)
+        typedef_map[t.hash] = typeName
+        return true
+    end
+
+    if isPointer(resolve.name) then
+        printf("resolve %s => IntPtr", t.name)
+        typedef_map[t.hash] = "IntPtr"
+        return true
+    end
+
+    if resolve.class == "Pointer" then
+        printf("resolve %s => IntPtr", t.name)
+        typedef_map[t.hash] = "IntPtr"
+        return true
+    end
+end
+
 local function CSTypedefDecl(f, t)
+    if resolveTypedef(t) then
+        return
+    end
+
     -- print(t, t.ref)
     local dst, option = CSType(t.ref.type)
     if not dst then
@@ -370,7 +418,7 @@ local function getStruct(decl)
             decl = decl.definition
         end
         return decl
-    elseif decl.class == "Typedef" then
+    elseif decl.class == "TypeDef" then
         return getStruct(decl.ref.type)
     else
         error("XXXXX")
@@ -520,7 +568,7 @@ end
 
 local function CSDecl(f, decl, option, i)
     local hasComInterface = false
-    if decl.class == "Typedef" then
+    if decl.class == "TypeDef" then
         CSTypedefDecl(f, decl)
     elseif decl.class == "Enum" then
         CSEnumDecl(f, decl, option.omitEnumPrefix, "    ")
@@ -1037,6 +1085,17 @@ local function CSGenerate(sourceMap, option)
     if file.exists(option.dir) then
         printf("rmdir %s", option.dir)
         file.rmdirRecurse(option.dir)
+    end
+
+    -- create typedef_map
+    for k, source in pairs(sourceMap) do
+        for i, decl in ipairs(source.types) do
+            if not declFilter or declFilter(decl) then
+                if decl.class == "TypeDef" then
+                    resolveTypedef(decl)
+                end
+            end
+        end
     end
 
     local packageName = basename(option.dir)

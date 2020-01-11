@@ -37,14 +37,18 @@ printf("use: %s", src)
 -- libclang CIndex
 ------------------------------------------------------------------------------
 local headers = {
+    "shared/dxgi.h",
+    "shared/dxgi1_2.h",
     "um/d3d11.h",
     "um/d3dcompiler.h",
     "um/d3d11shader.h",
     "um/d3d10shader.h",
     "um/d2d1.h",
     "um/d2d1_2.h",
-    "shared/dxgi.h",
-    "shared/dxgi1_2.h"
+    "um/dwrite.h",
+    "um/wincodec.h",
+    "um/documenttarget.h",
+    "um/d2d1effectauthor.h"
 }
 for i, f in ipairs(headers) do
     local header = string.format("%s/%s", src, f)
@@ -78,16 +82,18 @@ end
 local param_map = {
     D2D1_BITMAP_INTERPOLATION_MODE_LINEAR = "D2D1_BITMAP_INTERPOLATION_MODE._LINEAR",
     D2D1_DRAW_TEXT_OPTIONS_NONE = "D2D1_DRAW_TEXT_OPTIONS._NONE",
-    DWRITE_MEASURING_MODE_NATURAL = "DWRITE_MEASURING_MODE._NATURAL",
     D2D1_INTERPOLATION_MODE_LINEAR = "D2D1_INTERPOLATION_MODE._LINEAR",
     D2D1_COMPOSITE_MODE_SOURCE_OVER = "D2D1_COMPOSITE_MODE._SOURCE_OVER",
+    D2D1_PIXEL_OPTIONS_NONE = "D2D1_PIXEL_OPTIONS._NONE",
+    DWRITE_MEASURING_MODE_NATURAL = "DWRITE_MEASURING_MODE._NATURAL"
 }
 
 local option = {
     filter = filter,
     omitEnumPrefix = true,
     macro_map = {
-        D3D_COMPILE_STANDARD_FILE_INCLUDE = "enum D3D_COMPILE_STANDARD_FILE_INCLUDE = cast(void*)1;"
+        D3D_COMPILE_STANDARD_FILE_INCLUDE = "enum D3D_COMPILE_STANDARD_FILE_INCLUDE = cast(void*)1;",
+        DWRITE_EXPORT = "// enum DWRITE_EXPORT = __declspec ( dllimport ) WINAPI;"
     },
     param_map = function(param, value)
         if #value == 0 then

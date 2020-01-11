@@ -423,6 +423,7 @@ int main(string[] args)
 	auto typedefType = register_type!(TypeDef)(lua.L);
 	typedefType.instance.Getter("useCount", (TypeDef* self) => self.useCount);
 	typedefType.instance.Getter("ref", (TypeDef* self) => self.typeref);
+	typedefType.instance.Getter("hash", (TypeDef* self) => self.hash);
 
 	auto enumValue = new UserType!EnumValue;
 	enumValue.instance.Getter("name", (EnumValue* self) => self.name);
