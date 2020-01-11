@@ -297,7 +297,7 @@ class Enum : UserDecl
     }
 }
 
-class Typedef : UserDecl
+class TypeDef : UserDecl
 {
     TypeRef typeref;
 
@@ -322,7 +322,7 @@ class Typedef : UserDecl
             }
         }
 
-        auto nest = cast(Typedef) typeref.type;
+        auto nest = cast(TypeDef) typeref.type;
         if (!nest)
         {
             return nest;

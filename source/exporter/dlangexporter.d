@@ -33,7 +33,7 @@ Decl GetTypedefSource(Decl decl)
 {
     while (true)
     {
-        Typedef typedefDecl = cast(Typedef) decl;
+        auto typedefDecl = cast(TypeDef) decl;
         if (!typedefDecl)
         {
             break;
@@ -116,7 +116,7 @@ string DType(Decl t)
             () => format("unknown(%s)", t))(t);
 }
 
-void DTypedefDecl(File* f, Typedef t)
+void DTypedefDecl(File* f, TypeDef t)
 {
     auto dst = DType(t.typeref.type);
     if (dst)
@@ -319,7 +319,7 @@ void DFucntionDecl(File* f, Function decl, string indent, bool isMethod)
 void DDecl(File* f, Decl decl, bool omitEnumPrefix)
 {
     castSwitch!( //
-            (Typedef decl) => DTypedefDecl(f, decl), //
+            (TypeDef decl) => DTypedefDecl(f, decl), //
             (Enum decl) => DEnumDecl(f,
                 decl, omitEnumPrefix), //
             (Struct decl) => DStructDecl(f, decl), //

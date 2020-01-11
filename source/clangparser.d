@@ -421,7 +421,7 @@ class Parser
     {
         foreach (k, v; m_declMap)
         {
-            Typedef typedefDecl = cast(Typedef) v;
+            auto typedefDecl = cast(TypeDef) v;
             if (typedefDecl)
             {
                 UserDecl userType = cast(UserDecl) typedefDecl.typeref.type;
@@ -438,7 +438,7 @@ class Parser
     {
         auto location = getCursorLocation(cursor);
         auto name = getCursorSpelling(cursor);
-        auto decl = new Typedef(location.path, location.line, name, type);
+        auto decl = new TypeDef(location.path, location.line, name, type);
         pushDecl(cursor, decl);
         auto header = getOrCreateHeader(cursor);
         header.types ~= decl;

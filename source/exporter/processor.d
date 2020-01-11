@@ -141,7 +141,7 @@ class Processor
 
         // next
         Function functionDecl = cast(Function) decl;
-        Typedef typedefDecl = cast(Typedef) decl;
+        TypeDef typedefDecl = cast(TypeDef) decl;
         Struct structDecl = cast(Struct) decl;
         if (functionDecl)
         {

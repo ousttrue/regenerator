@@ -60,13 +60,13 @@ Struct getForwardDecl(ref Source[string] map)
 	return null;
 }
 
-Tuple!(clangdecl.Typedef, Decl) getDefTag(ref Source[string] map)
+Tuple!(TypeDef, Decl) getDefTag(ref Source[string] map)
 {
 	foreach (k, s; map)
 	{
 		foreach (t; s.m_types)
 		{
-			auto def = cast(clangdecl.Typedef) t;
+			auto def = cast(TypeDef) t;
 			if (def)
 			{
 				if (def.name == "D3D10_RECT" || def.name == "D3D11_RECT")
@@ -80,7 +80,7 @@ Tuple!(clangdecl.Typedef, Decl) getDefTag(ref Source[string] map)
 
 				auto tag = def.typeref.type;
 				Pointer tagP = cast(clangdecl.Pointer) tag;
-				if (cast(clangdecl.Typedef) tag || cast(Function) tag)
+				if (cast(TypeDef) tag || cast(Function) tag)
 				{
 				}
 				else if (tagP && cast(clangdecl.Function) tagP.typeref.type)
@@ -93,7 +93,7 @@ Tuple!(clangdecl.Typedef, Decl) getDefTag(ref Source[string] map)
 			}
 		}
 	}
-	return Tuple!(clangdecl.Typedef, Decl)();
+	return Tuple!(TypeDef, Decl)();
 }
 
 void resolve(ref Source[string] map, UserDecl from, Decl to)
@@ -279,7 +279,7 @@ void push_clangdecl(lua_State* L, Decl decl)
 				decl), //
 			(Reference decl) => lua_push(L, decl), //
 			(Array decl) => lua_push(L, decl), //
-			(clangdecl.Typedef decl) => lua_push(L,
+			(TypeDef decl) => lua_push(L,
 				decl), //
 			(Enum decl) => lua_push(L, decl), //
 			(Struct decl) => lua_push(L,
@@ -302,7 +302,7 @@ Decl GetTypedefSource(Decl decl)
 {
 	while (true)
 	{
-		auto typedefDecl = cast(clangdecl.Typedef) decl;
+		auto typedefDecl = cast(TypeDef) decl;
 		if (!typedefDecl)
 		{
 			break;
@@ -420,9 +420,9 @@ int main(string[] args)
 	ar.instance.Getter("ref", (Array* self) => self.typeref);
 	ar.instance.Getter("size", (Array* self) => self.size);
 
-	auto typedefType = register_type!(clangdecl.Typedef)(lua.L);
-	typedefType.instance.Getter("useCount", (clangdecl.Typedef* self) => self.useCount);
-	typedefType.instance.Getter("ref", (clangdecl.Typedef* self) => self.typeref);
+	auto typedefType = register_type!(TypeDef)(lua.L);
+	typedefType.instance.Getter("useCount", (TypeDef* self) => self.useCount);
+	typedefType.instance.Getter("ref", (TypeDef* self) => self.typeref);
 
 	auto enumValue = new UserType!EnumValue;
 	enumValue.instance.Getter("name", (EnumValue* self) => self.name);
