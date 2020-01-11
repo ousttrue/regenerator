@@ -201,7 +201,7 @@ class Parser
 
         case CXCursorKind._FunctionDecl:
             {
-                auto decl = parseFunction(cursor, &context);
+                auto decl = parseFunction(cursor, &context, clang_getCursorResultType(cursor));
                 if (decl)
                 {
                     auto header = getOrCreateHeader(cursor);
@@ -330,8 +330,9 @@ class Parser
 
         if (type.kind == CXTypeKind._FunctionProto)
         {
+            auto resultType = clang_getResultType(type);
             auto dummy = Context();
-            auto decl = parseFunction(cursor, &dummy);
+            auto decl = parseFunction(cursor, &dummy, resultType);
             return decl;
         }
 
@@ -472,13 +473,6 @@ class Parser
         auto location = getCursorLocation(cursor);
         auto name = getCursorSpelling(cursor);
 
-        if (clang_Cursor_getNumTemplateArguments(cursor) > 0)
-        {
-            // template parameter has child TypeRef
-            debug auto a = 0;
-            return;
-        }
-
         auto decl = new Struct(location.path, location.line, name);
         decl.namespace = context.namespace;
         decl.isUnion = isUnion;
@@ -501,6 +495,14 @@ class Parser
         foreach (child; cursor.getChildren())
         {
             auto fieldName = getCursorSpelling(child);
+            debug
+            {
+                if (fieldName == "enteredMainFile")
+                {
+                    auto a = 0;
+                }
+            }
+
             auto fieldKind = cast(CXCursorKind) clang_getCursorKind(child);
             auto fieldType = clang_getCursorType(child);
             switch (fieldKind)
@@ -528,7 +530,7 @@ class Parser
 
             case CXCursorKind._CXXMethod:
                 {
-                    Function method = parseFunction(child, &context);
+                    Function method = parseFunction(child, &context, clang_getCursorResultType(child));
                     decl.methods ~= method;
                 }
                 break;
@@ -614,7 +616,7 @@ class Parser
         header.types ~= decl;
     }
 
-    Function parseFunction(CXCursor cursor, const Context* context)
+    Function parseFunction(CXCursor cursor, const Context* context, CXType retType)
     {
         auto location = getCursorLocation(cursor);
         auto name = getCursorSpelling(cursor);
@@ -676,7 +678,6 @@ class Parser
             }
         }
 
-        auto retType = getReturnType(cursor);
         auto retDecl = typeToDecl(retType, cursor);
 
         auto decl = new Function(location.path, location.line, name,
@@ -778,18 +779,27 @@ class Parser
         return [];
     }
 
-    Decl getReferenceType(CXCursor cursor)
+    Nullable!CXCursor getReferenceCursor(CXCursor cursor)
     {
         foreach (child; getChildren(cursor))
         {
             if (child.kind == CXCursorKind._TypeRef)
             {
                 auto referenced = clang_getCursorReferenced(child);
-                return getDeclFromCursor(referenced);
+                return Nullable!CXCursor(referenced);
             }
         }
+        return Nullable!CXCursor();
+    }
 
-        return null;
+    Decl getReferenceType(CXCursor cursor)
+    {
+        auto referenced = getReferenceCursor(cursor);
+        if (referenced.isNull)
+        {
+            return null;
+        }
+        return getDeclFromCursor(referenced.get);
     }
 
     CXType getReturnType(CXCursor cursor)
