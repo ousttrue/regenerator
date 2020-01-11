@@ -41,6 +41,7 @@ local headers = {
     "um/d3dcompiler.h",
     "um/d3d11shader.h",
     "um/d3d10shader.h",
+    "um/d2d1.h",
     "shared/dxgi.h",
     "shared/dxgi1_2.h"
 }
@@ -73,12 +74,29 @@ local function filter(decl)
     end
 end
 
+local param_map = {
+    D2D1_BITMAP_INTERPOLATION_MODE_LINEAR = "D2D1_BITMAP_INTERPOLATION_MODE._LINEAR",
+    D2D1_DRAW_TEXT_OPTIONS_NONE = "D2D1_DRAW_TEXT_OPTIONS._NONE",
+    DWRITE_MEASURING_MODE_NATURAL = "DWRITE_MEASURING_MODE._NATURAL"
+}
+
 local option = {
     filter = filter,
     omitEnumPrefix = true,
     macro_map = {
         D3D_COMPILE_STANDARD_FILE_INCLUDE = "enum D3D_COMPILE_STANDARD_FILE_INCLUDE = cast(void*)1;"
     },
+    param_map = function(param, value)
+        if #value == 0 then
+            return
+        end
+        local found = param_map[value]
+        if found then
+            printf("%s: %s => %s", param, value, found)
+            return found
+        end
+        return value
+    end,
     injection = {
         d3dcommon = [[
             alias ID3DBlob = ID3D10Blob;

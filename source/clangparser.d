@@ -353,14 +353,20 @@ class Parser
 
             case CXCursorKind._TypeRef:
                 {
-                    enforce(type.kind == CXTypeKind._Record || type.kind == CXTypeKind._Typedef
-                            || type.kind == CXTypeKind._Elaborated, "not record or typedef");
+                    if (type.kind == CXTypeKind._Record || type.kind == CXTypeKind._Typedef
+                            || type.kind == CXTypeKind._Elaborated || CXTypeKind._Enum)
+                    {
+                        auto referenced = clang_getCursorReferenced(child);
+                        return getDeclFromCursor(referenced);
+                    }
+                    else
+                    {
+                        throw new Exception("not record or typedef");
+                    }
                     // auto referenced = clang_getCursorReferenced(child);
                     // return getDeclFromCursor(referenced);
                     // auto referenced = clang_getCursorReferenced(child);
                     // return getDeclFromCursor(referenced);
-                    auto referenced = clang_getCursorReferenced(child);
-                    return getDeclFromCursor(referenced);
                 }
 
                 // case CXCursorKind._DLLImport:
@@ -466,6 +472,13 @@ class Parser
         auto location = getCursorLocation(cursor);
         auto name = getCursorSpelling(cursor);
 
+        if (clang_Cursor_getNumTemplateArguments(cursor) > 0)
+        {
+            // template parameter has child TypeRef
+            debug auto a = 0;
+            return;
+        }
+
         auto decl = new Struct(location.path, location.line, name);
         decl.namespace = context.namespace;
         decl.isUnion = isUnion;
@@ -523,6 +536,8 @@ class Parser
             case CXCursorKind._Constructor:
             case CXCursorKind._Destructor:
             case CXCursorKind._ConversionFunction:
+            case CXCursorKind._FunctionTemplate:
+            case CXCursorKind._VarDecl:
                 break;
 
             case CXCursorKind._ObjCClassMethodDecl:
@@ -537,10 +552,14 @@ class Parser
                 }
                 break;
 
-            default:
-                traverse(child, context);
-                if (CXCursorKind._StructDecl || CXCursorKind._ClassDecl || CXCursorKind._UnionDecl)
+            case CXCursorKind._StructDecl:
+            case CXCursorKind._ClassDecl:
+            case CXCursorKind._UnionDecl:
+            case CXCursorKind._TypedefDecl:
+            case CXCursorKind._EnumDecl:
                 {
+                    // nested type
+                    traverse(child, context);
                     if (fieldName == "")
                     {
                         // anonymous
@@ -551,6 +570,15 @@ class Parser
                                 TypeRef(fieldDecl, fieldConst != 0));
                     }
                 }
+                break;
+
+            case CXCursorKind._TypeRef:
+                // template param ?
+                debug auto a = 0;
+                break;
+
+            default:
+                traverse(child, context);
                 break;
             }
         }
@@ -590,7 +618,7 @@ class Parser
     {
         auto location = getCursorLocation(cursor);
         auto name = getCursorSpelling(cursor);
-        auto tu = clang_Cursor_getTranslationUnit(cursor);
+
         bool dllExport = false;
         Param[] params;
         foreach (child; cursor.getChildren())
@@ -598,6 +626,7 @@ class Parser
             debug auto tmp = name;
             auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
             auto childName = getCursorSpelling(child);
+
             switch (childKind)
             {
             case CXCursorKind._TypeRef:
@@ -610,8 +639,13 @@ class Parser
                 {
                     debug
                     {
-                        if (name == "ShowDemoWindow")
+                        if (childName == "sourceRectangle")
                         {
+                            auto a = 0;
+                        }
+                        if (childName == "opacity")
+                        {
+                            auto a = 0;
                         }
                     }
                     auto paramCursorType = clang_getCursorType(child);
@@ -619,32 +653,7 @@ class Parser
                     auto paramConst = clang_isConstQualifiedType(paramCursorType);
 
                     auto param = Param(childName, TypeRef(paramType, paramConst != 0));
-
-                    foreach (x; getChildren(child))
-                    {
-                        auto xKind = cast(CXCursorKind) clang_getCursorKind(x);
-                        // if (xKind == CXCursorKind._FirstExpr)
-                        {
-                            // default value
-                            auto tokens = getTokens(child);
-                            scope (exit)
-                                clang_disposeTokens(tu, tokens.ptr, cast(uint) tokens.length);
-                            string[] tokenSpellings = tokens.map!(t => tokenToString(child,
-                                    t)).array();
-                            auto found = tokenSpellings.countUntil!(a => a == "=");
-                            if (found != -1)
-                            {
-                                param.values = tokenSpellings[found + 1 .. $];
-                                debug auto a = 0;
-                            }
-                            else
-                            {
-                                debug auto a = 0;
-                            }
-                        }
-                        break;
-                    }
-
+                    param.values = getDefaultValue(child);
                     params ~= param;
                 }
                 break;
@@ -679,6 +688,99 @@ class Parser
                 TypeRef(retDecl), params, dllExport, context.isExternC);
         decl.namespace = context.namespace;
         return decl;
+    }
+
+    string[] getDefaultValue(CXCursor cursor)
+    {
+        auto tu = clang_Cursor_getTranslationUnit(cursor);
+        auto tokens = getTokens(cursor);
+        scope (exit)
+            clang_disposeTokens(tu, tokens.ptr, cast(uint) tokens.length);
+        if (tokens.length > 0)
+        {
+            string[] tokenSpellings = tokens.map!(t => tokenToString(cursor, t)).array();
+            auto found = tokenSpellings.countUntil!(a => a == "=");
+            if (found != -1)
+            {
+                debug auto a = 0;
+                return tokenSpellings[found + 1 .. $];
+            }
+
+            debug auto a = 0;
+        }
+
+        // search cursor
+        auto children = getChildren(cursor);
+        foreach (child; children)
+        {
+            switch (child.kind)
+            {
+            case CXCursorKind._TypeRef:
+                {
+                    // null ?
+                    auto referenced = clang_getCursorReferenced(child);
+                    debug auto a = 0;
+                    break;
+                }
+
+            case CXCursorKind._FirstExpr:
+                {
+                    // default value. ex: void func(int a = 0);
+                    return FirstExpr(child);
+                }
+
+            case CXCursorKind._IntegerLiteral:
+                {
+                    // array length. ex: void func(int a[4]);
+                    debug auto a = 0;
+                    break;
+                }
+
+            default:
+                {
+                    debug auto a = 0;
+                    // throw new Exception("not implemented");
+                    break;
+                }
+            }
+        }
+
+        return [];
+    }
+
+    string[] FirstExpr(CXCursor cursor)
+    {
+        auto tu = clang_Cursor_getTranslationUnit(cursor);
+
+        auto children = getChildren(cursor);
+        foreach (child; children)
+        {
+            switch (child.kind)
+            {
+            case CXCursorKind._IntegerLiteral:
+                {
+                    // auto tokens = getTokens(cursor);
+                    // scope (exit)
+                    //     clang_disposeTokens(tu, tokens.ptr, cast(uint) tokens.length);
+                    debug auto a = 0;
+                    // TODO
+                    return ["0"];
+                }
+
+            case CXCursorKind._FloatingLiteral:
+                {
+                    debug auto a = 0;
+                    // TODO
+                    return ["0.0"];
+                }
+
+            default:
+                break;
+                // throw new Exception("not implemented");
+            }
+        }
+
+        return [];
     }
 
     Decl getReferenceType(CXCursor cursor)

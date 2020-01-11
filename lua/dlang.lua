@@ -148,18 +148,24 @@ local function DEnumDecl(f, decl, omitEnumPrefix)
     writeln(f, "}")
 end
 
-local function getValue(param, param_map)
+local function getValue(param, param_map, class)
     local value = ""
     local values = param.values
     if #values > 0 then
-        if #values == 1 and values[1] == "NULL" then
-            value = "=null"
+        if #values == 1 then
+            if values[1] == "NULL" then
+                value = "null"
+            elseif class=='Pointer' and values[1] == "0" then
+                value = "null"
+            else
+                value = values[1]
+            end
         else
             if values[1] == "sizeof" then
                 values = {table.unpack(values, 2, #values)}
                 table.insert(values, ".sizeof")
             end
-            value = "=" .. table.concat(values, "")
+            value = table.concat(values, "")
         end
     end
     if param_map then
@@ -168,7 +174,12 @@ local function getValue(param, param_map)
             value = newValue
         end
     end
-    return value
+
+    if #value==0 then
+        return ''
+    else
+        return '='..value
+    end
 end
 
 local function DFunctionDecl(f, decl, indent, isMethod, option)
@@ -202,7 +213,14 @@ local function DFunctionDecl(f, decl, indent, isMethod, option)
         if param.ref.isConst then
             dst = string.format("const(%s)", dst)
         end
-        f:write(string.format("%s %s%s", dst, DEscapeName(param.name), getValue(param, option.param_map)))
+        f:write(
+            string.format(
+                "%s %s%s",
+                dst,
+                DEscapeName(param.name),
+                getValue(param, option.param_map, param.ref.type.class)
+            )
+        )
     end
     writeln(f, ");")
 end
