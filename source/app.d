@@ -184,13 +184,15 @@ extern (C) int luaFunc_parse(lua_State* L)
 	// resolveForwardDeclaration(sourceMap); 
 
 	// TODO: struct tag っぽい typedef を解決する
-	resolveStructTag(g_sourceMap);
+	// log("resolve typedef...");
+	// resolveStructTag(g_sourceMap);
 
 	// TODO: primitive の名前変えを解決する
 
 	// GC.collect();
 
 	// array を table として push
+	log("run script...");
 	return push(L, g_sourceMap);
 }
 
