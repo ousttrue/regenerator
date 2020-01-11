@@ -326,7 +326,7 @@ local function DStructDecl(f, decl, option, i)
 end
 
 local function DDecl(f, decl, option, i)
-    if decl.class == "Typedef" then
+    if decl.class == "TypeDef" then
         DTypedefDecl(f, decl)
     elseif decl.class == "Enum" then
         DEnumDecl(f, decl, option.omitEnumPrefix)
@@ -335,11 +335,8 @@ local function DDecl(f, decl, option, i)
     elseif decl.class == "Function" then
         DFunctionDecl(f, decl, "", false, option)
     else
-        error("unknown", decl)
+        error(string.format("unknown: %s", decl))
     end
-end
-
-local function importModule(f, m)
 end
 
 local function DImport(f, packageName, source)

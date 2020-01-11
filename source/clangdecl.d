@@ -307,6 +307,11 @@ class TypeDef : UserDecl
         typeref = TypeRef(type, isConst);
     }
 
+    override string toString() const
+    {
+        return "typedef %s = %s".format(name, typeref.type);
+    }
+
     override void replace(UserDecl from, Decl to, Decl[] path)
     {
         typeref.replace(from, to, path ~ this);
@@ -346,7 +351,8 @@ class Function : UserDecl
     bool dllExport;
     Param[] params;
 
-    this(string path, int line, string name, TypeRef ret, Param[] params, bool dllExport, bool externC)
+    this(string path, int line, string name, TypeRef ret, Param[] params,
+            bool dllExport, bool externC)
     {
         super(path, line, name);
         this.ret = ret;
