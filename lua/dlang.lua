@@ -217,7 +217,7 @@ local function DFunctionDecl(f, decl, indent, isMethod, option)
             string.format(
                 "%s %s%s",
                 dst,
-                DEscapeName(param.name),
+                DEscapeName(param.name, i),
                 getValue(param, option.param_map, param.ref.type.class)
             )
         )
@@ -306,7 +306,7 @@ local function DStructDecl(f, decl, option, i)
                             end
                             writefln(f, "    }")
                         else
-                            writefln(f, "   // anonymous struct %s;", DEscapeName(field.name))
+                            writefln(f, "   // anonymous struct %s;", DEscapeName(field.name, i))
                         end
                     else
                         error(string.format("unknown: %s", fieldType))

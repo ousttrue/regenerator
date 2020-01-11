@@ -676,13 +676,8 @@ class Parser
             }
         }
 
-        // return type
-        auto retDecl = getReferenceType(cursor);
-        if (!retDecl)
-        {
-            auto retType = getReturnType(cursor);
-            retDecl = typeToDecl(retType, cursor);
-        }
+        auto retType = getReturnType(cursor);
+        auto retDecl = typeToDecl(retType, cursor);
 
         auto decl = new Function(location.path, location.line, name,
                 TypeRef(retDecl), params, dllExport, context.isExternC);
