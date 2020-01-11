@@ -44,13 +44,13 @@
             "visualizerFile": "${workspaceFolder}/.vscode/d.natvis"
         },
         {
-            "name": "gen d3d11",
+            "name": "gen windowskits",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/regenerator.exe",
             "args": [
-                "${workspaceFolder}/lua/d_d3d11.lua",
-                "${workspaceFolder}/source/d3d11",
+                "${workspaceFolder}/lua/d_windowskits.lua",
+                "${workspaceFolder}/source/windowskits",
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

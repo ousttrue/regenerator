@@ -2,4 +2,5 @@
 /.dub
 /*.exe
 /source/d3d11
+/source/windowskits
 /source/imgui

@@ -64,9 +64,13 @@ $ regenerator.exe lua/d_liblua.lua {lua_src_dir} {d_generate_dir}
 
 [generated](source/liblua)
 
-### d3d11
+### windowskits
 
+* windows api
 * com interface
+* dxgi
+* d3d11
+* d2d1
 
 generate d3d11.d from latest `C:/Program Files (x86)/Windows Kits/10/Include`
 
