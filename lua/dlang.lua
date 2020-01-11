@@ -155,7 +155,7 @@ local function getValue(param, param_map, class)
         if #values == 1 then
             if values[1] == "NULL" then
                 value = "null"
-            elseif class=='Pointer' and values[1] == "0" then
+            elseif class == "Pointer" and values[1] == "0" then
                 value = "null"
             else
                 value = values[1]
@@ -175,10 +175,10 @@ local function getValue(param, param_map, class)
         end
     end
 
-    if #value==0 then
-        return ''
+    if #value == 0 then
+        return ""
     else
-        return '='..value
+        return "=" .. value
     end
 end
 
@@ -339,22 +339,46 @@ local function DDecl(f, decl, option, i)
     end
 end
 
-local function DImport(f, packageName, src, modules)
-    if not src.empty then
-        -- inner package
-        writefln(f, "import %s.%s;", packageName, src.name)
-    end
+local function importModule(f, m)
+end
 
-    local hasComInterface = false
-    for j, m in ipairs(src.modules) do
+local function DImport(f, packageName, source)
+    writeln(f, HEADLINE)
+    local self = string.format("%s.%s", packageName, source.name)
+    writefln(f, "module %s;", self)
+
+    local used = {[self] = true}
+
+    local function writeModule(m)
         -- core.sys.windows.windef etc...
-        if not modules[m] then
-            modules[m] = true
+        if not used[m] then
+            used[m] = true
             writefln(f, "import %s;", m)
         end
         if m == "core.sys.windows.unknwn" then
             writefln(f, "import %s.guidutil;", packageName)
+            return true
+        end
+        return false
+    end
+
+    local hasComInterface = false
+    for _, m in ipairs(source.modules) do
+        if writeModule(m) then
             hasComInterface = true
+        end
+    end
+
+    for i, src in ipairs(source.imports) do
+        if not src.empty then
+            -- inner package
+            writefln(f, "import %s.%s;", packageName, src.name)
+        end
+
+        for _, m in ipairs(src.modules) do
+            if writeModule(m) then
+                hasComInterface = true
+            end
         end
     end
     return hasComInterface
@@ -382,17 +406,8 @@ local function DSource(f, packageName, source, option)
     local declFilter = option["filter"]
     local omitEnumPrefix = option["omitEnumPrefix"]
 
-    writeln(f, HEADLINE)
-    writefln(f, "module %s.%s;", packageName, source.name)
-
     -- imports
-    local hasComInterface = false
-    local modules = {}
-    for i, src in ipairs(source.imports) do
-        if DImport(f, packageName, src, modules) then
-            hasComInterface = true
-        end
-    end
+    local hasComInterface = DImport(f, packageName, source)
 
     if option.injection then
         local inejection = option.injection[source.name]
