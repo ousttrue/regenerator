@@ -6,7 +6,11 @@ using System.Runtime.InteropServices;
 ]]
 
 local INT_MAX = 2147483647
-local TYPE_MAP = {
+
+--
+-- ref.type.class から得る
+--
+local PRIMITIVE_MAP = {
     Void = "void",
     Bool = "bool",
     --
@@ -21,9 +25,16 @@ local TYPE_MAP = {
     UInt64 = "ulong",
     --
     Float = "float",
-    Double = "double",
-    --
-    IID = "Guid",
+    Double = "double"
+}
+
+--
+-- ref.type.name から得る
+--
+local NAME_MAP = {
+    ID3DInclude = "IntPtr",
+    _GUID = "Guid",
+    _D3DCOLORVALUE = "System.Numerics.Vector4",
     --
     D2D_POINT_2F = "System.Numerics.Vector2",
     D2D1_POINT_2F = "System.Numerics.Vector2",
@@ -33,9 +44,13 @@ local TYPE_MAP = {
     D2D1_MATRIX_3X2_F = "System.Numerics.Matrix3x2"
 }
 
-local typedef_map = {}
-
 local FIELD_MAP = {
+    LPCSTR = {
+        "string",
+        {
+            attr = "[MarshalAs(UnmanagedType.LPStr)]"
+        }
+    },
     LPCWSTR = {
         "string",
         {
@@ -45,6 +60,12 @@ local FIELD_MAP = {
 }
 
 local PARAM_MAP = {
+    LPCSTR = {
+        "string",
+        {
+            attr = "[MarshalAs(UnmanagedType.LPStr)]"
+        }
+    },
     LPCWSTR = {
         "ref ushort",
         {
@@ -105,21 +126,87 @@ local function isPointer(name)
     end
 end
 
-local function CSType(t, isParam)
-    local name = TYPE_MAP[t.class]
+local function resolveTypedef(t)
+    if t.class == "TypeDef" then
+        return resolveTypedef(t.ref.type)
+    else
+        return t
+    end
+end
+
+local function isUserType(t)
+    for i, u in ipairs {"Enum", "Struct", "TypeDef", "Function"} do
+        if u == t.class then
+            return true
+        end
+    end
+end
+
+local function getMapType(t, isParam)
+    local name = PRIMITIVE_MAP[t.class]
     if name then
         return name, {}
     end
 
-    if t.class == "TypeDef" then
-        name = typedef_map[t.hash]
+    if isUserType(t) then
+        local name = NAME_MAP[t.name]
         if name then
             return name, {}
         end
+
+        if isParam then
+            local nameOption = PARAM_MAP[t.name]
+            if nameOption then
+                return table.unpack(nameOption)
+            end
+        else
+            local nameOption = FIELD_MAP[t.name]
+            if nameOption then
+                return table.unpack(nameOption)
+            end
+        end
+    end
+end
+
+local function isCallback(t)
+    if t.class == "Function" then
+        return true
     end
 
-    if t.class == "TypeDef" or t.class == "Struct" then
-        local name = TYPE_MAP[t.name]
+    if t.class == "TypeDef" then
+        if t.ref.type.class == "Function" then
+            -- return t.name
+            error("not implemented")
+        end
+        if t.ref.type.class == "Pointer" and t.ref.type.ref.type.class == "Function" then
+            return true
+        end
+    end
+end
+
+local function CSType(t, isParam)
+    local typeName, option = getMapType(t, isParam)
+    if typeName then
+        return typeName, option
+    end
+
+    if isCallback(t) then
+        return t.name, {}
+    end
+
+    -- typedefを剥がす
+    t = resolveTypedef(t)
+
+    local typeName, option = getMapType(t, isParam)
+    if typeName then
+        if not option then
+            error("no option")
+        end
+        return typeName, option
+    end
+
+    if isUserType(t) then
+        local name = NAME_MAP[t.name]
         if name then
             return name, {}
         end
@@ -138,30 +225,30 @@ local function CSType(t, isParam)
     end
 
     if t.class == "Pointer" then
+        -- csharpで型を表現できる場合は、ref, out に。
+        -- できない場合は、IntPtrにする
         local option = {isConst = t.ref.isConst, isRef = true}
-        if t.ref.type.name == "ID3DInclude" then
+        local typeName, refOption = CSType(t.ref.type, isParam)
+        for k, v in pairs(refOption) do
+            option[k] = option[k] or v
+        end
+
+        -- 特定の型へのポインターは、IntPtrにする
+        if t.ref.type.class == "Void" then
             return "IntPtr", option
-        elseif t.ref.type.class == "Void" then
-            return "IntPtr", option
-        elseif isInterface(t.ref.type) then
-            option.isCom = true
-            local typeName = CSType(t.ref.type, isParam)
-            if typeName == "ID3DBlob" then
-                typeName = "ID3D10Blob"
-            end
-            return typeName, option
-        elseif t.ref.type.class == "Int8" then
-            -- string
-            option["attr"] = "[MarshalAs(UnmanagedType.LPStr)]"
-            return "string", option
-        elseif isPointer(t.ref.type.name) then
+        end
+        if isPointer(t.ref.type.name) then
             -- HWND etc...
             return "IntPtr", option
-        elseif isParam then
-            local typeName, refOption = CSType(t.ref.type, isParam)
-            for k, v in pairs(refOption) do
-                option[k] = option[k] or v
-            end
+        end
+
+        if isInterface(t.ref.type) then
+            option.isCom = true
+            -- ref, out を付けない
+            return typeName, option
+        end
+
+        if isParam then
             if option.isCom then
                 option.attr =
                     string.format(
@@ -171,29 +258,15 @@ local function CSType(t, isParam)
             end
             local inout = option.isConst and "ref" or "out"
             if inout == "out" and typeName == "IUnknown" then
-                typeName = "out IntPtr"
+                option.isCom = false
+                typeName = "IntPtr"
             end
-            return string.format("%s %s", inout, typeName), option
-        elseif t.ref.type.class == "Function" then
-            if isParam then
-                return t.ref.type.name, option
-            else
-                local decl = t.ref.type
-                local retType = CSType(decl.ret.type)
-                local params = decl.params
-                local paramTypes = {}
-                for i, param in ipairs(params) do
-                    local comma = i == #params and "" or ","
-                    local dst, option = CSType(param.ref.type, true)
-                    local paramName = CSEscapeName(param.name, i)
-                    local typeName = string.format("%s %s", dst, paramName)
-                    table.insert(paramTypes, typeName)
-                end
-                local func = string.format("%s %%s(%s)", retType, table.concat(paramTypes, ", "))
-                return func, {
-                    isDelegate = true
-                }
+            if startswith(typeName, {"out ", "ref "}) then
+                -- double pointer
+                typeName = "IntPtr"
             end
+            typeName = string.format("%s %s", inout, typeName)
+            return typeName, option
         else
             return "IntPtr", option
         end
@@ -217,8 +290,6 @@ local function CSType(t, isParam)
             option.attr = string.format("[MarshalAs(UnmanagedType.ByValArray, SizeConst=%d)]", a.size)
             return string.format("%s[]", typeName), option
         end
-    elseif t.class == "Function" then
-        error("not implemented: function")
     else
         if #t.name == 0 then
             return nil, {}
@@ -227,69 +298,41 @@ local function CSType(t, isParam)
     end
 end
 
-local function _resolveTypedef(t)
-    if t.class == "TypeDef" then
-        return _resolveTypedef(t.ref.type)
-    else
-        return t
-    end
-end
-
-local function resolveTypedef(t)
-    local map = typedef_map[t.hash]
-    if map then
-        return true
-    end
-
-    local resolve = _resolveTypedef(t)
-    local typeName = TYPE_MAP[resolve.class]
-    if typeName then
-        printf("resolve %s => %s", t.name, typeName)
-        typedef_map[t.hash] = typeName
-        return true
-    end
-
-    if isPointer(resolve.name) then
-        printf("resolve %s => IntPtr", t.name)
-        typedef_map[t.hash] = "IntPtr"
-        return true
-    end
-
-    if resolve.class == "Pointer" then
-        printf("resolve %s => IntPtr", t.name)
-        typedef_map[t.hash] = "IntPtr"
-        return true
-    end
-end
-
 local function CSTypedefDecl(f, t)
-    if resolveTypedef(t) then
-        return
+    if t.ref.type.class == "Function" then
+        -- ありえない？
+        eroor("not implemented")
     end
 
-    -- print(t, t.ref)
     local dst, option = CSType(t.ref.type)
     if not dst then
-        -- nameless
-        writeln(f, "// typedef target nameless")
+        -- ありえない？
+        error("not implemented")
         return
     end
 
-    if t.name == dst then
-        -- f.writefln("// samename: %s", t.m_name);
-        return
+    if t.ref.type.class == "Pointer" and t.ref.type.ref.type.class == "Function" then
+        -- 関数ポインターへのTypedef --
+        local decl = t.ref.type.ref.type
+        local retType = CSType(decl.ret.type)
+        local params = decl.params
+        local paramTypes = {}
+        for i, param in ipairs(params) do
+            local comma = i == #params and "" or ","
+            local dst, option = CSType(param.ref.type, true)
+            local paramName = CSEscapeName(param.name, i)
+            local typeName = string.format("%s %s", dst, paramName)
+            table.insert(paramTypes, typeName)
+        end
+        writefln(f, "    public delegate %s %s(%s);", retType, t.name, table.concat(paramTypes, ", "))
     end
 
-    if option.isDelegate then
-        local template = string.format("    public delegate %s;", dst)
-        writefln(f, template, t.name)
-    else
-        writefln(f, "    public struct %s { public %s Value; } // %d", t.name, dst, t.useCount)
-    end
+    -- do nothing
+    -- writefln(f, "    public struct %s { public %s Value; } // %d", t.name, dst, t.useCount)
 end
 
 local function CSEnumDecl(f, decl, omitEnumPrefix, indent)
-    if not decl.name then
+    if #decl.name == 0 then
         writefln(f, "// enum nameless", indent)
         return
     end
@@ -340,6 +383,12 @@ local function CSInterfaceMethod(f, decl, indent, option, isMethod, override)
     if name == "GetType" then
         name = "GetComType"
     end
+    if name == "DrawTextA" or name == "DrawTextW" then
+        -- avoid DrawText macro
+        -- d2d1 work around
+        name = "DrawText"
+    end
+
     writefln(f, "%spublic %s %s %s(", indent, override, ret, name)
     local params = decl.params
     local callbackParams = {"m_ptr"}
@@ -497,8 +546,8 @@ local function CSComInterface(f, decl, option, i)
         writefln(
             f,
             [[
-    static Guid s_uuid = new Guid("%s");
-    public static new ref Guid IID => ref s_uuid;
+        static Guid s_uuid = new Guid("%s");
+        public static new ref Guid IID => ref s_uuid;
                 ]],
             decl.iid
         )
@@ -545,9 +594,15 @@ local function CSStructDecl(f, decl, option, i)
         writeln(f, "    {")
         for i, field in ipairs(decl.fields) do
             local typeName, option = CSType(field.ref.type, false)
+            option = opton or {}
+
+            -- if not option then
+            --     print(field.name, field.ref.type, field.ref.type.ref.type, typeName, option)
+            --     error(field.name)
+            -- end
+
             if not typeName then
                 typeName = anonymousMap[field.ref.type.hash]
-            -- print(field.ref.type.class, typeName, table.concat(field.ref.type.namespace, "_"))
             end
             if not typeName then
                 local fieldType = field.ref.type
@@ -563,7 +618,7 @@ local function CSStructDecl(f, decl, option, i)
                         writefln(f, "       // anonymous struct %s;", CSEscapeName(field.name))
                     end
                 else
-                    error("unknown")
+                    error(string.format("unknown: %s", fieldType))
                 end
             else
                 if decl.isUnion then
@@ -1102,17 +1157,6 @@ local function CSGenerate(sourceMap, option)
     if file.exists(option.dir) then
         printf("rmdir %s", option.dir)
         file.rmdirRecurse(option.dir)
-    end
-
-    -- create typedef_map
-    for k, source in pairs(sourceMap) do
-        for i, decl in ipairs(source.types) do
-            if not declFilter or declFilter(decl) then
-                if decl.class == "TypeDef" then
-                    resolveTypedef(decl)
-                end
-            end
-        end
     end
 
     local packageName = basename(option.dir)

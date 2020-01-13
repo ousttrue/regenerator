@@ -530,7 +530,8 @@ class Parser
 
             case CXCursorKind._CXXMethod:
                 {
-                    Function method = parseFunction(child, &context, clang_getCursorResultType(child));
+                    Function method = parseFunction(child, &context,
+                            clang_getCursorResultType(child));
                     decl.methods ~= method;
                 }
                 break;

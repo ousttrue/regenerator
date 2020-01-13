@@ -38,6 +38,7 @@ local headers = {
     "um/d3d11shader.h",
     "um/d3d10shader.h",
     "um/d2d1.h",
+    "um/d2d1effectauthor.h",
     "um/d2d1_1.h",
     "um/dwrite.h",
     "shared/dxgi.h",
@@ -53,7 +54,8 @@ for i, f in ipairs(headers) do
 end
 local sourceMap =
     ClangParse {
-    headers = headers
+    headers = headers,
+    defines = {"UNICODE=1"}
 }
 if not sourceMap then
     error("no sourceMap")
@@ -171,12 +173,13 @@ local option = {
         DXGI_MAP_DISCARD = "public const int DXGI_MAP_DISCARD = ( 4 );",
         DXGI_ENUM_MODES_INTERLACED = "public const int DXGI_ENUM_MODES_INTERLACED = ( 1 );",
         DXGI_ENUM_MODES_SCALING = "public const int DXGI_ENUM_MODES_SCALING = ( 2 );",
+        DWRITE_EXPORT = "// public const int DWRITE_EXPORT = __declspec ( dllimport ) WINAPI;",
+        --
         SETWALLPAPER_DEFAULT = "public static readonly IntPtr SETWALLPAPER_DEFAULT = new IntPtr(- 1);",
         TIMERR_NOCANDO = "public const int TIMERR_NOCANDO = ( /*TIMERR_BASE*/96 + 1 );",
         TIMERR_STRUCT = "public const int TIMERR_STRUCT = ( /*TIMERR_BASE*/96 + 33 );",
         LB_CTLCODE = "public const int LB_CTLCODE = 0;",
         WHEEL_PAGESCROLL = "public const int WHEEL_PAGESCROLL = unchecked( /*UINT_MAX*/(int)0xfffffff );",
-        --
         LBS_STANDARD = "public const long LBS_STANDARD = ( LBS_NOTIFY | LBS_SORT | (long)WS._VSCROLL | (long)WS._BORDER );"
     },
     dir = dir,
