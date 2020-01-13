@@ -37,10 +37,14 @@ local headers = {
     "um/d3dcompiler.h",
     "um/d3d11shader.h",
     "um/d3d10shader.h",
+    --
+    "um/documenttarget.h",
+    "um/wincodec.h",
+    "um/dwrite.h",
     "um/d2d1.h",
     "um/d2d1effectauthor.h",
     "um/d2d1_1.h",
-    "um/dwrite.h",
+    --
     "shared/dxgi.h",
     "shared/dxgi1_2.h",
     --

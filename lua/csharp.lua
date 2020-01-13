@@ -540,7 +540,7 @@ local function CSComInterface(f, decl, option, i)
 
     -- methods
     local indices = decl.vTableIndices
-    local baseMaxIndices = 0
+    local baseMaxIndices = -1
     if decl.base then
         for i, index in ipairs(decl.base.vTableIndices) do
             if index > baseMaxIndices then
@@ -548,12 +548,16 @@ local function CSComInterface(f, decl, option, i)
             end
         end
     end
+    local used = {}
     for i, method in ipairs(decl.methods) do
         local index = indices[i]
         if index <= baseMaxIndices then
             -- override. not necessary
         else
-            CSInterfaceMethod(f, method, "        ", option, index, "virtual")
+            if not used[index] then
+                CSInterfaceMethod(f, method, "        ", option, index, "virtual")
+                used[index] = true
+            end
         end
     end
     writeln(f, "    }")
