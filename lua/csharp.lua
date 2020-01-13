@@ -162,6 +162,9 @@ local function CSType(t, isParam)
                 )
             end
             local inout = option.isConst and "ref" or "out"
+            if inout == "out" and typeName == "IUnknown" then
+                typeName = "out IntPtr"
+            end
             return string.format("%s %s", inout, typeName), option
         elseif t.ref.type.class == "Function" then
             if isParam then
@@ -496,9 +499,13 @@ local function CSComInterface(f, decl, option, i)
     -- methods
     local indexBase = getIndexBase(decl)
     -- print(decl.name, indexBase)
+    local methods = {}
     for i, method in ipairs(decl.methods) do
-        local override = hasSameMethod(method.name, decl) and "override" or "virtual"
-        CSInterfaceMethod(f, method, "        ", option, indexBase + i, override)
+        if not methods[method.name] then
+            local override = hasSameMethod(method.name, decl) and "override" or "virtual"
+            CSInterfaceMethod(f, method, "        ", option, indexBase + i, override)
+            methods[method.name] = true
+        end
     end
     writeln(f, "    }")
 end
