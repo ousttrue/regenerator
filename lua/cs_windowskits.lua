@@ -39,6 +39,7 @@ local headers = {
     "um/d3d10shader.h",
     "um/d2d1.h",
     "um/d2d1_1.h",
+    "um/dwrite.h",
     "shared/dxgi.h",
     "shared/dxgi1_2.h",
     --
@@ -68,7 +69,7 @@ local function filter(decl)
     end
 
     if decl.class == "Function" then
-        return decl.isExternC
+        return decl.isExternC or decl.dllExport
     else
         return true
     end

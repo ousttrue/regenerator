@@ -73,7 +73,7 @@ end
 ------------------------------------------------------------------------------
 local function filter(decl)
     if decl.class == "Function" then
-        return decl.isExternC
+        return decl.isExternC or decl.dllExport
     else
         return true
     end
