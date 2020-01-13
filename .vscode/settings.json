@@ -28,9 +28,11 @@
         "pointee",
         "setglobal",
         "struct",
+        "typecons",
         "typeref",
         "uint",
         "ulong",
+        "vtable",
         "writeln"
     ],
     "cSpell.enabledLanguageIds": [

@@ -204,6 +204,8 @@ class Struct : UserDecl
     UserDecl base;
     Field[] fields;
     Function[] methods;
+    string[] vtable; // VTable for COM interface
+    int[] methodVTableIndices;
 
     bool forwardDecl;
 

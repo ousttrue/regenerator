@@ -483,6 +483,7 @@ int main(string[] args)
 		push_clangdecl(L, self.definition);
 		return 1;
 	});
+	structType.instance.Getter("vTableIndices", (Struct* self)=>self.methodVTableIndices);
 
 	auto param = new UserType!Param;
 	param.instance.Getter("name", (Param* self) => self.name);

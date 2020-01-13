@@ -43,12 +43,13 @@ local headers = {
     "um/d3dcompiler.h",
     "um/d3d11shader.h",
     "um/d3d10shader.h",
-    "um/d2d1.h",
-    "um/d2d1_2.h",
-    "um/dwrite.h",
+    --
     "um/wincodec.h",
     "um/documenttarget.h",
-    "um/d2d1effectauthor.h"
+    "um/dwrite.h",
+    "um/d2d1.h",
+    "um/d2d1effectauthor.h",
+    "um/d2d1_2.h"
 }
 for i, f in ipairs(headers) do
     local header = string.format("%s/%s", src, f)

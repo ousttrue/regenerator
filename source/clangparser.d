@@ -494,21 +494,12 @@ class Parser
         // after fields
         foreach (child; cursor.getChildren())
         {
-            auto fieldName = getCursorSpelling(child);
-            debug
-            {
-                if (fieldName == "enteredMainFile")
-                {
-                    auto a = 0;
-                }
-            }
-
-            auto fieldKind = cast(CXCursorKind) clang_getCursorKind(child);
             auto fieldType = clang_getCursorType(child);
-            switch (fieldKind)
+            switch (child.kind)
             {
             case CXCursorKind._FieldDecl:
                 {
+                    auto fieldName = getCursorSpelling(child);
                     auto fieldOffset = clang_Cursor_getOffsetOfField(child);
                     auto fieldDecl = typeToDecl(fieldType, child);
                     auto fieldConst = clang_isConstQualifiedType(fieldType);
@@ -532,6 +523,21 @@ class Parser
                 {
                     Function method = parseFunction(child, &context,
                             clang_getCursorResultType(child));
+                    // if (clang_CXXMethod_isVirtual(child))
+                    {
+                        auto found = cast(int) decl.vtable.countUntil!(f => f == method.name);
+                        if (found != -1)
+                        {
+                            debug auto a = 0;
+                        }
+                        else
+                        {
+                            found = cast(int) decl.vtable.length;
+                            decl.vtable ~= method.name;
+                            debug auto a = 0;
+                        }
+                        decl.methodVTableIndices ~= found;
+                    }
                     decl.methods ~= method;
                 }
                 break;
@@ -551,7 +557,21 @@ class Parser
 
             case CXCursorKind._CXXBaseSpecifier:
                 {
-                    decl.base = cast(UserDecl) getReferenceType(child);
+                    Decl referenced = getReferenceType(child);
+                    while (true)
+                    {
+                        auto typeDef = cast(TypeDef) referenced;
+                        if (!typeDef)
+                            break;
+                        referenced = typeDef.typeref.type;
+                    }
+                    auto base = cast(Struct) referenced;
+                    if (base.definition)
+                    {
+                        base = base.definition;
+                    }
+                    decl.base = base;
+                    decl.vtable = base.vtable;
                 }
                 break;
 
@@ -563,13 +583,14 @@ class Parser
                 {
                     // nested type
                     traverse(child, context);
-                    if (fieldName == "")
+                    auto nestName = getCursorSpelling(child);
+                    if (nestName == "")
                     {
                         // anonymous
                         auto fieldOffset = clang_Cursor_getOffsetOfField(child);
                         auto fieldDecl = getDeclFromCursor(child);
                         auto fieldConst = clang_isConstQualifiedType(fieldType);
-                        decl.fields ~= Field(fieldOffset, fieldName,
+                        decl.fields ~= Field(fieldOffset, nestName,
                                 TypeRef(fieldDecl, fieldConst != 0));
                     }
                 }

@@ -234,7 +234,7 @@ local function CSType(t, isParam)
         end
 
         -- 特定の型へのポインターは、IntPtrにする
-        if t.ref.type.class == "Void" then
+        if typeName == "void" then
             return "IntPtr", option
         end
         if isPointer(t.ref.type.name) then
@@ -485,22 +485,6 @@ local function getStruct(decl)
     end
 end
 
-local function getIndexBase(decl)
-    local indexBase = 0
-    local current = decl
-    local i = 0
-    while true do
-        i = i + 1
-        current = getStruct(current.base)
-        if not current then
-            break
-        end
-        -- print(i, decl.name, current.name, #current.methods)
-        indexBase = indexBase + #current.methods
-    end
-    return indexBase
-end
-
 local function hasSameMethod(name, decl)
     local current = decl
     while true do
@@ -508,6 +492,7 @@ local function hasSameMethod(name, decl)
         if not current then
             break
         end
+
         for i, method in ipairs(current.methods) do
             if method.name == name then
                 -- print("found", name)
@@ -554,14 +539,21 @@ local function CSComInterface(f, decl, option, i)
     end
 
     -- methods
-    local indexBase = getIndexBase(decl)
-    -- print(decl.name, indexBase)
-    local methods = {}
+    local indices = decl.vTableIndices
+    local baseMaxIndices = 0
+    if decl.base then
+        for i, index in ipairs(decl.base.vTableIndices) do
+            if index > baseMaxIndices then
+                baseMaxIndices = index
+            end
+        end
+    end
     for i, method in ipairs(decl.methods) do
-        if not methods[method.name] then
-            local override = hasSameMethod(method.name, decl) and "override" or "virtual"
-            CSInterfaceMethod(f, method, "        ", option, indexBase + i, override)
-            methods[method.name] = true
+        local index = indices[i]
+        if index <= baseMaxIndices then
+            -- override. not necessary
+        else
+            CSInterfaceMethod(f, method, "        ", option, index, "virtual")
         end
     end
     writeln(f, "    }")
