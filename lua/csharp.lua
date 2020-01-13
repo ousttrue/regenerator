@@ -259,6 +259,7 @@ local function CSType(t, isParam)
             local inout = option.isConst and "ref" or "out"
             if inout == "out" and typeName == "IUnknown" then
                 option.isCom = false
+                option.attr = nil
                 typeName = "IntPtr"
             end
             if startswith(typeName, {"out ", "ref "}) then
@@ -358,7 +359,8 @@ local function CSGlobalFunction(f, decl, indent, option, sourceName)
     if decl.isExternC then
         writefln(f, '%s[DllImport("%s.dll")]', indent, dllName)
     else
-        writefln(f, '%s[DllImport("%s.dll", EntryPoint="mangle")]', indent, dllName)
+        -- mangle
+        writefln(f, '%s[DllImport("%s.dll")]', indent, dllName)
     end
     writefln(f, "%spublic static extern %s %s(", indent, CSType(decl.ret.type), decl.name)
     local params = decl.params
@@ -451,7 +453,7 @@ local function CSInterfaceMethod(f, decl, indent, option, isMethod, override)
             %s
             %scallback(%s);
         }]],
-        isMethod - 1,
+        isMethod,
         delegateName,
         delegateName,
         table.concat(callvariables, ""),
@@ -542,6 +544,7 @@ local function CSComInterface(f, decl, option, i)
     local indices = decl.vTableIndices
     local baseMaxIndices = -1
     if decl.base then
+        local baseMaxIndices = 0
         for i, index in ipairs(decl.base.vTableIndices) do
             if index > baseMaxIndices then
                 baseMaxIndices = index
@@ -553,10 +556,13 @@ local function CSComInterface(f, decl, option, i)
         local index = indices[i]
         if index <= baseMaxIndices then
             -- override. not necessary
+            printf("[%d] override:%d<=%d %s", i, index, baseMaxIndices, method.name)
         else
-            if not used[index] then
+            if used[method.name] then
+                printf("[%d] duplicate:%d %s", i, index, method.name)
+            else
                 CSInterfaceMethod(f, method, "        ", option, index, "virtual")
-                used[index] = true
+                used[method.name] = true
             end
         end
     end
@@ -590,13 +596,6 @@ local function CSStructDecl(f, decl, option, i)
         writeln(f, "    {")
         for i, field in ipairs(decl.fields) do
             local typeName, option = CSType(field.ref.type, false)
-            option = opton or {}
-
-            -- if not option then
-            --     print(field.name, field.ref.type, field.ref.type.ref.type, typeName, option)
-            --     error(field.name)
-            -- end
-
             if not typeName then
                 typeName = anonymousMap[field.ref.type.hash]
             end
@@ -895,6 +894,7 @@ namespace ShrimpDX
 
         public static implicit operator bool(ComPtr i)
         {
+            if (i is null) return false;
             return i.m_ptr != IntPtr.Zero;
         }
 

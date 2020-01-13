@@ -14,7 +14,8 @@ CXTranslationUnitImpl* getTU(void* index, string[] headers, string[] params)
     }
 
     auto options = CXTranslationUnit_Flags._DetailedPreprocessingRecord
-        | CXTranslationUnit_Flags._SkipFunctionBodies;
+        // | CXTranslationUnit_Flags._SkipFunctionBodies
+        ;
     if (headers.length == 1)
     {
         return clang_parseTranslationUnit(index, headers[0].toStringz(),

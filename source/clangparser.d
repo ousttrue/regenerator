@@ -4,6 +4,7 @@ import std.algorithm;
 import std.file;
 import std.string;
 import std.array;
+import std.range;
 import std.stdio;
 import std.uni;
 import std.uuid;
@@ -468,6 +469,30 @@ class Parser
         return !clang_equalCursors(cursor, definition);
     }
 
+    static bool isOverride(Function base, Function f)
+    {
+        if (base.name != f.name)
+        {
+            return false;
+        }
+        if (base.params.length != f.params.length)
+        {
+            return false;
+        }
+        if (base.ret != f.ret)
+        {
+            return false;
+        }
+        foreach (tup; zip(base.params, f.params))
+        {
+            if (tup[0] != tup[1])
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     void parseStruct(CXCursor cursor, Context context, bool isUnion)
     {
         auto location = getCursorLocation(cursor);
@@ -523,9 +548,9 @@ class Parser
                 {
                     Function method = parseFunction(child, &context,
                             clang_getCursorResultType(child));
-                    // if (clang_CXXMethod_isVirtual(child))
+                    if (!method.hasBody)
                     {
-                        auto found = cast(int) decl.vtable.countUntil!(f => f == method.name);
+                        auto found = cast(int) decl.vtable.countUntil!(f => isOverride(f, method));
                         if (found != -1)
                         {
                             debug auto a = 0;
@@ -533,12 +558,12 @@ class Parser
                         else
                         {
                             found = cast(int) decl.vtable.length;
-                            decl.vtable ~= method.name;
+                            decl.vtable ~= method;
                             debug auto a = 0;
                         }
                         decl.methodVTableIndices ~= found;
+                        decl.methods ~= method;
                     }
-                    decl.methods ~= method;
                 }
                 break;
 
@@ -645,14 +670,17 @@ class Parser
 
         bool dllExport = false;
         Param[] params;
+        bool hasBody = false;
         foreach (child; cursor.getChildren())
         {
-            debug auto tmp = name;
-            auto childKind = cast(CXCursorKind) clang_getCursorKind(child);
             auto childName = getCursorSpelling(child);
 
-            switch (childKind)
+            switch (child.kind)
             {
+            case CXCursorKind._CompoundStmt:
+                hasBody = true;
+                break;
+
             case CXCursorKind._TypeRef:
                 break;
 
@@ -705,6 +733,7 @@ class Parser
         auto decl = new Function(location.path, location.line, name,
                 TypeRef(retDecl), params, dllExport, context.isExternC);
         decl.namespace = context.namespace;
+        decl.hasBody = hasBody;
         return decl;
     }
 

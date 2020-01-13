@@ -204,7 +204,7 @@ class Struct : UserDecl
     UserDecl base;
     Field[] fields;
     Function[] methods;
-    string[] vtable; // VTable for COM interface
+    Function[] vtable; // VTable for COM interface
     int[] methodVTableIndices;
 
     bool forwardDecl;
@@ -357,6 +357,7 @@ class Function : UserDecl
     bool externC;
     bool dllExport;
     Param[] params;
+    bool hasBody;
 
     this(string path, int line, string name, TypeRef ret, Param[] params,
             bool dllExport, bool externC)
