@@ -23,7 +23,14 @@ local TYPE_MAP = {
     Float = "float",
     Double = "double",
     --
-    IID = "Guid"
+    IID = "Guid",
+    --
+    D2D_POINT_2F = "System.Numerics.Vector2",
+    D2D1_POINT_2F = "System.Numerics.Vector2",
+    D2D1_COLOR_F = "System.Numerics.Vector4",
+    D2D1_RECT_F = "System.Numerics.Vector4",
+    D2D_MATRIX_3X2_F = "System.Numerics.Matrix3x2",
+    D2D1_MATRIX_3X2_F = "System.Numerics.Matrix3x2"
 }
 
 local typedef_map = {}
@@ -50,7 +57,8 @@ local ESCAPE_SYMBOLS = {
     --
     ref = true,
     ["in"] = true,
-    event = true
+    event = true,
+    string = true
 }
 
 local function CSEscapeName(src, i)
@@ -1004,6 +1012,8 @@ namespace ShrimpDX
     {
         // zero terminated
         public byte[] Buffer;
+
+        public int Length => Buffer.Length-2;
 
         public ref ushort Data
         {
