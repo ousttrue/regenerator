@@ -343,15 +343,20 @@ local function CSTypedefDecl(f, t)
     -- writefln(f, "    public struct %s { public %s Value; } // %d", t.name, dst, t.useCount)
 end
 
-local function CSEnumDecl(f, decl, omitEnumPrefix, indent)
+local function CSEnumDecl(sourceDir, decl, option, indent)
     if #decl.name == 0 then
-        writefln(f, "// enum nameless", indent)
+        -- writefln(f, "    // enum nameless", indent)
         return
     end
 
-    if omitEnumPrefix then
+    if option.omitEnumPrefix then
         decl.omit()
     end
+
+    local path = string.format("%s/%s.cs", sourceDir, decl.name)
+    local f = io.open(path, "w")
+    writeln(f, HEADLINE)
+    writefln(f, "namespace %s {", option.packageName)
 
     writefln(f, "%spublic enum %s // %d", indent, decl.name, decl.useCount)
     writefln(f, "%s{", indent)
@@ -359,10 +364,12 @@ local function CSEnumDecl(f, decl, omitEnumPrefix, indent)
         if value.value > INT_MAX then
             writefln(f, "%s    %s = unchecked((int)0x%x),", indent, value.name, value.value)
         else
-            writefln(f, "%s    %s = 0x%x,", indent, value.name, value.value)
+            writefln(f, "%s    %s = 0x%x,", indent, value.name, value.value )
         end
     end
     writefln(f, "%s}", indent)
+    writeln(f, "}")
+    io.close(f)
 end
 
 local function CSGlobalFunction(f, decl, indent, option, sourceName)
@@ -517,7 +524,7 @@ end
 
 local anonymousMap = {}
 
-local function CSComInterface(f, decl, option, i)
+local function CSComInterface(sourceDir, decl, option)
     if not decl.isInterface then
         error("is not interface")
     end
@@ -528,6 +535,11 @@ local function CSComInterface(f, decl, option, i)
     end
 
     local name = decl.name
+
+    local path = string.format("%s/%s.cs", sourceDir, decl.name)
+    local f = io.open(path, "w")
+    writeln(f, HEADLINE)
+    writefln(f, "namespace %s {", option.packageName)
 
     -- interface
     writef(f, "    public class %s", name)
@@ -581,6 +593,8 @@ local function CSComInterface(f, decl, option, i)
         end
     end
     writeln(f, "    }")
+    writeln(f, "}")
+    io.close(f)
 end
 
 local function CSStructDecl(f, decl, option, i)
@@ -645,18 +659,18 @@ local function CSStructDecl(f, decl, option, i)
     end
 end
 
-local function CSDecl(f, decl, option, i)
+local function CSDecl(f, decl, option, i, sourceDir)
     local hasComInterface = false
     if decl.class == "TypeDef" then
         CSTypedefDecl(f, decl)
     elseif decl.class == "Enum" then
-        CSEnumDecl(f, decl, option.omitEnumPrefix, "    ")
+        CSEnumDecl(sourceDir, decl, option, "    ")
     elseif decl.class == "Function" then
         error("not reach Function")
     elseif decl.class == "Struct" then
         hasComInterface = decl.isInterface
         if hasComInterface then
-            CSComInterface(f, decl, option, i)
+            CSComInterface(sourceDir, decl, option)
         else
             CSStructDecl(f, decl, option, i)
         end
@@ -860,7 +874,7 @@ local function CSSource(f, source, option)
         end
     end
     for i, decl in ipairs(types) do
-        if CSDecl(f, decl, option) then
+        if CSDecl(f, decl, option, i, sourceDir) then
             hasComInterface = true
         end
     end
