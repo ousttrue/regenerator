@@ -550,7 +550,38 @@ class Parser
                             clang_getCursorResultType(child));
                     if (!method.hasBody)
                     {
-                        auto found = cast(int) decl.vtable.countUntil!(f => isOverride(f, method));
+                        CXCursor* p;
+                        uint n;
+                        ulong[] hashes;
+                        clang_getOverriddenCursors(child, &p, &n);
+                        if (n)
+                        {
+                            scope (exit)
+                                clang_disposeOverriddenCursors(p);
+
+                            hashes.length = n;
+                            for(int i=0; i<n; ++i)
+                            {
+                                hashes[i] = clang_hashCursor(p[i]);
+                            }
+
+                            debug
+                            {
+                                auto childName = getCursorSpelling(child);
+                                auto a = 0;
+                            }
+                        }
+
+                        auto found = -1;
+                        for(int i=0; i<decl.vtable.length; ++i)
+                        {
+                            auto current = decl.vtable[i].hash;
+                            if(hashes.any!(x => x == current))
+                            {
+                                found = i;
+                                break;
+                            }
+                        }
                         if (found != -1)
                         {
                             debug auto a = 0;
@@ -734,6 +765,7 @@ class Parser
                 TypeRef(retDecl), params, dllExport, context.isExternC);
         decl.namespace = context.namespace;
         decl.hasBody = hasBody;
+        decl.hash = clang_hashCursor(cursor);
         return decl;
     }
 

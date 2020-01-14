@@ -115,7 +115,9 @@ local pointerTypes = {
     "HKL__",
     "HICON__",
     "RAWINPUT",
-    "HMENU__"
+    "HMENU__",
+    "HWINEVENTHOOK__",
+    "HMONITOR__"
 }
 
 local function isPointer(name)
@@ -544,12 +546,15 @@ local function CSComInterface(f, decl, option, i)
     local indices = decl.vTableIndices
     local baseMaxIndices = -1
     if decl.base then
-        local baseMaxIndices = 0
+        baseMaxIndices = 0
         for i, index in ipairs(decl.base.vTableIndices) do
             if index > baseMaxIndices then
                 baseMaxIndices = index
             end
         end
+    end
+    if baseMaxIndices >= 0 then
+        -- printf("# %s: baseMaxIndices = %d", decl.name, baseMaxIndices)
     end
     local used = {}
     for i, method in ipairs(decl.methods) do
