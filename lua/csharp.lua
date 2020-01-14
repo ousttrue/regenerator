@@ -142,7 +142,7 @@ local function resolveTypedef(t)
         if isUserType(resolved) then
             if t.useCount == 1 and resolved.name ~= t.name then
                 -- rename
-                printf("tag rename %s => %s", resolved.name, t.name)
+                -- printf("tag rename %s => %s", resolved.name, t.name)
                 -- TODO: __newindex
                 -- resolved.name = t.name
             end
@@ -749,13 +749,13 @@ local function CSMacro(f, macro, macro_map)
     writefln(f, "        public const %s %s = %s;", valueType, macro.name, value)
 end
 
-local function CSSource(f, packageName, source, option)
+local function CSSource(f, source, option)
     macro_map = option["macro_map"] or {}
     declFilter = option["filter"]
     omitEnumPrefix = option["omitEnumPrefix"]
 
     writeln(f, HEADLINE)
-    writefln(f, "namespace %s {", packageName)
+    writefln(f, "namespace %s {", option.packageName)
 
     if option.injection then
         local inejection = option.injection[source.name]
@@ -770,7 +770,7 @@ local function CSSource(f, packageName, source, option)
         local macros = source.macros
 
         -- enum じゃなくて const 変数に(castを避けたい)
-        local function CSMacroEnum(path, prefix, items, packageName, pred, type)
+        local function CSMacroEnum(path, prefix, items, pred, type)
             if #items == 0 then
                 return
             end
@@ -779,7 +779,7 @@ local function CSSource(f, packageName, source, option)
 
             local f = io.open(path, "w")
             writeln(f, HEADLINE)
-            writefln(f, "namespace %s {", packageName)
+            writefln(f, "namespace %s {", option.packageName)
 
             writefln(f, "    public static partial class %s {", prefix)
             for i, m in ipairs(items) do
@@ -814,7 +814,7 @@ local function CSSource(f, packageName, source, option)
                 end
             end
             local path = string.format("%s/%s_%s.cs", option.dir, source.name, prefix)
-            CSMacroEnum(path, prefix, group, packageName, const.value, const.type)
+            CSMacroEnum(path, prefix, group, const.value, const.type)
         end
 
         local constants = {}
@@ -870,7 +870,7 @@ local function CSSource(f, packageName, source, option)
     return hasComInterface
 end
 
-local function ComUtil(f, packageName)
+local function ComUtil(f)
     writeln(f, HEADLINE)
     f:write(
         [[
@@ -1169,7 +1169,7 @@ local function CSGenerate(sourceMap, option)
         file.rmdirRecurse(option.dir)
     end
 
-    local packageName = basename(option.dir)
+    option.packageName = basename(option.dir)
     local hasComInterface = false
     for k, source in pairs(sourceMap) do
         -- write each source
@@ -1181,7 +1181,7 @@ local function CSGenerate(sourceMap, option)
             do
                 -- open
                 local f = io.open(path, "w")
-                if CSSource(f, packageName, source, option) then
+                if CSSource(f, source, option) then
                     hasComInterface = true
                 end
                 io.close(f)
@@ -1193,7 +1193,7 @@ local function CSGenerate(sourceMap, option)
         -- write utility
         local path = string.format("%s/ComUtil.cs", option.dir)
         local f = io.open(path, "w")
-        ComUtil(f, packageName)
+        ComUtil(f)
         io.close(f)
     end
 
