@@ -128,19 +128,28 @@ local function isPointer(name)
     end
 end
 
-local function resolveTypedef(t)
-    if t.class == "TypeDef" then
-        return resolveTypedef(t.ref.type)
-    else
-        return t
-    end
-end
-
 local function isUserType(t)
     for i, u in ipairs {"Enum", "Struct", "TypeDef", "Function"} do
         if u == t.class then
             return true
         end
+    end
+end
+
+local function resolveTypedef(t)
+    if t.class == "TypeDef" then
+        local resolved = resolveTypedef(t.ref.type)
+        if isUserType(resolved) then
+            if t.useCount == 1 and resolved.name ~= t.name then
+                -- rename
+                printf("tag rename %s => %s", resolved.name, t.name)
+                -- TODO: __newindex
+                -- resolved.name = t.name
+            end
+        end
+        return resolved
+    else
+        return t
     end
 end
 
@@ -554,14 +563,14 @@ local function CSComInterface(f, decl, option, i)
         end
     end
     if baseMaxIndices >= 0 then
-        -- printf("# %s: baseMaxIndices = %d", decl.name, baseMaxIndices)
+    -- printf("# %s: baseMaxIndices = %d", decl.name, baseMaxIndices)
     end
     local used = {}
     for i, method in ipairs(decl.methods) do
         local index = indices[i]
         if index <= baseMaxIndices then
             -- override. not necessary
-            printf("[%d] override:%d<=%d %s", i, index, baseMaxIndices, method.name)
+            -- printf("[%d] override:%d<=%d %s", i, index, baseMaxIndices, method.name)
         else
             if used[method.name] then
                 printf("[%d] duplicate:%d %s", i, index, method.name)

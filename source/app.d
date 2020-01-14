@@ -322,6 +322,16 @@ string getName(Decl decl)
 	return userDecl.name;
 }
 
+void setName(Decl decl, in string name)
+{
+	auto userDecl = cast(UserDecl) decl;
+	if (!userDecl)
+	{
+		return;
+	}
+	userDecl.name = name;
+}
+
 UserType!T register_type(T : Decl)(lua_State* L)
 {
 	auto user = new UserType!T;
@@ -331,6 +341,7 @@ UserType!T register_type(T : Decl)(lua_State* L)
 	user.metaMethod(LuaMetaKey.tostring, (T* self) => self.toString);
 
 	user.instance.Getter("name", (T* self) => (*self).getName);
+	user.instance.Setter("name", (T* self, string name) => (*self).setName(name));
 	user.instance.Getter("typedefSource", (lua_State* L) {
 		auto self = lua_to!T(L, 1);
 		auto source = self.GetTypedefSource;
@@ -483,7 +494,7 @@ int main(string[] args)
 		push_clangdecl(L, self.definition);
 		return 1;
 	});
-	structType.instance.Getter("vTableIndices", (Struct* self)=>self.methodVTableIndices);
+	structType.instance.Getter("vTableIndices", (Struct* self) => self.methodVTableIndices);
 
 	auto param = new UserType!Param;
 	param.instance.Getter("name", (Param* self) => self.name);

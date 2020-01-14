@@ -92,7 +92,7 @@ struct IndexDispatcher(T)
         // stack#1: userdata
         // stack#2: key
         // stack#3: value ?
-        throw new Exception("NotImplemented");
+        m_setter[name] = MetaValue(true, to_luasetter(f));
     }
 
     void Method(S)(string name, S delegate(T*) f)
@@ -129,6 +129,7 @@ private:
     }
 
     MetaValue[string] m_map;
+    MetaValue[string] m_setter;
 
     int dispatchIndex(lua_State* L)
     {
@@ -138,22 +139,63 @@ private:
     int dispatchStringKey(lua_State* L)
     {
         auto key = lua_to!string(L, 2);
-        auto found = key in m_map;
-        if (!found)
-        {
-            lua_pushstring(L, "'%s' is not found in __index in %s".format(key,
-                    typeid(T).name).toStringz);
-            lua_error(L);
-            return 1;
-        }
 
-        if (found.isProperty)
+        auto argc = lua_gettop(L);
+        if (argc == 2)
         {
+            auto found = key in m_map;
+            if (!found)
+            {
+                lua_pushstring(L, "'%s' is not found in __index in %s".format(key,
+                        typeid(T).name).toStringz);
+                lua_error(L);
+                return 1;
+            }
+
+            if (found.isProperty)
+            {
+                try
+                {
+                    // execute getter or setter
+                    // stack#1: userdata
+                    // stack#2: key
+                    return found.func(L);
+                }
+                catch (Exception ex)
+                {
+                    lua_pushfstring(L, ex.msg.toStringz);
+                    lua_error(L);
+                    return 1;
+                }
+            }
+            else
+            {
+                // upvalue#1: body
+                lua_pushlightuserdata(L, &found.func);
+                // upvalue#2: userdata
+                lua_pushvalue(L, -3);
+                // closure
+                lua_pushcclosure(L, &LuaFuncClosure, 2);
+                return 1;
+            }
+        }
+        else if (argc == 3)
+        {
+            auto found = key in m_setter;
+            if (!found)
+            {
+                lua_pushstring(L, "'%s' is not found in __index in %s".format(key,
+                        typeid(T).name).toStringz);
+                lua_error(L);
+                return 1;
+            }
+
             try
             {
                 // execute getter or setter
                 // stack#1: userdata
                 // stack#2: key
+                // stack#3: value
                 return found.func(L);
             }
             catch (Exception ex)
@@ -165,12 +207,9 @@ private:
         }
         else
         {
-            // upvalue#1: body
-            lua_pushlightuserdata(L, &found.func);
-            // upvalue#2: userdata
-            lua_pushvalue(L, -3);
-            // closure
-            lua_pushcclosure(L, &LuaFuncClosure, 2);
+            lua_pushstring(L, "%s.%s call invalid arguments".format(typeid(T)
+                    .name, key).toStringz);
+            lua_error(L);
             return 1;
         }
     }

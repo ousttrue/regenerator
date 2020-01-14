@@ -46,12 +46,24 @@ Tuple!ARGS lua_totuple(ARGS...)(lua_State* L, int idx)
     return tuple(first) ~ rest;
 }
 
+// getter
 LuaFunc to_luafunc(R, ARGS...)(R delegate(ARGS) f)
 {
     return delegate(lua_State* L) {
         auto args = lua_totuple!ARGS(L, 1);
         auto value = f(args.expand);
         return lua_push!R(L, value);
+    };
+}
+
+// setter
+LuaFunc to_luasetter(S, T)(void delegate(S self, T value) f)
+{
+    return delegate(lua_State* L) {
+        auto self = lua_to!(S)(L, 1);
+        auto value = lua_to!(T)(L, 3);
+        f(self, value);
+        return 0;
     };
 }
 

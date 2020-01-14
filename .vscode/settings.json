@@ -19,6 +19,7 @@
         "libclang",
         "liblua",
         "logf",
+        "luafunc",
         "mscrtlib",
         "msvc",
         "msvcrt",
