@@ -141,10 +141,10 @@ local function resolveTypedef(t)
         local resolved = resolveTypedef(t.ref.type)
         if isUserType(resolved) then
             if t.useCount == 1 and resolved.name ~= t.name then
-                -- rename
-                -- printf("tag rename %s => %s", resolved.name, t.name)
-                -- TODO: __newindex
-                -- resolved.name = t.name
+            -- rename
+            -- printf("tag rename %s => %s", resolved.name, t.name)
+            -- TODO: __newindex
+            -- resolved.name = t.name
             end
         end
         return resolved
@@ -750,6 +750,11 @@ local function CSMacro(f, macro, macro_map)
 end
 
 local function CSSource(f, source, option)
+    -- open
+    local path = string.format("%s/%s.cs", option.dir, source.name)
+    printf("writeTo: %s", path)
+    local f = io.open(path, "w")
+
     macro_map = option["macro_map"] or {}
     declFilter = option["filter"]
     omitEnumPrefix = option["omitEnumPrefix"]
@@ -867,6 +872,7 @@ local function CSSource(f, source, option)
 
     writeln(f, "}")
 
+    io.close(f)
     return hasComInterface
 end
 
@@ -1168,23 +1174,15 @@ local function CSGenerate(sourceMap, option)
         printf("rmdir %s", option.dir)
         file.rmdirRecurse(option.dir)
     end
-
     option.packageName = basename(option.dir)
+    file.mkdirRecurse(option.dir)
+
     local hasComInterface = false
     for k, source in pairs(sourceMap) do
         -- write each source
         if not source.empty then
-            local path = string.format("%s/%s.cs", option.dir, source.name)
-            printf("writeTo: %s", path)
-            file.mkdirRecurse(option.dir)
-
-            do
-                -- open
-                local f = io.open(path, "w")
-                if CSSource(f, source, option) then
-                    hasComInterface = true
-                end
-                io.close(f)
+            if CSSource(f, source, option) then
+                hasComInterface = true
             end
         end
     end
