@@ -364,7 +364,7 @@ local function CSEnumDecl(sourceDir, decl, option, indent)
         if value.value > INT_MAX then
             writefln(f, "%s    %s = unchecked((int)0x%x),", indent, value.name, value.value)
         else
-            writefln(f, "%s    %s = 0x%x,", indent, value.name, value.value )
+            writefln(f, "%s    %s = 0x%x,", indent, value.name, value.value)
         end
     end
     writefln(f, "%s}", indent)
@@ -397,7 +397,7 @@ local function CSGlobalFunction(f, decl, indent, option, sourceName)
     end
 end
 
-local function CSInterfaceMethod(f, decl, indent, option, isMethod, override)
+local function CSInterfaceMethod(f, decl, indent, option, vTableIndex, override)
     local ret = CSType(decl.ret.type)
     local name = decl.name
     if name == "GetType" then
@@ -467,16 +467,19 @@ local function CSInterfaceMethod(f, decl, indent, option, isMethod, override)
         [[
         ){
             var fp = GetFunctionPointer(%s);
-            var callback = (%s)Marshal.GetDelegateForFunctionPointer(fp, typeof(%s));
+            if(m_%s==null) m_%s = (%s)Marshal.GetDelegateForFunctionPointer(fp, typeof(%s));
             %s
-            %scallback(%s);
+            %sm_%s(%s);
         }]],
-        isMethod,
-        delegateName,
-        delegateName,
+        vTableIndex,
+        delegateName, -- m_%s
+        delegateName, -- m_%s
+        delegateName, -- (%s)
+        delegateName, -- typeof(%s)
         table.concat(callvariables, ""),
-        ret == "void" and "" or "return ",
-        table.concat(callbackParams, ", ")
+        ret == "void" and "" or "return ", -- %s
+        delegateName, -- m_%s
+        table.concat(callbackParams, ", ") -- (%s)
     )
 
     -- delegate
@@ -486,6 +489,7 @@ local function CSInterfaceMethod(f, decl, indent, option, isMethod, override)
         -- TODO: default value = getValue(param, option.param_map)
     end
     writeln(f, ");")
+    writefln(f, "%s%s m_%s;", indent, delegateName, delegateName)
     writeln(f)
 end
 

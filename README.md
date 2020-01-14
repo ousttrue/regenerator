@@ -39,7 +39,7 @@
 * [x] naming anonymous struct/union
 * [x] marshal out com interface variable
 * [x] marshal in com interface variable
-* [ ] cache delegate of com interface method
+* [x] cache delegate of com interface method
 * [ ] function brace formatting
 
 ## Usage
