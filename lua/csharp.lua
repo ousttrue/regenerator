@@ -750,8 +750,12 @@ local function CSMacro(f, macro, macro_map)
 end
 
 local function CSSource(f, source, option)
+    -- dir
+    local sourceDir = string.format("%s/%s", option.dir, source.name)
+    file.mkdirRecurse(sourceDir)
+
     -- open
-    local path = string.format("%s/%s.cs", option.dir, source.name)
+    local path = sourceDir .. ".cs"
     printf("writeTo: %s", path)
     local f = io.open(path, "w")
 
@@ -818,7 +822,7 @@ local function CSSource(f, source, option)
                     used[i] = true
                 end
             end
-            local path = string.format("%s/%s_%s.cs", option.dir, source.name, prefix)
+            local path = string.format("%s/%s.cs", sourceDir, prefix)
             CSMacroEnum(path, prefix, group, const.value, const.type)
         end
 
