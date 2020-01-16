@@ -112,29 +112,13 @@ local function rename_values(prefix, tokens, value_map)
     return table.concat(items, " ")
 end
 local const = {
-    IDC = {
-        value = remove_MAKEINTRESOURCE
-    },
-    CS = {
-        value = rename_values,
-        type = "uint"
-    },
-    CW = {
-        value = rename_values,
-        type = "int"
-    },
-    SW = {
-        value = rename_values,
-        type = "int"
-    },
-    QS = {
-        value = rename_values,
-        type = "uint"
-    },
-    WS = {
-        value = rename_values,
-        type = "uint"
-    },
+    IDC = {value = remove_MAKEINTRESOURCE},
+    CS = {value = rename_values, type = "uint"},
+    CW = {value = rename_values, type = "int"},
+    SW = {value = rename_values, type = "int"},
+    SM = {value = rename_values, type = "int"},
+    QS = {value = rename_values, type = "uint"},
+    WS = {value = rename_values, type = "uint"},
     PM = {
         value = rename_values,
         value_map = {
@@ -147,23 +131,15 @@ local const = {
         },
         type = "uint"
     },
-    WM = {
-        value = rename_values,
-        type = "uint"
-    },
+    WM = {value = rename_values, type = "uint"},
     DM = {
         value = rename_values,
         value_map = {WM_USER = "WM._USER"},
         type = "uint"
     },
-    DXGI_USAGE = {
-        value = rename_values,
-        type = "uint"
-    },
-    DXGI_ENUM_MODES = {
-        value = rename_values,
-        type = "uint"
-    }
+    DXGI = {value = rename_values, type = "uint"},
+    DXGI_USAGE = {value = rename_values, type = "uint"},
+    DXGI_ENUM_MODES = {value = rename_values, type = "uint"}
 }
 local overload = {
     LoadCursorW = [[
