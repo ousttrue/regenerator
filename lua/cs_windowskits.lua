@@ -90,35 +90,20 @@ local function remove_MAKEINTRESOURCE(prefix, tokens)
     end
     return table.concat(items, " ")
 end
-local function rename_values(prefix, tokens)
+local function rename_values(prefix, tokens, value_map)
     local items = {}
     for _, t in ipairs(tokens) do
-        local rename = string.gsub(t, "^" .. prefix .. "_", "")
-        if rename ~= t then
-            -- 数字で始まる場合があるので
-            rename = "_" .. rename
-        end
-        if rename:sub(#rename - 1) == "UL" then
-            rename = string.sub(rename, 1, #rename - 2)
-        elseif rename:sub(#rename) == "L" then
-            rename = string.sub(rename, 1, #rename - 1)
-        end
-        table.insert(items, rename)
-    end
-    return table.concat(items, " ")
-end
-local function rename_values_dm(prefix, tokens)
-    local items = {}
-    for _, t in ipairs(tokens) do
-        if t == "WM_USER" then
-            table.insert(items, "WM._USER")
+        if value_map and value_map[t] then
+            table.insert(items, value_map[t])
         else
             local rename = string.gsub(t, "^" .. prefix .. "_", "")
             if rename ~= t then
                 -- 数字で始まる場合があるので
                 rename = "_" .. rename
             end
-            if rename:sub(#rename) == "L" then
+            if rename:sub(#rename - 1) == "UL" then
+                rename = string.sub(rename, 1, #rename - 2)
+            elseif rename:sub(#rename) == "L" then
                 rename = string.sub(rename, 1, #rename - 1)
             end
             table.insert(items, rename)
@@ -130,8 +115,36 @@ local const = {
     IDC = {
         value = remove_MAKEINTRESOURCE
     },
+    CS = {
+        value = rename_values,
+        type = "uint"
+    },
+    CW = {
+        value = rename_values,
+        type = "int"
+    },
+    SW = {
+        value = rename_values,
+        type = "int"
+    },
+    QS = {
+        value = rename_values,
+        type = "uint"
+    },
     WS = {
         value = rename_values,
+        type = "uint"
+    },
+    PM = {
+        value = rename_values,
+        value_map = {
+            QS_INPUT = "QS._INPUT",
+            QS_POSTMESSAGE = "QS._POSTMESSAGE",
+            QS_HOTKEY = "QS._HOTKEY",
+            QS_TIMER = "QS._TIMER",
+            QS_PAINT = "QS._PAINT",
+            QS_SENDMESSAGE = "QS._SENDMESSAGE"
+        },
         type = "uint"
     },
     WM = {
@@ -139,7 +152,8 @@ local const = {
         type = "uint"
     },
     DM = {
-        value = rename_values_dm,
+        value = rename_values,
+        value_map = {WM_USER = "WM._USER"},
         type = "uint"
     },
     DXGI_USAGE = {
@@ -184,7 +198,8 @@ local option = {
         TIMERR_STRUCT = "public const int TIMERR_STRUCT = ( /*TIMERR_BASE*/96 + 33 );",
         LB_CTLCODE = "public const int LB_CTLCODE = 0;",
         WHEEL_PAGESCROLL = "public const int WHEEL_PAGESCROLL = unchecked( /*UINT_MAX*/(int)0xfffffff );",
-        LBS_STANDARD = "public const long LBS_STANDARD = ( LBS_NOTIFY | LBS_SORT | (long)WS._VSCROLL | (long)WS._BORDER );"
+        LBS_STANDARD = "public const long LBS_STANDARD = ( LBS_NOTIFY | LBS_SORT | (long)WS._VSCROLL | (long)WS._BORDER );",
+        CW_USEDEFAULT = "public const int _USEDEFAULT = unchecked( ( int ) 0x80000000 );"
     },
     dir = dir,
     const = const,

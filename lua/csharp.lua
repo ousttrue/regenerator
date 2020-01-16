@@ -793,16 +793,14 @@ local function CSSource(f, source, option)
 
     -- const
     if #source.macros > 0 then
-        writeln(f, "    public static partial class Constants {")
-        local macros = source.macros
-
         -- enum じゃなくて const 変数に(castを避けたい)
-        local function CSMacroEnum(path, prefix, items, pred, type)
+        local function CSMacroEnum(path, prefix, items, const_option)
             if #items == 0 then
                 return
             end
 
-            type = type or "int"
+            local type = const_option.type or "int"
+            local pred = const_option.value
 
             local f = io.open(path, "w")
             writeln(f, HEADLINE)
@@ -810,16 +808,21 @@ local function CSSource(f, source, option)
 
             writefln(f, "    public static partial class %s {", prefix)
             for i, m in ipairs(items) do
-                local tokens = m.tokens
-                table.remove(tokens, 1)
-                local name = string.sub(m.name, #prefix + 1)
-                writefln(
-                    f,
-                    "        public const %s %s = %s;",
-                    type,
-                    name,
-                    pred and pred(prefix, tokens) or table.concat(tokens, " ")
-                )
+                local text = option.macro_map[m.name]
+                if text then
+                    writefln(f, "        %s", text)
+                else
+                    local tokens = m.tokens
+                    table.remove(tokens, 1)
+                    local name = string.sub(m.name, #prefix + 1)
+                    writefln(
+                        f,
+                        "        public const %s %s = %s;",
+                        type,
+                        name,
+                        pred and pred(prefix, tokens, const_option.value_map) or table.concat(tokens, " ")
+                    )
+                end
             end
             writeln(f, "    }")
 
@@ -827,6 +830,10 @@ local function CSSource(f, source, option)
             io.close(f)
         end
 
+        writeln(f, "    public static partial class Constants {")
+        local macros = source.macros
+
+        -- option.constに設定があるものだけ、定数宣言を別ファイルに分離する
         local used = {}
         for prefix, const in pairs(option.const) do
             local group = {}
@@ -841,7 +848,7 @@ local function CSSource(f, source, option)
                 end
             end
             local path = string.format("%s/%s.cs", sourceDir, prefix)
-            CSMacroEnum(path, prefix, group, const.value, const.type)
+            CSMacroEnum(path, prefix, group, const)
         end
 
         local constants = {}
