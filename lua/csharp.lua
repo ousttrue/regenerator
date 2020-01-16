@@ -561,7 +561,8 @@ local function CSComInterface(sourceDir, decl, option)
             f,
             [[
         static Guid s_uuid = new Guid("%s");
-        public static new ref Guid IID => ref s_uuid;
+        public static new ref Guid IID =>ref s_uuid;
+        public override ref Guid GetIID(){ return ref s_uuid; }
                 ]],
             decl.iid
         )
@@ -913,6 +914,19 @@ using System.Text;
 
 namespace ShrimpDX
 {
+    public static class ComPtrExtensions
+    {
+        public static T QueryInterface<T>(this IUnknown self) where T : ComPtr, new()
+        {
+            var p = new T();
+            if (self.QueryInterface(ref p.GetIID(), out p.PtrForNew).Failed())
+            {
+                return null;
+            }
+            return p;
+        }
+    }
+
     /// <summary>
     /// COMの virtual function table を自前で呼び出すヘルパークラス。
     /// </summary>
@@ -920,6 +934,7 @@ namespace ShrimpDX
     {
         static Guid s_uuid;
         public static ref Guid IID => ref s_uuid;
+        public virtual ref Guid GetIID(){ return ref s_uuid; }
  
         /// <summay>
         /// IUnknown を継承した interface(ID3D11Deviceなど) に対するポインター。
