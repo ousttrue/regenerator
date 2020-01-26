@@ -11,63 +11,63 @@ local INT_MAX = 2147483647
 -- ref.type.class から得る
 --
 local PRIMITIVE_MAP = {
-    Void = "void",
-    Bool = "bool",
+    Void = 'void',
+    Bool = 'bool',
     --
-    Int8 = "sbyte",
-    Int16 = "short",
-    Int32 = "int",
-    Int64 = "long",
+    Int8 = 'sbyte',
+    Int16 = 'short',
+    Int32 = 'int',
+    Int64 = 'long',
     --
-    UInt8 = "byte",
-    UInt16 = "ushort",
-    UInt32 = "uint",
-    UInt64 = "ulong",
+    UInt8 = 'byte',
+    UInt16 = 'ushort',
+    UInt32 = 'uint',
+    UInt64 = 'ulong',
     --
-    Float = "float",
-    Double = "double"
+    Float = 'float',
+    Double = 'double'
 }
 
 --
 -- ref.type.name から得る
 --
 local NAME_MAP = {
-    ID3DInclude = "IntPtr",
-    _GUID = "Guid",
-    _D3DCOLORVALUE = "System.Numerics.Vector4",
+    ID3DInclude = 'IntPtr',
+    _GUID = 'Guid',
+    _D3DCOLORVALUE = 'System.Numerics.Vector4',
     --
-    D2D_POINT_2F = "System.Numerics.Vector2",
-    D2D1_POINT_2F = "System.Numerics.Vector2",
-    D2D1_COLOR_F = "System.Numerics.Vector4",
-    D2D1_RECT_F = "System.Numerics.Vector4",
-    D2D_MATRIX_3X2_F = "System.Numerics.Matrix3x2",
-    D2D1_MATRIX_3X2_F = "System.Numerics.Matrix3x2"
+    D2D_POINT_2F = 'System.Numerics.Vector2',
+    D2D1_POINT_2F = 'System.Numerics.Vector2',
+    D2D1_COLOR_F = 'System.Numerics.Vector4',
+    D2D1_RECT_F = 'System.Numerics.Vector4',
+    D2D_MATRIX_3X2_F = 'System.Numerics.Matrix3x2',
+    D2D1_MATRIX_3X2_F = 'System.Numerics.Matrix3x2'
 }
 
 local FIELD_MAP = {
     LPCSTR = {
-        "string",
+        'string',
         {
-            attr = "[MarshalAs(UnmanagedType.LPStr)]"
+            attr = '[MarshalAs(UnmanagedType.LPStr)]'
         }
     },
     LPCWSTR = {
-        "string",
+        'string',
         {
-            attr = "[MarshalAs(UnmanagedType.LPWStr)]"
+            attr = '[MarshalAs(UnmanagedType.LPWStr)]'
         }
     }
 }
 
 local PARAM_MAP = {
     LPCSTR = {
-        "string",
+        'string',
         {
-            attr = "[MarshalAs(UnmanagedType.LPStr)]"
+            attr = '[MarshalAs(UnmanagedType.LPStr)]'
         }
     },
     LPCWSTR = {
-        "ref ushort",
+        'ref ushort',
         {
             isRef = true
         }
@@ -77,18 +77,18 @@ local PARAM_MAP = {
 local ESCAPE_SYMBOLS = {
     --
     ref = true,
-    ["in"] = true,
+    ['in'] = true,
     event = true,
     string = true
 }
 
 local function CSEscapeName(src, i)
-    i = i or ""
+    i = i or ''
     if ESCAPE_SYMBOLS[src] then
-        return "_" .. src
+        return '_' .. src
     end
     if #src == 0 then
-        src = string.format("__param__%s", i)
+        src = string.format('__param__%s', i)
     end
     return src
 end
@@ -96,7 +96,7 @@ end
 local function isInterface(decl)
     decl = decl.typedefSource
 
-    if decl.class ~= "Struct" then
+    if decl.class ~= 'Struct' then
         return false
     end
 
@@ -109,15 +109,15 @@ local function isInterface(decl)
 end
 
 local pointerTypes = {
-    "HDC__",
-    "HWND__",
-    "HINSTANCE__",
-    "HKL__",
-    "HICON__",
-    "RAWINPUT",
-    "HMENU__",
-    "HWINEVENTHOOK__",
-    "HMONITOR__"
+    'HDC__',
+    'HWND__',
+    'HINSTANCE__',
+    'HKL__',
+    'HICON__',
+    'RAWINPUT',
+    'HMENU__',
+    'HWINEVENTHOOK__',
+    'HMONITOR__'
 }
 
 local function isPointer(name)
@@ -129,7 +129,7 @@ local function isPointer(name)
 end
 
 local function isUserType(t)
-    for i, u in ipairs {"Enum", "Struct", "TypeDef", "Function"} do
+    for i, u in ipairs {'Enum', 'Struct', 'TypeDef', 'Function'} do
         if u == t.class then
             return true
         end
@@ -137,7 +137,7 @@ local function isUserType(t)
 end
 
 local function resolveTypedef(t)
-    if t.class == "TypeDef" then
+    if t.class == 'TypeDef' then
         local resolved = resolveTypedef(t.ref.type)
         if isUserType(resolved) then
             if t.useCount == 1 and resolved.name ~= t.name then
@@ -180,16 +180,16 @@ local function getMapType(t, isParam)
 end
 
 local function isCallback(t)
-    if t.class == "Function" then
+    if t.class == 'Function' then
         return true
     end
 
-    if t.class == "TypeDef" then
-        if t.ref.type.class == "Function" then
+    if t.class == 'TypeDef' then
+        if t.ref.type.class == 'Function' then
             -- return t.name
-            error("not implemented")
+            error('not implemented')
         end
-        if t.ref.type.class == "Pointer" and t.ref.type.ref.type.class == "Function" then
+        if t.ref.type.class == 'Pointer' and t.ref.type.ref.type.class == 'Function' then
             return true
         end
     end
@@ -211,7 +211,7 @@ local function CSType(t, isParam)
     local typeName, option = getMapType(t, isParam)
     if typeName then
         if not option then
-            error("no option")
+            error('no option')
         end
         return typeName, option
     end
@@ -235,7 +235,7 @@ local function CSType(t, isParam)
         end
     end
 
-    if t.class == "Pointer" then
+    if t.class == 'Pointer' then
         -- csharpで型を表現できる場合は、ref, out に。
         -- できない場合は、IntPtrにする
         local option = {isConst = t.ref.isConst, isRef = true}
@@ -245,12 +245,12 @@ local function CSType(t, isParam)
         end
 
         -- 特定の型へのポインターは、IntPtrにする
-        if typeName == "void" then
-            return "IntPtr", option
+        if typeName == 'void' then
+            return 'IntPtr', option
         end
         if isPointer(t.ref.type.name) then
             -- HWND etc...
-            return "IntPtr", option
+            return 'IntPtr', option
         end
 
         if isInterface(t.ref.type) then
@@ -263,44 +263,44 @@ local function CSType(t, isParam)
             if option.isCom then
                 option.attr =
                     string.format(
-                    "[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(CustomMarshaler<%s>))]",
+                    '[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(CustomMarshaler<%s>))]',
                     typeName
                 )
             end
-            local inout = option.isConst and "ref" or "out"
-            if inout == "out" and typeName == "IUnknown" then
+            local inout = option.isConst and 'ref' or 'out'
+            if inout == 'out' and typeName == 'IUnknown' then
                 option.isCom = false
                 option.attr = nil
-                typeName = "IntPtr"
+                typeName = 'IntPtr'
             end
-            if startswith(typeName, {"out ", "ref "}) then
+            if startswith(typeName, {'out ', 'ref '}) then
                 -- double pointer
-                typeName = "IntPtr"
+                typeName = 'IntPtr'
             end
-            typeName = string.format("%s %s", inout, typeName)
+            typeName = string.format('%s %s', inout, typeName)
             return typeName, option
         else
-            return "IntPtr", option
+            return 'IntPtr', option
         end
-    elseif t.class == "Reference" then
+    elseif t.class == 'Reference' then
         local option = {isConst = t.ref.isConst, isRef = true}
         local typeName, refOption = CSType(t.ref.type, isParam)
         for k, v in pairs(refOption) do
             option[k] = option[k] or v
         end
-        local inout = option.isConst and "ref" or "out"
-        return string.format("%s %s", inout, typeName), option
-    elseif t.class == "Array" then
+        local inout = option.isConst and 'ref' or 'out'
+        return string.format('%s %s', inout, typeName), option
+    elseif t.class == 'Array' then
         -- return DArray(t)
         local a = t
         local typeName, option = CSType(a.ref.type, isParam)
         option.isConst = option.isConst or t.ref.isConst
         if isParam then
             option.isRef = true
-            return string.format("ref %s", typeName), option
+            return string.format('ref %s', typeName), option
         else
-            option.attr = string.format("[MarshalAs(UnmanagedType.ByValArray, SizeConst=%d)]", a.size)
-            return string.format("%s[]", typeName), option
+            option.attr = string.format('[MarshalAs(UnmanagedType.ByValArray, SizeConst=%d)]', a.size)
+            return string.format('%s[]', typeName), option
         end
     else
         if #t.name == 0 then
@@ -311,32 +311,32 @@ local function CSType(t, isParam)
 end
 
 local function CSTypedefDecl(f, t)
-    if t.ref.type.class == "Function" then
+    if t.ref.type.class == 'Function' then
         -- ありえない？
-        eroor("not implemented")
+        eroor('not implemented')
     end
 
     local dst, option = CSType(t.ref.type)
     if not dst then
         -- ありえない？
-        error("not implemented")
+        error('not implemented')
         return
     end
 
-    if t.ref.type.class == "Pointer" and t.ref.type.ref.type.class == "Function" then
+    if t.ref.type.class == 'Pointer' and t.ref.type.ref.type.class == 'Function' then
         -- 関数ポインターへのTypedef --
         local decl = t.ref.type.ref.type
         local retType = CSType(decl.ret.type)
         local params = decl.params
         local paramTypes = {}
         for i, param in ipairs(params) do
-            local comma = i == #params and "" or ","
+            local comma = i == #params and '' or ','
             local dst, option = CSType(param.ref.type, true)
             local paramName = CSEscapeName(param.name, i)
-            local typeName = string.format("%s %s", dst, paramName)
+            local typeName = string.format('%s %s', dst, paramName)
             table.insert(paramTypes, typeName)
         end
-        writefln(f, "    public delegate %s %s(%s);", retType, t.name, table.concat(paramTypes, ", "))
+        writefln(f, '    public delegate %s %s(%s);', retType, t.name, table.concat(paramTypes, ', '))
     end
 
     -- do nothing
@@ -353,22 +353,22 @@ local function CSEnumDecl(sourceDir, decl, option, indent)
         decl.omit()
     end
 
-    local path = string.format("%s/%s.cs", sourceDir, decl.name)
-    local f = io.open(path, "w")
+    local path = string.format('%s/%s.cs', sourceDir, decl.name)
+    local f = io.open(path, 'w')
     writeln(f, HEADLINE)
-    writefln(f, "namespace %s {", option.packageName)
+    writefln(f, 'namespace %s {', option.packageName)
 
-    writefln(f, "%spublic enum %s // %d", indent, decl.name, decl.useCount)
-    writefln(f, "%s{", indent)
+    writefln(f, '%spublic enum %s // %d', indent, decl.name, decl.useCount)
+    writefln(f, '%s{', indent)
     for i, value in ipairs(decl.values) do
         if value.value > INT_MAX then
-            writefln(f, "%s    %s = unchecked((int)0x%x),", indent, value.name, value.value)
+            writefln(f, '%s    %s = unchecked((int)0x%x),', indent, value.name, value.value)
         else
-            writefln(f, "%s    %s = 0x%x,", indent, value.name, value.value)
+            writefln(f, '%s    %s = 0x%x,', indent, value.name, value.value)
         end
     end
-    writefln(f, "%s}", indent)
-    writeln(f, "}")
+    writefln(f, '%s}', indent)
+    writeln(f, '}')
     io.close(f)
 end
 
@@ -380,15 +380,15 @@ local function CSGlobalFunction(f, decl, indent, option, sourceName)
         -- mangle
         writefln(f, '%s[DllImport("%s.dll")]', indent, dllName)
     end
-    writefln(f, "%spublic static extern %s %s(", indent, CSType(decl.ret.type), decl.name)
+    writefln(f, '%spublic static extern %s %s(', indent, CSType(decl.ret.type), decl.name)
     local params = decl.params
     for i, param in ipairs(params) do
-        local comma = i == #params and "" or ","
+        local comma = i == #params and '' or ','
         local dst, option = CSType(param.ref.type, true)
-        writefln(f, "%s    %s%s %s%s", indent, option.attr or "", dst, CSEscapeName(param.name, i), comma)
+        writefln(f, '%s    %s%s %s%s', indent, option.attr or '', dst, CSEscapeName(param.name, i), comma)
         -- TODO: dfeault value = getValue(param, option.param_map)
     end
-    writefln(f, "%s);", indent)
+    writefln(f, '%s);', indent)
     if option.overload then
         local overload = option.overload[decl.name]
         if overload then
@@ -400,68 +400,68 @@ end
 local function CSInterfaceMethod(f, decl, indent, option, vTableIndex, override)
     local ret = CSType(decl.ret.type)
     local name = decl.name
-    if name == "GetType" then
-        name = "GetComType"
+    if name == 'GetType' then
+        name = 'GetComType'
     end
-    if name == "DrawTextA" or name == "DrawTextW" then
+    if name == 'DrawTextA' or name == 'DrawTextW' then
         -- avoid DrawText macro
         -- d2d1 work around
-        name = "DrawText"
+        name = 'DrawText'
     end
 
-    writefln(f, "%spublic %s %s %s(", indent, override, ret, name)
+    writefln(f, '%spublic %s %s %s(', indent, override, ret, name)
     local params = decl.params
-    local callbackParams = {"m_ptr"}
+    local callbackParams = {'m_ptr'}
     local delegateParams = {}
     local callvariables = {}
     for i, param in ipairs(params) do
-        local comma = i == #params and "" or ","
+        local comma = i == #params and '' or ','
         local dst, option = CSType(param.ref.type, true)
         local name = CSEscapeName(param.name)
         if option.isCom then
-            if param.ref.type.class == "Pointer" and param.ref.type.ref.type.class == "Pointer" then
+            if param.ref.type.class == 'Pointer' and param.ref.type.ref.type.class == 'Pointer' then
                 if not option.isConst then
                     -- out interface
-                    writefln(f, "%s    %s %s%s", indent, dst, name, comma)
+                    writefln(f, '%s    %s %s%s', indent, dst, name, comma)
                     table.insert(
                         callvariables,
-                        string.format("%s = new %s();", name, dst:gsub("^ref ", ""):gsub("^out ", ""))
+                        string.format('%s = new %s();', name, dst:gsub('^ref ', ''):gsub('^out ', ''))
                     )
-                    table.insert(callbackParams, string.format("out %s.PtrForNew", name))
-                    table.insert(delegateParams, string.format("out IntPtr %s", name))
+                    table.insert(callbackParams, string.format('out %s.PtrForNew', name))
+                    table.insert(delegateParams, string.format('out IntPtr %s', name))
                 else
                     -- may interface array
                     -- printf("## %s %d ##", decl.name, i)
                     -- print_table(option)
-                    writefln(f, "%s    ref IntPtr %s%s", indent, name, comma)
-                    table.insert(callbackParams, string.format("ref %s", name))
-                    table.insert(delegateParams, string.format("ref IntPtr %s", name))
+                    writefln(f, '%s    ref IntPtr %s%s', indent, name, comma)
+                    table.insert(callbackParams, string.format('ref %s', name))
+                    table.insert(delegateParams, string.format('ref IntPtr %s', name))
                 end
             else
                 -- in interface
-                writefln(f, "%s    %s %s%s", indent, dst, name, comma)
-                table.insert(callbackParams, string.format("%s!=null ? %s.Ptr : IntPtr.Zero", name, name))
-                table.insert(delegateParams, string.format("IntPtr %s", name))
+                writefln(f, '%s    %s %s%s', indent, dst, name, comma)
+                table.insert(callbackParams, string.format('%s!=null ? %s.Ptr : IntPtr.Zero', name, name))
+                table.insert(delegateParams, string.format('IntPtr %s', name))
             end
         elseif option.isRef then
-            writefln(f, "%s    %s %s%s", indent, dst, name, comma)
+            writefln(f, '%s    %s %s%s', indent, dst, name, comma)
             local isRef = string.sub(dst, 1, 4)
-            if isRef == "ref " then
-                table.insert(callbackParams, string.format("ref %s", name))
-            elseif isRef == "out " then
-                table.insert(callbackParams, string.format("out %s", name))
+            if isRef == 'ref ' then
+                table.insert(callbackParams, string.format('ref %s', name))
+            elseif isRef == 'out ' then
+                table.insert(callbackParams, string.format('out %s', name))
             else
-                table.insert(callbackParams, string.format("%s", name))
+                table.insert(callbackParams, string.format('%s', name))
             end
-            table.insert(delegateParams, string.format("%s %s", dst, name))
+            table.insert(delegateParams, string.format('%s %s', dst, name))
         else
-            writefln(f, "%s    %s %s%s", indent, dst, name, comma)
-            table.insert(callbackParams, string.format("%s", name))
-            table.insert(delegateParams, string.format("%s %s", dst, name))
+            writefln(f, '%s    %s %s%s', indent, dst, name, comma)
+            table.insert(callbackParams, string.format('%s', name))
+            table.insert(delegateParams, string.format('%s %s', dst, name))
         end
         -- TODO: default value = getValue(param, option.param_map)
     end
-    local delegateName = decl.name .. "Func"
+    local delegateName = decl.name .. 'Func'
     writefln(
         f,
         [[
@@ -476,20 +476,20 @@ local function CSInterfaceMethod(f, decl, indent, option, vTableIndex, override)
         delegateName, -- m_%s
         delegateName, -- (%s)
         delegateName, -- typeof(%s)
-        table.concat(callvariables, ""),
-        ret == "void" and "" or "return ", -- %s
+        table.concat(callvariables, ''),
+        ret == 'void' and '' or 'return ', -- %s
         delegateName, -- m_%s
-        table.concat(callbackParams, ", ") -- (%s)
+        table.concat(callbackParams, ', ') -- (%s)
     )
 
     -- delegate
-    writef(f, "%sdelegate %s %s(IntPtr self", indent, ret, delegateName)
+    writef(f, '%sdelegate %s %s(IntPtr self', indent, ret, delegateName)
     for i, param in ipairs(delegateParams) do
-        writef(f, ", %s", param)
+        writef(f, ', %s', param)
         -- TODO: default value = getValue(param, option.param_map)
     end
-    writeln(f, ");")
-    writefln(f, "%s%s m_%s;", indent, delegateName, delegateName)
+    writeln(f, ');')
+    writefln(f, '%s%s m_%s;', indent, delegateName, delegateName)
     writeln(f)
 end
 
@@ -497,15 +497,15 @@ local function getStruct(decl)
     if not decl then
         return nil
     end
-    if decl.class == "Struct" then
+    if decl.class == 'Struct' then
         if decl.isForwardDecl then
             decl = decl.definition
         end
         return decl
-    elseif decl.class == "TypeDef" then
+    elseif decl.class == 'TypeDef' then
         return getStruct(decl.ref.type)
     else
-        error("XXXXX")
+        error('XXXXX')
     end
 end
 
@@ -530,7 +530,7 @@ local anonymousMap = {}
 
 local function CSComInterface(sourceDir, decl, option)
     if not decl.isInterface then
-        error("is not interface")
+        error('is not interface')
     end
 
     -- com interface
@@ -540,21 +540,21 @@ local function CSComInterface(sourceDir, decl, option)
 
     local name = decl.name
 
-    local path = string.format("%s/%s.cs", sourceDir, decl.name)
-    local f = io.open(path, "w")
+    local path = string.format('%s/%s.cs', sourceDir, decl.name)
+    local f = io.open(path, 'w')
     writeln(f, HEADLINE)
-    writefln(f, "namespace %s {", option.packageName)
+    writefln(f, 'namespace %s {', option.packageName)
 
     -- interface
-    writef(f, "    public class %s", name)
+    writef(f, '    public class %s', name)
     if not decl.base then
-        writef(f, ": ComPtr")
+        writef(f, ': ComPtr')
     else
-        writef(f, ": %s", decl.base.name)
+        writef(f, ': %s', decl.base.name)
     end
 
     writeln(f)
-    writeln(f, "    {")
+    writeln(f, '    {')
     if decl.iid then
         -- writefln(f, '    [Guid("%s"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]', decl.iid)
         writefln(
@@ -590,15 +590,15 @@ local function CSComInterface(sourceDir, decl, option)
             -- printf("[%d] override:%d<=%d %s", i, index, baseMaxIndices, method.name)
         else
             if used[method.name] then
-                printf("[%d] duplicate:%d %s", i, index, method.name)
+                printf('[%d] duplicate:%d %s', i, index, method.name)
             else
-                CSInterfaceMethod(f, method, "        ", option, index, "virtual")
+                CSInterfaceMethod(f, method, '        ', option, index, 'virtual')
                 used[method.name] = true
             end
         end
     end
-    writeln(f, "    }")
-    writeln(f, "}")
+    writeln(f, '    }')
+    writeln(f, '}')
     io.close(f)
 end
 
@@ -608,7 +608,7 @@ local function CSStructDecl(f, decl, option, i)
     if not name or #name == 0 then
         -- writeln(f, "    // struct nameless")
         -- return
-        name = string.format("%s_anonymous_%d", table.concat(decl.namespace, "_"), i)
+        name = string.format('%s_anonymous_%d', table.concat(decl.namespace, '_'), i)
         -- print(name)
         anonymousMap[decl.hash] = name
     end
@@ -616,17 +616,17 @@ local function CSStructDecl(f, decl, option, i)
     if decl.isForwardDecl then
         -- forward decl
         if #decl.fields > 0 then
-            error("forward decl has fields")
+            error('forward decl has fields')
         end
-        writefln(f, "    // forward declaration %s;", name)
+        writefln(f, '    // forward declaration %s;', name)
     else
         if decl.isUnion then
-            writeln(f, "    [StructLayout(LayoutKind.Explicit)]")
+            writeln(f, '    [StructLayout(LayoutKind.Explicit)]')
         else
-            writeln(f, "    [StructLayout(LayoutKind.Sequential)]")
+            writeln(f, '    [StructLayout(LayoutKind.Sequential)]')
         end
-        writefln(f, "    public struct %s // %d", name, decl.useCount)
-        writeln(f, "    {")
+        writefln(f, '    public struct %s // %d', name, decl.useCount)
+        writeln(f, '    {')
         for i, field in ipairs(decl.fields) do
             local typeName, option = CSType(field.ref.type, false)
             if not typeName then
@@ -634,45 +634,45 @@ local function CSStructDecl(f, decl, option, i)
             end
             if not typeName then
                 local fieldType = field.ref.type
-                if fieldType.class == "Struct" then
+                if fieldType.class == 'Struct' then
                     if fieldType.isUnion then
                         -- for i, unionField in ipairs(fieldType.fields) do
                         --     local unionFieldTypeName = CSType(unionField.ref.type)
                         --     writefln(f, "        %s %s;", unionFieldTypeName, CSEscapeName(unionField.name))
                         -- end
                         -- writefln(f, "    }")
-                        writefln(f, "        // anonymous union")
+                        writefln(f, '        // anonymous union')
                     else
-                        writefln(f, "       // anonymous struct %s;", CSEscapeName(field.name))
+                        writefln(f, '       // anonymous struct %s;', CSEscapeName(field.name))
                     end
                 else
-                    error(string.format("unknown: %s", fieldType))
+                    error(string.format('unknown: %s', fieldType))
                 end
             else
                 if decl.isUnion then
-                    writefln(f, "        [FieldOffset(0)]", field.offset)
+                    writefln(f, '        [FieldOffset(0)]', field.offset)
                 end
                 local name = CSEscapeName(field.name, i)
                 if #name == 0 then
-                    name = string.format("__anonymous__%d", i)
+                    name = string.format('__anonymous__%d', i)
                 end
-                writefln(f, "        %spublic %s %s;", option.attr or "", typeName, name)
+                writefln(f, '        %spublic %s %s;', option.attr or '', typeName, name)
             end
         end
 
-        writeln(f, "    }")
+        writeln(f, '    }')
     end
 end
 
 local function CSDecl(f, decl, option, i, sourceDir)
     local hasComInterface = false
-    if decl.class == "TypeDef" then
+    if decl.class == 'TypeDef' then
         CSTypedefDecl(f, decl)
-    elseif decl.class == "Enum" then
-        CSEnumDecl(sourceDir, decl, option, "    ")
-    elseif decl.class == "Function" then
-        error("not reach Function")
-    elseif decl.class == "Struct" then
+    elseif decl.class == 'Enum' then
+        CSEnumDecl(sourceDir, decl, option, '    ')
+    elseif decl.class == 'Function' then
+        error('not reach Function')
+    elseif decl.class == 'Struct' then
         hasComInterface = decl.isInterface
         if hasComInterface then
             CSComInterface(sourceDir, decl, option)
@@ -680,14 +680,14 @@ local function CSDecl(f, decl, option, i, sourceDir)
             CSStructDecl(f, decl, option, i)
         end
     else
-        error("unknown", decl)
+        error('unknown', decl)
     end
     return hasComInterface
 end
 
 local function getPointerValue(str)
-    for i, key in ipairs {"HWND", "HBITMAP", "HANDLE"} do
-        local pattern = "(.*)%( *" .. key .. " *%)(.*)"
+    for i, key in ipairs {'HWND', 'HBITMAP', 'HANDLE'} do
+        local pattern = '(.*)%( *' .. key .. ' *%)(.*)'
         local s, e = string.match(str, pattern)
         if s then
             return s .. e
@@ -696,18 +696,18 @@ local function getPointerValue(str)
 end
 
 local function trim(s)
-    return s:match "^%s*(.-)%s*$"
+    return s:match '^%s*(.-)%s*$'
 end
 
 local function CSMacro(f, macro, macro_map)
     if macro.isFunctionLike then
-        writefln(f, "        // macro function: %s", table.concat(macro.tokens, " "))
+        writefln(f, '        // macro function: %s', table.concat(macro.tokens, ' '))
         return
     end
 
     local text = macro_map[macro.name]
     if text then
-        writefln(f, "        %s", text)
+        writefln(f, '        %s', text)
         return
     end
 
@@ -715,75 +715,75 @@ local function CSMacro(f, macro, macro_map)
     table.remove(tokens, 1)
 
     if isFirstAlpha(tokens[1]) then
-        writefln(f, "        // unknown type: %s", table.concat(macro.tokens, " "))
+        writefln(f, '        // unknown type: %s', table.concat(macro.tokens, ' '))
         return
     end
 
     -- const definitions
-    local value = table.concat(tokens, " ")
+    local value = table.concat(tokens, ' ')
 
-    for i, key in ipairs {"LONG", "DWORD", "int"} do
-        value = value:gsub("%( " .. key .. " %)", "")
+    for i, key in ipairs {'LONG', 'DWORD', 'int'} do
+        value = value:gsub('%( ' .. key .. ' %)', '')
     end
 
     local pointerValue = getPointerValue(value)
     if pointerValue then
         -- HWND, HBITMAP...
-        writefln(f, "        public static readonly IntPtr %s = new IntPtr(%s);", macro.name, pointerValue)
+        writefln(f, '        public static readonly IntPtr %s = new IntPtr(%s);', macro.name, pointerValue)
         return
     end
 
-    for i, pattern in ipairs {"^(0x)([0-9a-fA-F]+)(U*)(L*)$", "%( *(0x)(%w+) %)"} do
+    for i, pattern in ipairs {'^(0x)([0-9a-fA-F]+)(U*)(L*)$', '%( *(0x)(%w+) %)'} do
         local hex, n, u, l = string.match(value, pattern)
         if n and #n > 0 then
             -- hex
             if l and #l > 1 then
-                error("not implemented: " .. l)
+                error('not implemented: ' .. l)
             end
 
             if u and #u > 0 then
                 -- unsigned
-                writefln(f, "        public const uint %s = %s%s;", macro.name, hex, n)
+                writefln(f, '        public const uint %s = %s%s;', macro.name, hex, n)
                 return
             else
                 -- signed
-                writefln(f, "        public const int %s = unchecked((int)%s%s);", macro.name, hex, n)
+                writefln(f, '        public const int %s = unchecked((int)%s%s);', macro.name, hex, n)
                 return
             end
         end
     end
 
-    local valueType = "int"
+    local valueType = 'int'
     if string.find(value, '%"') then
-        valueType = "string"
-    elseif string.find(value, "f") and not string.find(value, "0x") then
-        valueType = "float"
-    elseif string.find(value, "%.") then
-        valueType = "double"
-    elseif string.find(value, "WS_") then
-        valueType = "long"
-    elseif string.find(value, "DS_") then
-        valueType = "long"
+        valueType = 'string'
+    elseif string.find(value, 'f') and not string.find(value, '0x') then
+        valueType = 'float'
+    elseif string.find(value, '%.') then
+        valueType = 'double'
+    elseif string.find(value, 'WS_') then
+        valueType = 'long'
+    elseif string.find(value, 'DS_') then
+        valueType = 'long'
     end
-    writefln(f, "        public const %s %s = %s;", valueType, macro.name, value)
+    writefln(f, '        public const %s %s = %s;', valueType, macro.name, value)
 end
 
 local function CSSource(f, source, option)
     -- dir
-    local sourceDir = string.format("%s/%s", option.dir, source.name)
+    local sourceDir = string.format('%s/%s', option.dir, source.name)
     file.mkdirRecurse(sourceDir)
 
     -- open
-    local path = sourceDir .. ".cs"
-    printf("writeTo: %s", path)
-    local f = io.open(path, "w")
+    local path = sourceDir .. '.cs'
+    printf('writeTo: %s', path)
+    local f = io.open(path, 'w')
 
-    macro_map = option["macro_map"] or {}
-    declFilter = option["filter"]
-    omitEnumPrefix = option["omitEnumPrefix"]
+    macro_map = option['macro_map'] or {}
+    declFilter = option['filter']
+    omitEnumPrefix = option['omitEnumPrefix']
 
     writeln(f, HEADLINE)
-    writefln(f, "namespace %s {", option.packageName)
+    writefln(f, 'namespace %s {', option.packageName)
 
     if option.injection then
         local inejection = option.injection[source.name]
@@ -800,45 +800,45 @@ local function CSSource(f, source, option)
                 return
             end
 
-            local type = const_option.type or "int"
+            local type = const_option.type or 'int'
             local pred = const_option.value
 
-            local f = io.open(path, "w")
+            local f = io.open(path, 'w')
             writeln(f, HEADLINE)
-            writefln(f, "namespace %s {", option.packageName)
+            writefln(f, 'namespace %s {', option.packageName)
 
-            writefln(f, "    public static partial class %s {", prefix)
+            writefln(f, '    public static partial class %s {', prefix)
             for i, m in ipairs(items) do
                 local text = option.macro_map[m.name]
                 if text then
-                    writefln(f, "        %s", text)
+                    writefln(f, '        %s', text)
                 else
                     local tokens = m.tokens
                     table.remove(tokens, 1)
                     local name = string.sub(m.name, #prefix + 1)
                     writefln(
                         f,
-                        "        public const %s %s = %s;",
+                        '        public const %s %s = %s;',
                         type,
                         name,
-                        pred and pred(prefix, tokens, const_option.value_map) or table.concat(tokens, " ")
+                        pred and pred(prefix, tokens, const_option.value_map) or table.concat(tokens, ' ')
                     )
                 end
             end
-            writeln(f, "    }")
+            writeln(f, '    }')
 
-            writeln(f, "}")
+            writeln(f, '}')
             io.close(f)
         end
 
-        writeln(f, "    public static partial class Constants {")
+        writeln(f, '    public static partial class Constants {')
         local macros = source.macros
 
         -- option.constに設定があるものだけ、定数宣言を別ファイルに分離する
         local used = {}
         for prefix, const in pairs(option.const) do
             local group = {}
-            local match = prefix .. "_"
+            local match = prefix .. '_'
             if const.match then
                 match = const.match
             end
@@ -848,7 +848,7 @@ local function CSSource(f, source, option)
                     used[i] = true
                 end
             end
-            local path = string.format("%s/%s.cs", sourceDir, prefix)
+            local path = string.format('%s/%s.cs', sourceDir, prefix)
             CSMacroEnum(path, prefix, group, const)
         end
 
@@ -856,14 +856,14 @@ local function CSSource(f, source, option)
         for i, macro in ipairs(macros) do
             if not used[i] then
                 if constants[macro.name] then
-                    writefln(f, "// duplicate: %s = %s", macro.name, table.concat(macro.tokens, " "))
+                    writefln(f, '// duplicate: %s = %s', macro.name, table.concat(macro.tokens, ' '))
                 else
                     CSMacro(f, macro, macro_map)
                     constants[macro.name] = true
                 end
             end
         end
-        writeln(f, "    }")
+        writeln(f, '    }')
     end
 
     -- types
@@ -872,8 +872,8 @@ local function CSSource(f, source, option)
     local types = {}
     for i, decl in ipairs(source.types) do
         if not declFilter or declFilter(decl) then
-            if decl.class == "Function" then
-                if not decl.name:find("operator") then
+            if decl.class == 'Function' then
+                if not decl.name:find('operator') then
                     table.insert(funcs, decl)
                 end
             elseif decl.name and #decl.name > 0 then
@@ -893,26 +893,29 @@ local function CSSource(f, source, option)
 
     -- funcs
     if #funcs > 0 then
-        writefln(f, "    public static class %s {", source.name)
+        writefln(f, '    public static class %s {', source.name)
         for i, decl in ipairs(funcs) do
-            CSGlobalFunction(f, decl, "        ", option, source.name)
+            CSGlobalFunction(f, decl, '        ', option, source.name)
         end
-        writeln(f, "    }")
+        writeln(f, '    }')
     end
 
-    writeln(f, "}")
+    writeln(f, '}')
 
     io.close(f)
     return hasComInterface
 end
 
-local function ComUtil(f)
+local function ComUtil(option)
+    local path = string.format('%s/ComUtil.cs', option.dir)
+    local f = io.open(path, 'w')
     writeln(f, HEADLINE)
     f:write(
-        [[
+        string.format(
+            [[
 using System.Text;
 
-namespace ShrimpDX
+namespace %s
 {
     public static class ComPtrExtensions
     {
@@ -1190,8 +1193,11 @@ namespace ShrimpDX
         }
     }    
 }
-]]
+]],
+            option.packageName
+        )
     )
+    io.close(f)
 end
 
 local function CSProj(f)
@@ -1215,7 +1221,7 @@ end
 local function CSGenerate(sourceMap, option)
     -- clear dir
     if file.exists(option.dir) then
-        printf("rmdir %s", option.dir)
+        printf('rmdir %s', option.dir)
         file.rmdirRecurse(option.dir)
     end
     option.packageName = basename(option.dir)
@@ -1233,16 +1239,13 @@ local function CSGenerate(sourceMap, option)
 
     if hasComInterface then
         -- write utility
-        local path = string.format("%s/ComUtil.cs", option.dir)
-        local f = io.open(path, "w")
-        ComUtil(f)
-        io.close(f)
+        ComUtil(option)
     end
 
     do
         -- csproj
-        local path = string.format("%s/ShrimpDX.csproj", option.dir)
-        local f = io.open(path, "w")
+        local path = string.format('%s/%s.csproj', option.dir, option.packageName)
+        local f = io.open(path, 'w')
         CSProj(f)
         io.close(f)
     end
