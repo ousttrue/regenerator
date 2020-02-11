@@ -134,15 +134,18 @@ class Processor
             from ~= dsource;
         }
 
-        if (!dsource.addDecl(decl, m_isD))
-        {
-            return;
-        }
-
-        // next
         Function functionDecl = cast(Function) decl;
         TypeDef typedefDecl = cast(TypeDef) decl;
         Struct structDecl = cast(Struct) decl;
+        if (!dsource.addDecl(decl, m_isD))
+        {
+            if (!typedefDecl) // fix IWICColorContext. same typedef for different locations ?
+            {
+                return;
+            }
+        }
+
+        // next
         if (functionDecl)
         {
             addDecl(_decl ~ functionDecl.ret.type, from);
