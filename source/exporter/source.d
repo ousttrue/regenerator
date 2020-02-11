@@ -75,7 +75,11 @@ class Source
             {
                 return false;
             }
-            if (includeModule!(core.sys.windows.winnt)(type.name))
+            if (includeModule!(core.sys.windows.basetsd)(type.name))
+            {
+                return false;
+            }
+             if (includeModule!(core.sys.windows.winnt)(type.name))
             {
                 return false;
             }

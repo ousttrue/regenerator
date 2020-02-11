@@ -39,6 +39,9 @@ printf("use: %s", src)
 local headers = {
     "shared/dxgi.h",
     "shared/dxgi1_2.h",
+    "shared/dxgi1_3.h",
+    "shared/dxgi1_4.h",
+    "um/d3d12.h",
     "um/d3d11.h",
     "um/d3dcompiler.h",
     "um/d3d11shader.h",
@@ -74,6 +77,9 @@ end
 ------------------------------------------------------------------------------
 local function filter(decl)
     if decl.class == "Function" then
+        if startswith(decl.name, "operator") then
+            return false
+        end 
         return decl.isExternC or decl.dllExport
     else
         return true
