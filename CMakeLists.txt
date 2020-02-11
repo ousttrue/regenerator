@@ -15,7 +15,6 @@ ADD_DEFINITIONS(
     -DNOMINMAX
     )
 ADD_COMPILE_OPTIONS(
-    /std:c++latest 
     /EHsc
     )
 
