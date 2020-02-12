@@ -105,9 +105,12 @@ local function DType(t, funcType)
         end
         return typeName
     elseif t.class == "Array" then
-        -- return DArray(t)
-        local a = t
-        return string.format("%s[%d]", DType(a.ref.type, funcType), a.size)
+        local typeName = DType(t.ref.type, funcType)
+        if funcType=="PARAM" then
+            return string.format("%s*", typeName)
+        else
+            return string.format("%s[%d]", typeName, t.size)
+        end
     else
         if #t.name == 0 then
             return nil
@@ -277,8 +280,9 @@ end
 
 local function DStructDecl(f, decl, option, i)
     if decl.isForwardDecl then
-        -- TODO
-        return
+        if decl.definition then
+            return
+        end
     end
 
     if anonymousMap[decl.hash] then
