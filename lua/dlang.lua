@@ -98,7 +98,7 @@ local function DType(t, funcType)
     elseif t.class == "Reference" then
         -- return DPointer(t)
         local typeName = DType(t.ref.type, funcType)
-        if t.ref.isConst and isParam then
+        if t.ref.isConst and funcType=="PARAM" then
             typeName = string.format("in %s", typeName)
         else
             typeName = string.format("ref %s", typeName)
