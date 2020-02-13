@@ -228,6 +228,9 @@ local function DFunctionDecl(f, decl, indent, isMethod, option)
             )
         )
     end
+    if decl.isVariadic then
+        f:write( ", ...")
+    end
     writeln(f, ");")
 end
 

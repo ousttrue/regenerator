@@ -560,7 +560,7 @@ class Parser
                                 clang_disposeOverriddenCursors(p);
 
                             hashes.length = n;
-                            for(int i=0; i<n; ++i)
+                            for (int i = 0; i < n; ++i)
                             {
                                 hashes[i] = clang_hashCursor(p[i]);
                             }
@@ -573,10 +573,10 @@ class Parser
                         }
 
                         auto found = -1;
-                        for(int i=0; i<decl.vtable.length; ++i)
+                        for (int i = 0; i < decl.vtable.length; ++i)
                         {
                             auto current = decl.vtable[i].hash;
-                            if(hashes.any!(x => x == current))
+                            if (hashes.any!(x => x == current))
                             {
                                 found = i;
                                 break;
@@ -766,6 +766,9 @@ class Parser
         decl.namespace = context.namespace;
         decl.hasBody = hasBody;
         decl.hash = clang_hashCursor(cursor);
+        auto isVariadic = clang_Cursor_isVariadic(cursor) != 0;
+        decl.isVariadic = isVariadic;
+
         return decl;
     }
 

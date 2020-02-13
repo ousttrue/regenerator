@@ -358,6 +358,7 @@ class Function : UserDecl
     bool dllExport;
     Param[] params;
     bool hasBody;
+    bool isVariadic;
 
     this(string path, int line, string name, TypeRef ret, Param[] params,
             bool dllExport, bool externC)

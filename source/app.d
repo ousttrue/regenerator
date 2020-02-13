@@ -509,6 +509,7 @@ int main(string[] args)
 	funcType.instance.Getter("params", (Function* self) => self.params);
 	funcType.instance.Getter("namespace", (Function* self) => self.namespace);
 	funcType.instance.Getter("ret", (Function* self) => self.ret);
+	funcType.instance.Getter("isVariadic", (Function* self) => self.isVariadic);
 
 	// parse
 	lua_register(lua.L, "parse", &luaFunc_parse);
