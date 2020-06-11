@@ -79,7 +79,8 @@ local ESCAPE_SYMBOLS = {
     ref = true,
     ['in'] = true,
     event = true,
-    string = true
+    string = true,
+    base = true,
 }
 
 local function CSEscapeName(src, i)
