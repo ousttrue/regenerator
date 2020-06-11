@@ -64,6 +64,27 @@
             "visualizerFile": "${workspaceFolder}/.vscode/d.natvis"
         },
         {
+            "name": "cs libclang",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/regenerator.exe",
+            "args": [
+                "${workspaceFolder}/lua/cs_libclang.lua",
+                "C:/Program Files/LLVM/include",
+                "${workspaceFolder}/cs/libclang",
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [
+                {
+                    "name": "PATH",
+                    "value": "C:/Program Files/LLVM/bin"
+                }
+            ],
+            "externalConsole": false,
+            "visualizerFile": "${workspaceFolder}/.vscode/d.natvis"
+        },
+        {
             "name": "cs d3d11",
             "type": "cppvsdbg",
             "request": "launch",
